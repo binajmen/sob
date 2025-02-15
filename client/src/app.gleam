@@ -40,11 +40,8 @@ pub opaque type Msg {
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     AddNote -> {
-      #(
-        Model(input: "", notes: dict.insert(model.notes, model.input, False)),
-        write_localstorage("notes", model.notes),
-        // effect.none(),
-      )
+      let notes = dict.insert(model.notes, model.input, False)
+      #(Model(input: "", notes:), write_localstorage("notes", notes))
     }
     ToggleStatus(note) -> {
       case dict.get(model.notes, note) {
@@ -62,6 +59,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     CacheInput(Error(_)) -> #(model, effect.none())
     CacheNotes(Ok(notes)) -> {
       io.debug(notes)
+      // TODO: find a way to parse the localStorage dict from "JS" string to Dict
       // #(Model(..model, notes:), effect.none())
       #(model, effect.none())
     }

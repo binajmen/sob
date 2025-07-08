@@ -1,5 +1,5 @@
 {
-  "name": "vite-template-solid",
+  "name": "sob-client",
   "version": "0.0.0",
   "description": "",
   "type": "module",
@@ -11,11 +11,17 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@biomejs/biome": "^2.1.0",
+    "@tanstack/router-plugin": "^1.125.6",
     "typescript": "^5.7.2",
     "vite": "^6.0.0",
     "vite-plugin-solid": "^2.11.6"
   },
   "dependencies": {
-    "solid-js": "^1.9.5"
+    "@tailwindcss/vite": "^4.1.11",
+    "@tanstack/solid-router": "^1.125.6",
+    "@tanstack/solid-router-devtools": "^1.125.6",
+    "solid-js": "^1.9.5",
+    "tailwindcss": "^4.1.11"
   }
 }

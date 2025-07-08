@@ -1,15 +1,22 @@
-/* @refresh reload */
-import { render } from 'solid-js/web';
+import { render } from "solid-js/web";
+import { RouterProvider, createRouter } from "@tanstack/solid-router";
+import "./index.css";
 
-import './index.css';
-import App from './App';
+// Import the generated route tree
+import { routeTree } from "./routeTree.gen";
 
-const root = document.getElementById('root');
+// Create a new router instance
+const router = createRouter({ routeTree });
 
-if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
-  throw new Error(
-    'Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got misspelled?',
-  );
+// Register the router instance for type safety
+declare module "@tanstack/solid-router" {
+  interface Register {
+    router: typeof router;
+  }
 }
 
-render(() => <App />, root!);
+// Render the app
+const rootElement = document.getElementById("root")!;
+if (!rootElement.innerHTML) {
+  render(() => <RouterProvider router={router} />, rootElement);
+}

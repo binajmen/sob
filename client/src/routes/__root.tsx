@@ -1,20 +1,19 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/solid-router";
+import type { QueryClient } from "@tanstack/solid-query";
+import { createRootRouteWithContext, Outlet } from "@tanstack/solid-router";
 import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
+import type { Api } from "~/api";
 
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <div class="p-2 flex gap-2">
-        <Link to="/" class="[&.active]:font-bold">
-          Home
-        </Link>{" "}
-        <Link to="/about" class="[&.active]:font-bold">
-          About
-        </Link>
-      </div>
-      <hr />
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
+export const Route = createRootRouteWithContext<{
+  api: Api;
+  query: QueryClient;
+}>()({
+  component: () => {
+    return (
+      <>
+        <Outlet />
+        <TanStackRouterDevtools />
+      </>
+    );
+  },
+  notFoundComponent: () => <div>404 Not Found</div>,
 });

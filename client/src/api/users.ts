@@ -1,6 +1,6 @@
 import { type MutationOptions, queryOptions } from "@tanstack/solid-query";
 import * as z from "zod/v4";
-import { get, post } from "~/api";
+import { del, get, post } from "~/api";
 
 const userSchema = z.object({
   id: z.string(),
@@ -23,18 +23,22 @@ const find = (id: string) =>
   });
 
 const create = {
-  mutationFn: (user: NewUser) =>
-    post("/users", user, userSchema),
+  mutationFn: (user: NewUser) => post("/users", user, userSchema),
 } satisfies MutationOptions<User, Error, NewUser>;
 
 const update = {
-  mutationFn: (user: User) =>
-    post(`/users/${user.id}`, user, userSchema),
+  mutationFn: (user: User) => post(`/users/${user.id}`, user, userSchema),
 } satisfies MutationOptions<User, Error, User>;
+
+const remove = {
+  mutationFn: (id: string) => del(`/users/${id}`),
+} satisfies MutationOptions<void, Error, string>;
 
 export const users = {
   list,
   find,
   create,
   update,
+  remove,
 };
+

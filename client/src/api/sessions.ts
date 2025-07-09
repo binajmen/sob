@@ -1,6 +1,6 @@
 import { type MutationOptions, queryOptions } from "@tanstack/solid-query";
 import * as z from "zod/v4";
-import { get, post } from "~/api";
+import { del, get, post } from "~/api";
 
 const sessionSchema = z.object({
   id: z.string(),
@@ -31,10 +31,14 @@ const update = {
     post(`/sessions/${session.id}`, session, sessionSchema),
 } satisfies MutationOptions<Session, Error, Session>;
 
+const remove = {
+  mutationFn: (id: string) => del(`/sessions/${id}`),
+} satisfies MutationOptions<void, Error, string>;
+
 export const sessions = {
   list,
   find,
   create,
   update,
+  remove,
 };
-

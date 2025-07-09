@@ -32,6 +32,19 @@ export async function post<Schema extends z.ZodSchema>(
     .then((json) => schema.parse(json));
 }
 
+export async function del(path: string): Promise<void> {
+  const headers: HeadersInit = {};
+
+  return fetch(`${API_URL}${path}`, {
+    method: "delete",
+    headers,
+  }).then((res) => {
+    if (!res.ok) {
+      throw new Error(`Delete failed: ${res.status}`);
+    }
+  });
+}
+
 export const api = {
   questions,
   sessions,

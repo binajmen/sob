@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createSignal, Show } from "solid-js";
+import { Show } from "solid-js";
+import { useAppForm } from "~/hooks/form";
 
 export const Route = createFileRoute("/admin/users/$id")({
   component: RouteComponent,
@@ -13,9 +14,6 @@ function RouteComponent() {
   const context = Route.useRouteContext();
   const navigate = useNavigate();
 
-  const [firstName, setFirstName] = createSignal("");
-  const [lastName, setLastName] = createSignal("");
-
   const updateMutation = useMutation(() => ({
     ...context().api.users.update,
     onSuccess: () => {
@@ -24,45 +22,38 @@ function RouteComponent() {
     },
   }));
 
-  const handleSubmit = (e: Event) => {
-    e.preventDefault();
-    updateMutation.mutate({
-      id: user().id,
-      first_name: firstName() || user().first_name,
-      last_name: lastName() || user().last_name,
-    });
-  };
+  const form = useAppForm(() => ({
+    defaultValues: {
+      first_name: user().first_name,
+      last_name: user().last_name,
+    },
+    onSubmit: async ({ value }) => {
+      updateMutation.mutate({
+        id: user().id,
+        first_name: value.first_name,
+        last_name: value.last_name,
+      });
+    },
+  }));
 
   return (
     <div>
       <h1>Edit User</h1>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label for="firstName">First Name:</label>
-          <br />
-          <input
-            type="text"
-            id="firstName"
-            name="firstName"
-            value={firstName() || user().first_name}
-            onInput={(e) => setFirstName(e.target.value)}
-            required
-          />
-        </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+      >
+        <form.AppField name="first_name">
+          {(field) => <field.TextField label="Fist name" />}
+        </form.AppField>
 
-        <div>
-          <label for="lastName">Last Name:</label>
-          <br />
-          <input
-            type="text"
-            id="lastName"
-            name="lastName"
-            value={lastName() || user().last_name}
-            onInput={(e) => setLastName(e.target.value)}
-            required
-          />
-        </div>
+        <form.AppField name="last_name">
+          {(field) => <field.TextField label="Last name" />}
+        </form.AppField>
 
         <div>
           <button type="submit" disabled={updateMutation.isPending}>

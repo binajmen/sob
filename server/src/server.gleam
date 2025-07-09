@@ -1,5 +1,5 @@
-import gleam/io
+import gleam/erlang/process
 
 pub fn main() -> Nil {
-  io.println("Hello from server!")
+  process.sleep_forever()
 }

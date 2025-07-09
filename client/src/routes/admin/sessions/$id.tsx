@@ -1,7 +1,7 @@
-import { createForm } from "@tanstack/solid-form";
 import { useMutation } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { Show } from "solid-js";
+import { useAppForm } from "~/hooks/form";
 
 export const Route = createFileRoute("/admin/sessions/$id")({
   component: RouteComponent,
@@ -22,7 +22,7 @@ function RouteComponent() {
     },
   }));
 
-  const form = createForm(() => ({
+  const form = useAppForm(() => ({
     defaultValues: {
       name: session().name,
     },
@@ -45,30 +45,14 @@ function RouteComponent() {
           form.handleSubmit();
         }}
       >
-        <div>
-          <form.Field name="name">
-            {(field) => (
-              <>
-                <label for="name">Name:</label>
-                <br />
-                <input
-                  type="text"
-                  id="name"
-                  name={field().name}
-                  value={field().state.value}
-                  onBlur={field().handleBlur}
-                  onInput={(e) => field().handleChange(e.target.value)}
-                  required
-                />
-              </>
-            )}
-          </form.Field>
-        </div>
+        <form.AppField name="name">
+          {(field) => <field.TextField label="Name" />}
+        </form.AppField>
 
         <div>
-          <button type="submit" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? "Updating..." : "Update Session"}
-          </button>
+          <form.AppForm>
+            <form.SubmitButton label="Update Session" />
+          </form.AppForm>
 
           <button
             type="button"

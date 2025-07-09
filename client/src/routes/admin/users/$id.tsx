@@ -56,9 +56,9 @@ function RouteComponent() {
         </form.AppField>
 
         <div>
-          <button type="submit" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? "Updating..." : "Update User"}
-          </button>
+          <form.AppForm>
+            <form.SubmitButton label="Update User" />
+          </form.AppForm>
 
           <button
             type="button"

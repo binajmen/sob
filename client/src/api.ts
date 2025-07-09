@@ -1,5 +1,7 @@
 import type * as z from "zod/v4";
 import { questions } from "~/api/questions";
+import { sessions } from "~/api/sessions";
+import { users } from "~/api/users";
 
 export const API_URL = "http://localhost:8010";
 
@@ -32,6 +34,8 @@ export async function post<Schema extends z.ZodSchema>(
 
 export const api = {
   questions,
+  sessions,
+  users,
 };
 
 export type Api = typeof api;

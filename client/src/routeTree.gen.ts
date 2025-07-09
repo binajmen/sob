@@ -11,6 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IdRouteImport } from './routes/$id'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as AdminSessionsIndexRouteImport } from './routes/admin/sessions/index'
+import { Route as AdminUsersIdRouteImport } from './routes/admin/users/$id'
+import { Route as AdminSessionsIdRouteImport } from './routes/admin/sessions/$id'
 
 const IdRoute = IdRouteImport.update({
   id: '/$id',
@@ -22,31 +26,86 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/admin/users/',
+  path: '/admin/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSessionsIndexRoute = AdminSessionsIndexRouteImport.update({
+  id: '/admin/sessions/',
+  path: '/admin/sessions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersIdRoute = AdminUsersIdRouteImport.update({
+  id: '/admin/users/$id',
+  path: '/admin/users/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSessionsIdRoute = AdminSessionsIdRouteImport.update({
+  id: '/admin/sessions/$id',
+  path: '/admin/sessions/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/admin/sessions/$id': typeof AdminSessionsIdRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
+  '/admin/sessions': typeof AdminSessionsIndexRoute
+  '/admin/users': typeof AdminUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/admin/sessions/$id': typeof AdminSessionsIdRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
+  '/admin/sessions': typeof AdminSessionsIndexRoute
+  '/admin/users': typeof AdminUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$id': typeof IdRoute
+  '/admin/sessions/$id': typeof AdminSessionsIdRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
+  '/admin/sessions/': typeof AdminSessionsIndexRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$id'
+  fullPaths:
+    | '/'
+    | '/$id'
+    | '/admin/sessions/$id'
+    | '/admin/users/$id'
+    | '/admin/sessions'
+    | '/admin/users'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$id'
-  id: '__root__' | '/' | '/$id'
+  to:
+    | '/'
+    | '/$id'
+    | '/admin/sessions/$id'
+    | '/admin/users/$id'
+    | '/admin/sessions'
+    | '/admin/users'
+  id:
+    | '__root__'
+    | '/'
+    | '/$id'
+    | '/admin/sessions/$id'
+    | '/admin/users/$id'
+    | '/admin/sessions/'
+    | '/admin/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IdRoute: typeof IdRoute
+  AdminSessionsIdRoute: typeof AdminSessionsIdRoute
+  AdminUsersIdRoute: typeof AdminUsersIdRoute
+  AdminSessionsIndexRoute: typeof AdminSessionsIndexRoute
+  AdminUsersIndexRoute: typeof AdminUsersIndexRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -65,12 +124,44 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/sessions/': {
+      id: '/admin/sessions/'
+      path: '/admin/sessions'
+      fullPath: '/admin/sessions'
+      preLoaderRoute: typeof AdminSessionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users/$id': {
+      id: '/admin/users/$id'
+      path: '/admin/users/$id'
+      fullPath: '/admin/users/$id'
+      preLoaderRoute: typeof AdminUsersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/sessions/$id': {
+      id: '/admin/sessions/$id'
+      path: '/admin/sessions/$id'
+      fullPath: '/admin/sessions/$id'
+      preLoaderRoute: typeof AdminSessionsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IdRoute: IdRoute,
+  AdminSessionsIdRoute: AdminSessionsIdRoute,
+  AdminUsersIdRoute: AdminUsersIdRoute,
+  AdminSessionsIndexRoute: AdminSessionsIndexRoute,
+  AdminUsersIndexRoute: AdminUsersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

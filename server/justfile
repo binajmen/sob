@@ -1,5 +1,11 @@
 default:
 	@just --list
 
-squirrel:
+env:
+	export $(grep -v '^#' .env | xargs)
+
+squirrel: env
 	gleam run -m squirrel
+
+run: env
+	gleam run

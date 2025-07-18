@@ -1,5 +1,9 @@
 default:
 	@just --list
 
-dev:
-	bun run dev
+build-dev:
+	gleam run -m lustre/dev build --outdir=../server/priv/static
+	cp app.css ../server/priv/static/app.css
+
+build-prod:
+	gleam run -m lustre/dev build --minify --outdir=../server/priv/static

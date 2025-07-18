@@ -6,6 +6,6 @@ Small application to organise a live voting session.
 
 Support:
 
-[ ] Multiple sessions
-[ ] Proxy person
-[ ] tbd
+- [ ] Multiple sessions
+- [ ] Proxy person
+- [ ] tbd

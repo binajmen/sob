@@ -1,6 +1,6 @@
 update
   sessions
 set
-  name = $2
+  user_id = $2
 where
   id = $1

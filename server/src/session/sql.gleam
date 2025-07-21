@@ -6,7 +6,7 @@ import youid/uuid.{type Uuid}
 /// Runs the `update_session` query
 /// defined in `./src/session/sql/update_session.sql`.
 ///
-/// > 🐿️ This function was generated automatically using v4.0.0 of
+/// > 🐿️ This function was generated automatically using v4.0.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn update_session(db, arg_1, arg_2) {
@@ -15,13 +15,13 @@ pub fn update_session(db, arg_1, arg_2) {
   "update
   sessions
 set
-  name = $2
+  user_id = $2
 where
   id = $1
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.text(arg_2))
+  |> pog.parameter(pog.text(uuid.to_string(arg_2)))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -29,13 +29,13 @@ where
 /// A row you get from running the `list_sessions` query
 /// defined in `./src/session/sql/list_sessions.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.0.0 of the
+/// > 🐿️ This type definition was generated automatically using v4.0.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type ListSessionsRow {
   ListSessionsRow(
     id: Uuid,
-    name: String,
+    user_id: Uuid,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -44,16 +44,16 @@ pub type ListSessionsRow {
 /// Runs the `list_sessions` query
 /// defined in `./src/session/sql/list_sessions.sql`.
 ///
-/// > 🐿️ This function was generated automatically using v4.0.0 of
+/// > 🐿️ This function was generated automatically using v4.0.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn list_sessions(db) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use name <- decode.field(1, decode.string)
+    use user_id <- decode.field(1, uuid_decoder())
     use created_at <- decode.field(2, pog.timestamp_decoder())
     use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(ListSessionsRow(id:, name:, created_at:, updated_at:))
+    decode.success(ListSessionsRow(id:, user_id:, created_at:, updated_at:))
   }
 
   "select
@@ -69,13 +69,13 @@ from
 /// A row you get from running the `find_session` query
 /// defined in `./src/session/sql/find_session.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.0.0 of the
+/// > 🐿️ This type definition was generated automatically using v4.0.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type FindSessionRow {
   FindSessionRow(
     id: Uuid,
-    name: String,
+    user_id: Uuid,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -84,16 +84,16 @@ pub type FindSessionRow {
 /// Runs the `find_session` query
 /// defined in `./src/session/sql/find_session.sql`.
 ///
-/// > 🐿️ This function was generated automatically using v4.0.0 of
+/// > 🐿️ This function was generated automatically using v4.0.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn find_session(db, arg_1) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use name <- decode.field(1, decode.string)
+    use user_id <- decode.field(1, uuid_decoder())
     use created_at <- decode.field(2, pog.timestamp_decoder())
     use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(FindSessionRow(id:, name:, created_at:, updated_at:))
+    decode.success(FindSessionRow(id:, user_id:, created_at:, updated_at:))
   }
 
   "select

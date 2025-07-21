@@ -4854,28 +4854,14 @@ function init2(_) {
   return [model, effect];
 }
 function update2(model, msg) {
-  if (msg instanceof UserNavigatedTo) {
-    let route = msg.route;
-    return [
-      (() => {
-        let _record = model;
-        return new Model(route, _record.counter, _record.error);
-      })(),
-      none()
-    ];
-  } else {
-    return [
-      (() => {
-        let _record = model;
-        return new Model(
-          _record.route,
-          new Counter(model.counter.count + 1),
-          _record.error
-        );
-      })(),
-      none()
-    ];
-  }
+  let route = msg.route;
+  return [
+    (() => {
+      let _record = model;
+      return new Model(route, _record.counter, _record.error);
+    })(),
+    none()
+  ];
 }
 function view_header_link(target, current, text4) {
   let is_active = isEqual(current, target);

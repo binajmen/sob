@@ -1,3 +1,4 @@
+import auth/router as auth
 import cors_builder
 import gleam/http.{Get, Patch, Post, Put}
 import lustre/attribute
@@ -15,9 +16,11 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
   case req.method, wisp.path_segments(req) {
     method, ["api", ..rest] ->
       case method, rest {
+        Post, ["auth", "sign-in"] -> auth.sign_in(req, ctx)
+        Post, ["auth", "sign-up"] -> auth.sign_up(req, ctx)
         Get, ["sessions"] -> session.list_sessions(req, ctx)
         Get, ["sessions", id] -> session.find_session(req, ctx, id)
-        Post, ["sessions", id] -> session.update_session(req, ctx, id)
+        // Post, ["sessions", id] -> session.update_session(req, ctx, id)
         _, _ -> wisp.not_found()
       }
     Get, _ -> serve_index()

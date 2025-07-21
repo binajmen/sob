@@ -4,7 +4,8 @@ import modem
 
 pub type Route {
   Index
-  Login
+  SignIn
+  SignUp
   About
   Session(id: String)
   NotFound(uri: Uri)
@@ -20,7 +21,8 @@ pub fn initial_route() -> Route {
 pub fn parse_route(uri: Uri) -> Route {
   case uri.path_segments(uri.path) {
     [] -> Index
-    ["login"] -> Login
+    ["signin"] -> SignIn
+    ["signup"] -> SignUp
     ["about"] -> About
     ["session", id] -> Session(id)
     _ -> NotFound(uri:)
@@ -30,7 +32,8 @@ pub fn parse_route(uri: Uri) -> Route {
 pub fn href(route: Route) -> Attribute(msg) {
   let url = case route {
     Index -> "/"
-    Login -> "/login"
+    SignIn -> "/signin"
+    SignUp -> "/signup"
     About -> "/about"
     Session(id) -> "/session/" <> id
     NotFound(_) -> "/not-found"

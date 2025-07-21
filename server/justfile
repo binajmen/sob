@@ -6,6 +6,10 @@ env:
 
 squirrel: env
 	gleam run -m squirrel
-
-run: env
+run: env squirrel
 	gleam run
+
+migrate: env
+    dbmate migrate
+down: env
+    dbmate down

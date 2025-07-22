@@ -21,8 +21,8 @@ pub fn initial_route() -> Route {
 pub fn parse_route(uri: Uri) -> Route {
   case uri.path_segments(uri.path) {
     [] -> Index
-    ["signin"] -> SignIn
-    ["signup"] -> SignUp
+    ["sign-in"] -> SignIn
+    ["sign-up"] -> SignUp
     ["about"] -> About
     ["session", id] -> Session(id)
     _ -> NotFound(uri:)
@@ -32,8 +32,8 @@ pub fn parse_route(uri: Uri) -> Route {
 pub fn href(route: Route) -> Attribute(msg) {
   let url = case route {
     Index -> "/"
-    SignIn -> "/signin"
-    SignUp -> "/signup"
+    SignIn -> "/sign-in"
+    SignUp -> "/sign-up"
     About -> "/about"
     Session(id) -> "/session/" <> id
     NotFound(_) -> "/not-found"

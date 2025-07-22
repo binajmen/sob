@@ -52,11 +52,22 @@ pub fn require_user(
   }
 }
 
-pub fn me(req: Request, ctx: Context) {
+pub fn require_admin(
+  req: Request,
+  ctx: Context,
+  next: fn(user.User) -> Response,
+) -> Response {
   use session_id <- require_session(req)
   use user <- require_user(session_id, ctx)
-  echo user.email
-  echo user.is_admin
+  case user.is_admin {
+    True -> next(user)
+    False -> helpers.unauthorised()
+  }
+}
+
+pub fn me(req: Request, ctx: Context) {
+  use session_id <- require_session(req)
+  use _user <- require_user(session_id, ctx)
   wisp.ok()
 }
 

@@ -1,8 +1,11 @@
 import gleam/dynamic/decode
+import gleam/http/response
 import gleam/json
 import gleam/list
 import gleam/string
+import gleam/string_tree
 import pog
+import wisp
 import youid/uuid
 
 pub fn uuid_decoder() {
@@ -10,6 +13,34 @@ pub fn uuid_decoder() {
   case uuid.from_bit_array(bit_array) {
     Ok(uuid) -> decode.success(uuid)
     Error(_) -> decode.failure(uuid.v7(), "Uuid")
+  }
+}
+
+pub type ApiError {
+  CustomError(reason: String)
+  DatabaseError(error: pog.QueryError)
+  UnknownError
+  WrongFormat(errors: List(decode.DecodeError))
+}
+
+pub fn to_wisp_response(error: ApiError) {
+  case error {
+    CustomError(reason) -> {
+      string_tree.from_string(reason)
+      |> wisp.json_response(404)
+    }
+    DatabaseError(error) -> {
+      pog_error_to_json(error)
+      |> wisp.json_response(500)
+    }
+    UnknownError -> {
+      string_tree.from_string("Unknown error")
+      |> wisp.json_response(500)
+    }
+    WrongFormat(errors) -> {
+      decode_errors_to_json(errors)
+      |> wisp.json_response(404)
+    }
   }
 }
 
@@ -57,4 +88,8 @@ pub fn pog_error_to_json(error: pog.QueryError) {
     // pog.UnexpectedResultType(_) -> todo
   }
   |> json.to_string_tree()
+}
+
+pub fn unauthorised() -> wisp.Response {
+  response.Response(401, [], wisp.Empty)
 }

@@ -11,5 +11,7 @@ run: env squirrel
 
 migrate: env
     dbmate migrate
+up: env
+    dbmate up
 down: env
     dbmate down

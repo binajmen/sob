@@ -33,6 +33,58 @@ pub fn create_session(db, arg_1) {
   |> pog.execute(db)
 }
 
+/// A row you get from running the `find_user_by_session` query
+/// defined in `./src/auth/sql/find_user_by_session.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.0.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type FindUserBySessionRow {
+  FindUserBySessionRow(
+    id: Uuid,
+    email: String,
+    password_hash: String,
+    is_admin: Bool,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `find_user_by_session` query
+/// defined in `./src/auth/sql/find_user_by_session.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.0.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn find_user_by_session(db, arg_1) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use email <- decode.field(1, decode.string)
+    use password_hash <- decode.field(2, decode.string)
+    use is_admin <- decode.field(3, decode.bool)
+    use created_at <- decode.field(4, pog.timestamp_decoder())
+    use updated_at <- decode.field(5, pog.timestamp_decoder())
+    decode.success(FindUserBySessionRow(
+      id:,
+      email:,
+      password_hash:,
+      is_admin:,
+      created_at:,
+      updated_at:,
+    ))
+  }
+
+  "select u.*
+from users u
+inner join sessions s on u.id = s.user_id
+where s.id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `create_user` query
 /// defined in `./src/auth/sql/create_user.sql`.
 ///
@@ -75,6 +127,7 @@ pub type FindUserByEmailRow {
     id: Uuid,
     email: String,
     password_hash: String,
+    is_admin: Bool,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -91,12 +144,14 @@ pub fn find_user_by_email(db, arg_1) {
     use id <- decode.field(0, uuid_decoder())
     use email <- decode.field(1, decode.string)
     use password_hash <- decode.field(2, decode.string)
-    use created_at <- decode.field(3, pog.timestamp_decoder())
-    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    use is_admin <- decode.field(3, decode.bool)
+    use created_at <- decode.field(4, pog.timestamp_decoder())
+    use updated_at <- decode.field(5, pog.timestamp_decoder())
     decode.success(FindUserByEmailRow(
       id:,
       email:,
       password_hash:,
+      is_admin:,
       created_at:,
       updated_at:,
     ))

@@ -16,6 +16,7 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
   case req.method, wisp.path_segments(req) {
     method, ["api", ..rest] ->
       case method, rest {
+        Get, ["auth", "me"] -> auth.me(req, ctx)
         Post, ["auth", "sign-in"] -> auth.sign_in(req, ctx)
         Post, ["auth", "sign-up"] -> auth.sign_up(req, ctx)
         Get, ["sessions"] -> session.list_sessions(req, ctx)

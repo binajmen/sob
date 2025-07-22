@@ -3,20 +3,13 @@ import gleam/bit_array
 import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
-import gleam/result.{map_error, try}
-import gleam/string_tree
+import gleam/result.{try}
 import helpers
 import pog
 import server/context.{type Context}
-import wisp.{type Request}
+import shared/user
+import wisp.{type Request, type Response}
 import youid/uuid
-
-type AuthError {
-  WrongPayloadFormat(errors: List(decode.DecodeError))
-  InvalidCredentials
-  DatabaseError(error: pog.QueryError)
-  InternalServerError
-}
 
 type AuthPayload {
   AuthPayload(email: String, password: String)
@@ -28,130 +21,142 @@ fn auth_payload_decoder() -> decode.Decoder(AuthPayload) {
   decode.success(AuthPayload(email:, password:))
 }
 
-// pub fn sign_in(req: Request, ctx: Context) {
-//   use json <- wisp.require_json(req)
+pub fn require_session(req: Request, next: fn(String) -> Response) -> Response {
+  let session_id = wisp.get_cookie(req, "session_id", wisp.Signed)
+  case session_id {
+    Ok(session_id) -> next(session_id)
+    Error(_) -> helpers.unauthorised()
+  }
+}
 
-//   case decode.run(json, auth_payload_decoder()) {
-//     Ok(AuthPayload(email, password)) -> {
-//       case authenticate_user(ctx, email, password) {
-//         Ok(user) -> {
-//           case sql.create_session(ctx.db, user.id) {
-//             Ok(pog.Returned(1, [session])) ->
-//               uuid.to_string(session.id)
-//               |> string_tree.from_string
-//               |> wisp.json_response(200)
-//             Error(error) -> {
-//               echo error
-//               helpers.pog_error_to_json(error) |> wisp.json_response(500)
-//             }
-//             _ -> {
-//               string_tree.from_string("Unexpected result from create_session")
-//               |> wisp.json_response(500)
-//             }
-//           }
-//         }
-//         Error(error) -> {
-//           string_tree.from_string(error)
-//           |> wisp.json_response(401)
-//         }
-//       }
-//     }
-//     Error(errors) -> {
-//       echo errors
-//       helpers.decode_errors_to_json(errors)
-//       |> wisp.json_response(404)
-//     }
-//   }
-// }
+pub fn require_user(
+  session_id: String,
+  ctx: Context,
+  next: fn(user.User) -> Response,
+) -> Response {
+  // TOFIX
+  let assert Ok(session_id) = uuid.from_string(session_id)
+  case sql.find_user_by_session(ctx.db, session_id) {
+    Ok(pog.Returned(1, [user])) ->
+      next(user.User(
+        id: uuid.to_string(user.id),
+        email: user.email,
+        is_admin: user.is_admin,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+      ))
+    Ok(_) -> helpers.unauthorised()
+    Error(error) ->
+      helpers.DatabaseError(error)
+      |> helpers.to_wisp_response
+  }
+}
+
+pub fn me(req: Request, ctx: Context) {
+  use session_id <- require_session(req)
+  use user <- require_user(session_id, ctx)
+  echo user.email
+  echo user.is_admin
+  wisp.ok()
+}
 
 pub fn sign_in(req: Request, ctx: Context) {
   use json <- wisp.require_json(req)
 
-  case do_sign_in(ctx, json) {
-    Ok(session_id) -> {
-      session_id
-      |> uuid.to_string
-      |> string_tree.from_string
-      |> wisp.json_response(200)
-    }
-    Error(WrongPayloadFormat(errors)) -> {
-      helpers.decode_errors_to_json(errors)
-      |> wisp.json_response(404)
-    }
-    Error(InvalidCredentials) -> {
-      string_tree.from_string("Invalid credentials")
-      |> wisp.json_response(401)
-    }
-    Error(DatabaseError(error)) -> {
-      helpers.pog_error_to_json(error) |> wisp.json_response(500)
-    }
-    Error(InternalServerError) -> {
-      string_tree.from_string("Internal server error")
-      |> wisp.json_response(500)
-    }
+  let result = {
+    use payload <- try(decode_payload(json))
+    use user <- try(authenticate_user(ctx, payload))
+    use session_id <- try(create_session(ctx, user.id))
+    Ok(session_id)
   }
-}
 
-fn do_sign_in(ctx: Context, json: dynamic.Dynamic) {
-  use payload <- try(
-    decode.run(json, auth_payload_decoder())
-    |> result.map_error(WrongPayloadFormat),
-  )
-  use user <- try(authenticate_user(ctx, payload.email, payload.password))
-  use session <- try(
-    sql.create_session(ctx.db, user.id) |> map_error(DatabaseError),
-  )
-  case session {
-    pog.Returned(1, [session]) -> Ok(session.id)
-    _ -> Error(InternalServerError)
+  case result {
+    Ok(session_id) ->
+      wisp.ok()
+      |> wisp.set_cookie(
+        req,
+        "session_id",
+        uuid.to_string(session_id),
+        wisp.Signed,
+        60 * 60,
+      )
+    Error(error) -> error |> helpers.to_wisp_response
   }
 }
 
 pub fn sign_up(req: Request, ctx: Context) {
   use json <- wisp.require_json(req)
 
-  case decode.run(json, auth_payload_decoder()) {
-    Ok(AuthPayload(email, password)) -> {
-      let password_hash =
-        crypto.hash(crypto.Sha256, bit_array.from_string(password))
-        |> bit_array.base64_encode(False)
-      case sql.create_user(ctx.db, email, password_hash) {
-        Ok(pog.Returned(1, [user])) ->
-          uuid.to_string(user.id)
-          |> string_tree.from_string
-          |> wisp.json_response(200)
-        Error(error) -> {
-          echo error
-          helpers.pog_error_to_json(error) |> wisp.json_response(500)
-        }
-        _ -> {
-          string_tree.from_string("Unexpected result from create_session")
-          |> wisp.json_response(500)
-        }
-      }
-    }
-    Error(errors) -> {
-      echo errors
-      helpers.decode_errors_to_json(errors)
-      |> wisp.json_response(404)
-    }
+  let result = {
+    use payload <- try(decode_payload(json))
+    use user <- try(create_user(ctx, payload))
+    use session_id <- try(create_session(ctx, user.id))
+    Ok(session_id)
   }
+
+  case result {
+    Ok(session_id) ->
+      wisp.ok()
+      |> wisp.set_cookie(
+        req,
+        "session_id",
+        uuid.to_string(session_id),
+        wisp.Signed,
+        60 * 60,
+      )
+    Error(error) -> error |> helpers.to_wisp_response
+  }
+}
+
+fn decode_payload(
+  json: dynamic.Dynamic,
+) -> Result(AuthPayload, helpers.ApiError) {
+  decode.run(json, auth_payload_decoder())
+  |> result.map_error(helpers.WrongFormat)
 }
 
 fn authenticate_user(
   ctx: Context,
-  email: String,
-  password: String,
-) -> Result(sql.FindUserByEmailRow, AuthError) {
-  use user <- try(case sql.find_user_by_email(ctx.db, email) {
+  payload: AuthPayload,
+) -> Result(sql.FindUserByEmailRow, helpers.ApiError) {
+  use user <- try(case sql.find_user_by_email(ctx.db, payload.email) {
     Ok(pog.Returned(1, [user])) -> Ok(user)
-    _ -> Error(InvalidCredentials)
+    Ok(_) -> Error(helpers.CustomError("Invalid credentials"))
+    Error(error) -> Error(helpers.DatabaseError(error))
   })
 
+  // TOFIX
   let assert Ok(password_hash) = bit_array.base64_decode(user.password_hash)
-  let challenge = crypto.hash(crypto.Sha256, bit_array.from_string(password))
+  let challenge =
+    crypto.hash(crypto.Sha256, bit_array.from_string(payload.password))
   case crypto.secure_compare(password_hash, challenge) {
-    False -> Error(InvalidCredentials)
     True -> Ok(user)
+    False -> Error(helpers.CustomError("Invalid credentials"))
+  }
+}
+
+fn create_session(
+  ctx: Context,
+  user_id: uuid.Uuid,
+) -> Result(uuid.Uuid, helpers.ApiError) {
+  case sql.create_session(ctx.db, user_id) {
+    Ok(pog.Returned(1, [session])) -> Ok(session.id)
+    Ok(_) -> Error(helpers.UnknownError)
+    Error(error) -> Error(helpers.DatabaseError(error))
+  }
+}
+
+fn create_user(
+  ctx: Context,
+  payload: AuthPayload,
+) -> Result(sql.CreateUserRow, helpers.ApiError) {
+  let password_hash =
+    crypto.hash(crypto.Sha256, bit_array.from_string(payload.password))
+    |> bit_array.base64_encode(False)
+
+  case sql.create_user(ctx.db, payload.email, password_hash) {
+    Ok(pog.Returned(1, [user])) -> Ok(user)
+    Ok(_) -> Error(helpers.UnknownError)
+    Error(error) -> Error(helpers.DatabaseError(error))
   }
 }

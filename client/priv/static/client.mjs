@@ -1222,26 +1222,6 @@ function fold_right(list4, initial, fun) {
     return fun(fold_right(rest$1, initial, fun), first$1);
   }
 }
-function find_map(loop$list, loop$fun) {
-  while (true) {
-    let list4 = loop$list;
-    let fun = loop$fun;
-    if (list4 instanceof Empty) {
-      return new Error(void 0);
-    } else {
-      let first$1 = list4.head;
-      let rest$1 = list4.tail;
-      let $ = fun(first$1);
-      if ($ instanceof Ok) {
-        let first$2 = $[0];
-        return new Ok(first$2);
-      } else {
-        loop$list = rest$1;
-        loop$fun = fun;
-      }
-    }
-  }
-}
 function sequences(loop$list, loop$compare, loop$growing, loop$direction, loop$prev, loop$acc) {
   while (true) {
     let list4 = loop$list;
@@ -1575,21 +1555,6 @@ function sort(list4, compare5) {
       return merge_all(sequences$1, new Ascending(), compare5);
     }
   }
-}
-function key_find(keyword_list, desired_key) {
-  return find_map(
-    keyword_list,
-    (keyword) => {
-      let key = keyword[0];
-      let value = keyword[1];
-      let $ = isEqual(key, desired_key);
-      if ($) {
-        return new Ok(value);
-      } else {
-        return new Error(void 0);
-      }
-    }
-  );
 }
 function key_set_loop(loop$list, loop$key, loop$value, loop$inspected) {
   while (true) {
@@ -2080,9 +2045,6 @@ function try$(result, fun) {
     return new Error(e);
   }
 }
-function then$(result, fun) {
-  return try$(result, fun);
-}
 function unwrap2(result, default$) {
   if (result instanceof Ok) {
     let v = result[0];
@@ -2296,117 +2258,8 @@ function object(entries) {
 function identity3(x) {
   return x;
 }
-function decode(string6) {
-  try {
-    const result = JSON.parse(string6);
-    return new Ok(result);
-  } catch (err) {
-    return new Error(getJsonDecodeError(err, string6));
-  }
-}
-function getJsonDecodeError(stdErr, json2) {
-  if (isUnexpectedEndOfInput(stdErr)) return new UnexpectedEndOfInput();
-  return toUnexpectedByteError(stdErr, json2);
-}
-function isUnexpectedEndOfInput(err) {
-  const unexpectedEndOfInputRegex = /((unexpected (end|eof))|(end of data)|(unterminated string)|(json( parse error|\.parse)\: expected '(\:|\}|\])'))/i;
-  return unexpectedEndOfInputRegex.test(err.message);
-}
-function toUnexpectedByteError(err, json2) {
-  let converters = [
-    v8UnexpectedByteError,
-    oldV8UnexpectedByteError,
-    jsCoreUnexpectedByteError,
-    spidermonkeyUnexpectedByteError
-  ];
-  for (let converter of converters) {
-    let result = converter(err, json2);
-    if (result) return result;
-  }
-  return new UnexpectedByte("", 0);
-}
-function v8UnexpectedByteError(err) {
-  const regex = /unexpected token '(.)', ".+" is not valid JSON/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[1]);
-  return new UnexpectedByte(byte, -1);
-}
-function oldV8UnexpectedByteError(err) {
-  const regex = /unexpected token (.) in JSON at position (\d+)/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[1]);
-  const position = Number(match[2]);
-  return new UnexpectedByte(byte, position);
-}
-function spidermonkeyUnexpectedByteError(err, json2) {
-  const regex = /(unexpected character|expected .*) at line (\d+) column (\d+)/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const line = Number(match[2]);
-  const column = Number(match[3]);
-  const position = getPositionFromMultiline(line, column, json2);
-  const byte = toHex(json2[position]);
-  return new UnexpectedByte(byte, position);
-}
-function jsCoreUnexpectedByteError(err) {
-  const regex = /unexpected (identifier|token) "(.)"/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[2]);
-  return new UnexpectedByte(byte, 0);
-}
-function toHex(char) {
-  return "0x" + char.charCodeAt(0).toString(16).toUpperCase();
-}
-function getPositionFromMultiline(line, column, string6) {
-  if (line === 1) return column - 1;
-  let currentLn = 1;
-  let position = 0;
-  string6.split("").find((char, idx) => {
-    if (char === "\n") currentLn += 1;
-    if (currentLn === line) {
-      position = idx + column;
-      return true;
-    }
-    return false;
-  });
-  return position;
-}
 
 // build/dev/javascript/gleam_json/gleam/json.mjs
-var UnexpectedEndOfInput = class extends CustomType {
-};
-var UnexpectedByte = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var UnableToDecode = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-function do_parse(json2, decoder) {
-  return try$(
-    decode(json2),
-    (dynamic_value) => {
-      let _pipe = run(dynamic_value, decoder);
-      return map_error(
-        _pipe,
-        (var0) => {
-          return new UnableToDecode(var0);
-        }
-      );
-    }
-  );
-}
-function parse(json2, decoder) {
-  return do_parse(json2, decoder);
-}
 function to_string2(json2) {
   return json_to_string(json2);
 }
@@ -6275,7 +6128,7 @@ var empty3 = /* @__PURE__ */ new Uri(
   /* @__PURE__ */ new None(),
   /* @__PURE__ */ new None()
 );
-function parse2(uri_string) {
+function parse(uri_string) {
   return parse_scheme_loop(uri_string, uri_string, empty3, 0);
 }
 
@@ -6453,6 +6306,16 @@ function scheme_from_string(scheme) {
   }
 }
 
+// build/dev/javascript/gleam_http/gleam/http/response.mjs
+var Response = class extends CustomType {
+  constructor(status, headers, body) {
+    super();
+    this.status = status;
+    this.headers = headers;
+    this.body = body;
+  }
+};
+
 // build/dev/javascript/gleam_http/gleam/http/request.mjs
 var Request = class extends CustomType {
   constructor(method, headers, body, scheme, host, port, path, query) {
@@ -6508,7 +6371,7 @@ function from_uri(uri) {
     }
   );
 }
-function set_header(request, key, value) {
+function set_header2(request, key, value) {
   let headers = key_set(request.headers, lowercase(key), value);
   let _record = request;
   return new Request(
@@ -6544,19 +6407,6 @@ function set_method(req, method) {
     _record.path,
     _record.query
   );
-}
-
-// build/dev/javascript/gleam_http/gleam/http/response.mjs
-var Response = class extends CustomType {
-  constructor(status, headers, body) {
-    super();
-    this.status = status;
-    this.headers = headers;
-    this.body = body;
-  }
-};
-function get_header(response, key) {
-  return key_find(response.headers, lowercase(key));
 }
 
 // build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
@@ -6717,12 +6567,6 @@ var HttpError = class extends CustomType {
     this[0] = $0;
   }
 };
-var JsonError = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
 var NetworkError2 = class extends CustomType {
 };
 var UnhandledResponse = class extends CustomType {
@@ -6755,32 +6599,6 @@ function expect_ok_response(handler) {
               } else {
                 return new Error(new UnhandledResponse(response));
               }
-            }
-          }
-        )
-      );
-    }
-  );
-}
-function expect_json_response(handler) {
-  return expect_ok_response(
-    (result) => {
-      return handler(
-        try$(
-          result,
-          (response) => {
-            let $ = get_header(response, "content-type");
-            if ($ instanceof Ok) {
-              let $1 = $[0];
-              if ($1 === "application/json") {
-                return new Ok(response);
-              } else if ($1.startsWith("application/json;")) {
-                return new Ok(response);
-              } else {
-                return new Error(new UnhandledResponse(response));
-              }
-            } else {
-              return new Error(new UnhandledResponse(response));
             }
           }
         )
@@ -6828,27 +6646,6 @@ function reject(err, handler) {
     }
   );
 }
-function decode_json_body(response, decoder) {
-  let _pipe = response.body;
-  let _pipe$1 = parse(_pipe, decoder);
-  return map_error(_pipe$1, (var0) => {
-    return new JsonError(var0);
-  });
-}
-function expect_json(decoder, handler) {
-  return expect_json_response(
-    (result) => {
-      let _pipe = result;
-      let _pipe$1 = then$(
-        _pipe,
-        (_capture) => {
-          return decode_json_body(_capture, decoder);
-        }
-      );
-      return handler(_pipe$1);
-    }
-  );
-}
 function to_uri2(uri_string) {
   let _block;
   if (uri_string.startsWith("./")) {
@@ -6856,7 +6653,7 @@ function to_uri2(uri_string) {
   } else if (uri_string.startsWith("/")) {
     _block = from_relative_url(uri_string);
   } else {
-    _block = parse2(uri_string);
+    _block = parse(uri_string);
   }
   let _pipe = _block;
   return replace_error(_pipe, new BadUrl(uri_string));
@@ -6871,7 +6668,7 @@ function post(url, body, handler) {
       (request) => {
         let _pipe$12 = request;
         let _pipe$22 = set_method(_pipe$12, new Post());
-        let _pipe$3 = set_header(
+        let _pipe$3 = set_header2(
           _pipe$22,
           "content-type",
           "application/json"
@@ -6922,9 +6719,9 @@ function parse_route(uri) {
     let $1 = $.tail;
     if ($1 instanceof Empty) {
       let $2 = $.head;
-      if ($2 === "signin") {
+      if ($2 === "sign-in") {
         return new SignIn();
-      } else if ($2 === "signup") {
+      } else if ($2 === "sign-up") {
         return new SignUp();
       } else if ($2 === "about") {
         return new About();
@@ -6959,10 +6756,9 @@ function initial_route() {
 
 // build/dev/javascript/client/model.mjs
 var Model = class extends CustomType {
-  constructor(route, token2, sign_in_form, sign_up_form) {
+  constructor(route, sign_in_form, sign_up_form) {
     super();
     this.route = route;
-    this.token = token2;
     this.sign_in_form = sign_in_form;
     this.sign_up_form = sign_up_form;
   }
@@ -7221,7 +7017,7 @@ function decode_formdata(values3) {
 }
 function sign_in(email, password, handle_response) {
   let url = "http://localhost:8000/api/auth/sign-in";
-  let handler = expect_json(success(email), handle_response);
+  let handler = expect_ok_response(handle_response);
   let body = object2(
     toList([
       ["email", string4(email)],
@@ -7238,12 +7034,7 @@ function update2(model, values3) {
     return [
       (() => {
         let _record = model;
-        return new Model(
-          _record.route,
-          _record.token,
-          new$(),
-          _record.sign_up_form
-        );
+        return new Model(_record.route, new$(), _record.sign_up_form);
       })(),
       sign_in(
         email,
@@ -7258,12 +7049,7 @@ function update2(model, values3) {
     return [
       (() => {
         let _record = model;
-        return new Model(
-          _record.route,
-          _record.token,
-          form2,
-          _record.sign_up_form
-        );
+        return new Model(_record.route, form2, _record.sign_up_form);
       })(),
       none()
     ];
@@ -7334,7 +7120,7 @@ function decode_formdata2(values3) {
 }
 function sign_up(email, password, handle_response) {
   let url = "http://localhost:8000/api/auth/sign-up";
-  let handler = expect_json(success(email), handle_response);
+  let handler = expect_ok_response(handle_response);
   let body = object2(
     toList([
       ["email", string4(email)],
@@ -7351,12 +7137,7 @@ function update3(model, values3) {
     return [
       (() => {
         let _record = model;
-        return new Model(
-          _record.route,
-          _record.token,
-          _record.sign_in_form,
-          new$()
-        );
+        return new Model(_record.route, _record.sign_in_form, new$());
       })(),
       sign_up(
         email,
@@ -7371,12 +7152,7 @@ function update3(model, values3) {
     return [
       (() => {
         let _record = model;
-        return new Model(
-          _record.route,
-          _record.token,
-          _record.sign_in_form,
-          form2
-        );
+        return new Model(_record.route, _record.sign_in_form, form2);
       })(),
       none()
     ];
@@ -7387,7 +7163,7 @@ function update3(model, values3) {
 var FILEPATH = "src/client.gleam";
 function init2(_) {
   let initial_route2 = initial_route();
-  let model = new Model(initial_route2, new None(), new$(), new$());
+  let model = new Model(initial_route2, new$(), new$());
   let effect = init(
     (uri) => {
       let _pipe = uri;
@@ -7403,12 +7179,7 @@ function update4(model, msg) {
     return [
       (() => {
         let _record = model;
-        return new Model(
-          route,
-          _record.token,
-          _record.sign_in_form,
-          _record.sign_up_form
-        );
+        return new Model(route, _record.sign_in_form, _record.sign_up_form);
       })(),
       none()
     ];
@@ -7421,13 +7192,11 @@ function update4(model, msg) {
   } else {
     let $ = msg[0];
     if ($ instanceof Ok) {
-      let token2 = $[0];
       return [
         (() => {
           let _record = model;
           return new Model(
             new Index2(),
-            new Some(token2),
             _record.sign_in_form,
             _record.sign_up_form
           );
@@ -7440,7 +7209,6 @@ function update4(model, msg) {
           let _record = model;
           return new Model(
             new About(),
-            _record.token,
             _record.sign_in_form,
             _record.sign_up_form
           );
@@ -7473,10 +7241,10 @@ function main() {
       "let_assert",
       FILEPATH,
       "client",
-      16,
+      15,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      { value: $, start: 369, end: 417, pattern_start: 380, pattern_end: 385 }
+      { value: $, start: 336, end: 384, pattern_start: 347, pattern_end: 352 }
     );
   }
   return void 0;

@@ -1,5 +1,4 @@
 import formal/form
-import gleam/option.{None, Some}
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -23,7 +22,6 @@ fn init(_options) -> #(Model, Effect(Msg)) {
   let model =
     Model(
       route: initial_route,
-      token: None,
       sign_in_form: form.new(),
       sign_up_form: form.new(),
     )
@@ -38,8 +36,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     model.UserNavigatedTo(route:) -> #(Model(..model, route:), effect.none())
     model.UserSubmittedSignInForm(values) -> sign_in.update(model, values)
     model.UserSubmittedSignUpForm(values) -> sign_up.update(model, values)
-    model.ApiAuthenticatedUser(Ok(token)) -> #(
-      Model(..model, token: Some(token), route: router.Index),
+    model.ApiAuthenticatedUser(Ok(_)) -> #(
+      Model(..model, route: router.Index),
       effect.none(),
     )
     model.ApiAuthenticatedUser(Error(_)) -> #(

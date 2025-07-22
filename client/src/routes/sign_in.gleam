@@ -1,7 +1,7 @@
 import components/button
 import components/input
 import formal/form.{type Form}
-import gleam/dynamic/decode
+import gleam/http/response
 import gleam/json
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -53,7 +53,6 @@ pub fn update(
       Model(..model, sign_in_form: form.new()),
       sign_in(email, password, model.ApiAuthenticatedUser),
     )
-
     Error(form) -> #(Model(..model, sign_in_form: form), effect.none())
   }
 }
@@ -61,10 +60,11 @@ pub fn update(
 fn sign_in(
   email email: String,
   password password: String,
-  on_response handle_response: fn(Result(String, rsvp.Error)) -> msg,
+  on_response handle_response: fn(Result(response.Response(String), rsvp.Error)) ->
+    msg,
 ) -> Effect(msg) {
   let url = "http://localhost:8000/api/auth/sign-in"
-  let handler = rsvp.expect_json(decode.success(email), handle_response)
+  let handler = rsvp.expect_ok_response(handle_response)
   let body =
     json.object([
       #("email", json.string(email)),

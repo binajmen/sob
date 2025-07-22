@@ -42,8 +42,6 @@ pub fn require_user(
         id: uuid.to_string(user.id),
         email: user.email,
         is_admin: user.is_admin,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
       ))
     Ok(_) -> helpers.unauthorised()
     Error(error) ->

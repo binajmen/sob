@@ -21,7 +21,7 @@ pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
     |> echo
   }
 
-  html.div([attribute.class("p-4")], [
+  html.div([], [
     html.h1([], [html.text("Sign in")]),
     html.form([event.on_submit(submit), attribute.class("space-y-2")], [
       input.view(form, is: "text", name: "email", label: "Email"),
@@ -50,12 +50,12 @@ fn sign_in(
     msg,
 ) -> Effect(msg) {
   let url = "http://localhost:8000/api/auth/sign-in"
-  let handler = rsvp.expect_ok_response(handle_response)
   let body =
     json.object([
       #("email", json.string(values.email)),
       #("password", json.string(values.password)),
     ])
+  let handler = rsvp.expect_ok_response(handle_response)
 
   rsvp.post(url, body, handler)
 }

@@ -50,12 +50,12 @@ fn sign_up(
     msg,
 ) -> Effect(msg) {
   let url = "http://localhost:8000/api/auth/sign-up"
-  let handler = rsvp.expect_ok_response(handle_response)
   let body =
     json.object([
       #("email", json.string(values.email)),
       #("password", json.string(values.password)),
     ])
+  let handler = rsvp.expect_ok_response(handle_response)
 
   rsvp.post(url, body, handler)
 }

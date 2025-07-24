@@ -641,32 +641,6 @@ function makeError(variant, file, module, line, fn, message2, extra) {
   return error;
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/option.mjs
-var Some = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var None = class extends CustomType {
-};
-function to_result(option, e) {
-  if (option instanceof Some) {
-    let a = option[0];
-    return new Ok(a);
-  } else {
-    return new Error(e);
-  }
-}
-function unwrap(option, default$) {
-  if (option instanceof Some) {
-    let x = option[0];
-    return x;
-  } else {
-    return default$;
-  }
-}
-
 // build/dev/javascript/gleam_stdlib/dict.mjs
 var referenceMap = /* @__PURE__ */ new WeakMap();
 var tempDataView = /* @__PURE__ */ new DataView(
@@ -1370,6 +1344,32 @@ var Dict = class _Dict {
   }
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
+
+// build/dev/javascript/gleam_stdlib/gleam/option.mjs
+var Some = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var None = class extends CustomType {
+};
+function to_result(option, e) {
+  if (option instanceof Some) {
+    let a = option[0];
+    return new Ok(a);
+  } else {
+    return new Error(e);
+  }
+}
+function unwrap(option, default$) {
+  if (option instanceof Some) {
+    let x = option[0];
+    return x;
+  } else {
+    return default$;
+  }
+}
 
 // build/dev/javascript/gleam_stdlib/gleam/order.mjs
 var Lt = class extends CustomType {
@@ -7529,7 +7529,7 @@ function view5(form2) {
     return echo2(_pipe$3, "src/routes/sign_in.gleam", 21);
   };
   return div(
-    toList([class$("p-4")]),
+    toList([]),
     toList([
       h1(toList([]), toList([text3("Sign in")])),
       form(
@@ -7551,13 +7551,13 @@ function view5(form2) {
 }
 function sign_in(values3, handle_response) {
   let url = "http://localhost:8000/api/auth/sign-in";
-  let handler = expect_ok_response(handle_response);
   let body = object2(
     toList([
       ["email", string3(values3.email)],
       ["password", string3(values3.password)]
     ])
   );
+  let handler = expect_ok_response(handle_response);
   return post(url, body, handler);
 }
 function update2(model, result) {
@@ -7752,13 +7752,13 @@ function view6(form2) {
 }
 function sign_up(values3, handle_response) {
   let url = "http://localhost:8000/api/auth/sign-up";
-  let handler = expect_ok_response(handle_response);
   let body = object2(
     toList([
       ["email", string3(values3.email)],
       ["password", string3(values3.password)]
     ])
   );
+  let handler = expect_ok_response(handle_response);
   return post(url, body, handler);
 }
 function update3(model, result) {
@@ -7855,7 +7855,8 @@ function update4(model, msg) {
     }
   } else if (msg instanceof UserSubmittedSignInForm) {
     let result = msg.result;
-    return update2(model, result);
+    let _pipe = update2(model, result);
+    return echo3(_pipe, "src/client.gleam", 51);
   } else {
     let result = msg.result;
     return update3(model, result);
@@ -7893,6 +7894,142 @@ function main() {
     );
   }
   return void 0;
+}
+function echo3(value, file, line) {
+  const grey = "\x1B[90m";
+  const reset_color = "\x1B[39m";
+  const file_line = `${file}:${line}`;
+  const string_value = echo$inspect3(value);
+  if (globalThis.process?.stderr?.write) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    process.stderr.write(string5);
+  } else if (globalThis.Deno) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
+  } else {
+    const string5 = `${file_line}
+${string_value}`;
+    globalThis.console.log(string5);
+  }
+  return value;
+}
+function echo$inspectString3(str) {
+  let new_str = '"';
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    if (char == "\n") new_str += "\\n";
+    else if (char == "\r") new_str += "\\r";
+    else if (char == "	") new_str += "\\t";
+    else if (char == "\f") new_str += "\\f";
+    else if (char == "\\") new_str += "\\\\";
+    else if (char == '"') new_str += '\\"';
+    else if (char < " " || char > "~" && char < "\xA0") {
+      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
+    } else {
+      new_str += char;
+    }
+  }
+  new_str += '"';
+  return new_str;
+}
+function echo$inspectDict3(map6) {
+  let body = "dict.from_list([";
+  let first = true;
+  let key_value_pairs = [];
+  map6.forEach((value, key) => {
+    key_value_pairs.push([key, value]);
+  });
+  key_value_pairs.sort();
+  key_value_pairs.forEach(([key, value]) => {
+    if (!first) body = body + ", ";
+    body = body + "#(" + echo$inspect3(key) + ", " + echo$inspect3(value) + ")";
+    first = false;
+  });
+  return body + "])";
+}
+function echo$inspectCustomType3(record) {
+  const props = globalThis.Object.keys(record).map((label) => {
+    const value = echo$inspect3(record[label]);
+    return isNaN(parseInt(label)) ? `${label}: ${value}` : value;
+  }).join(", ");
+  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
+}
+function echo$inspectObject3(v) {
+  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const props = [];
+  for (const k of Object.keys(v)) {
+    props.push(`${echo$inspect3(k)}: ${echo$inspect3(v[k])}`);
+  }
+  const body = props.length ? " " + props.join(", ") + " " : "";
+  const head = name2 === "Object" ? "" : name2 + " ";
+  return `//js(${head}{${body}})`;
+}
+function echo$inspect3(v) {
+  const t = typeof v;
+  if (v === true) return "True";
+  if (v === false) return "False";
+  if (v === null) return "//js(null)";
+  if (v === void 0) return "Nil";
+  if (t === "string") return echo$inspectString3(v);
+  if (t === "bigint" || t === "number") return v.toString();
+  if (globalThis.Array.isArray(v))
+    return `#(${v.map(echo$inspect3).join(", ")})`;
+  if (v instanceof List)
+    return `[${v.toArray().map(echo$inspect3).join(", ")}]`;
+  if (v instanceof UtfCodepoint)
+    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
+  if (v instanceof BitArray) return echo$inspectBitArray3(v);
+  if (v instanceof CustomType) return echo$inspectCustomType3(v);
+  if (echo$isDict3(v)) return echo$inspectDict3(v);
+  if (v instanceof Set)
+    return `//js(Set(${[...v].map(echo$inspect3).join(", ")}))`;
+  if (v instanceof RegExp) return `//js(${v})`;
+  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
+  if (v instanceof Function) {
+    const args = [];
+    for (const i of Array(v.length).keys())
+      args.push(String.fromCharCode(i + 97));
+    return `//fn(${args.join(", ")}) { ... }`;
+  }
+  return echo$inspectObject3(v);
+}
+function echo$inspectBitArray3(bitArray) {
+  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
+  let alignedBytes = bitArraySlice(
+    bitArray,
+    bitArray.bitOffset,
+    endOfAlignedBytes
+  );
+  let remainingUnalignedBits = bitArray.bitSize % 8;
+  if (remainingUnalignedBits > 0) {
+    let remainingBits = bitArraySliceToInt(
+      bitArray,
+      endOfAlignedBytes,
+      bitArray.bitSize,
+      false,
+      false
+    );
+    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
+    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
+    if (alignedBytesArray.length === 0) {
+      return `<<${suffix}>>`;
+    } else {
+      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
+    }
+  } else {
+    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
+  }
+}
+function echo$isDict3(value) {
+  try {
+    return value instanceof Dict;
+  } catch {
+    return false;
+  }
 }
 
 // build/.lustre/entry.mjs

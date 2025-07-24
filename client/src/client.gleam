@@ -47,7 +47,8 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       model.Base(app: model.App(..model.app, route:)),
       effect.none(),
     )
-    model.UserSubmittedSignInForm(result) -> sign_in.update(model, result)
+    model.UserSubmittedSignInForm(result) ->
+      sign_in.update(model, result) |> echo
     model.UserSubmittedSignUpForm(result) -> sign_up.update(model, result)
     model.ApiAuthenticatedUser(Ok(_)) -> #(
       model.Base(app: model.App(..model.app, route: router.About)),

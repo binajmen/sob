@@ -1,15 +1,23 @@
 import formal/form.{type Form}
+import forms.{type SignInFormData, type SignUpFormData}
 import gleam/http/response
+import gleam/option
 import router.{type Route}
 import rsvp
 
+pub type Base {
+  Base(route: Route, session_id: option.Option(String))
+}
+
 pub type Model {
-  Model(route: Route, sign_in_form: Form, sign_up_form: Form)
+  Model(base: Base)
+  SignIn(base: Base, form: Form(SignInFormData))
+  SignUp(base: Base, form: Form(SignUpFormData))
 }
 
 pub type Msg {
-  UserNavigatedTo(route: Route)
-  UserSubmittedSignInForm(data: List(#(String, String)))
-  UserSubmittedSignUpForm(data: List(#(String, String)))
   ApiAuthenticatedUser(Result(response.Response(String), rsvp.Error))
+  UserNavigatedTo(route: Route)
+  UserSubmittedSignInForm(result: Result(SignInFormData, Form(SignInFormData)))
+  UserSubmittedSignUpForm(result: Result(SignUpFormData, Form(SignUpFormData)))
 }

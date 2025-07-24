@@ -1125,14 +1125,6 @@ function reverse_and_prepend(loop$prefix, loop$suffix) {
 function reverse(list4) {
   return reverse_and_prepend(list4, toList([]));
 }
-function first(list4) {
-  if (list4 instanceof Empty) {
-    return new Error(void 0);
-  } else {
-    let first$1 = list4.head;
-    return new Ok(first$1);
-  }
-}
 function filter_map_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
     let list4 = loop$list;
@@ -1182,20 +1174,40 @@ function map(list4, fun) {
 }
 function append_loop(loop$first, loop$second) {
   while (true) {
-    let first2 = loop$first;
+    let first = loop$first;
     let second2 = loop$second;
-    if (first2 instanceof Empty) {
+    if (first instanceof Empty) {
       return second2;
     } else {
-      let first$1 = first2.head;
-      let rest$1 = first2.tail;
+      let first$1 = first.head;
+      let rest$1 = first.tail;
       loop$first = rest$1;
       loop$second = prepend(first$1, second2);
     }
   }
 }
-function append(first2, second2) {
-  return append_loop(reverse(first2), second2);
+function append(first, second2) {
+  return append_loop(reverse(first), second2);
+}
+function flatten_loop(loop$lists, loop$acc) {
+  while (true) {
+    let lists = loop$lists;
+    let acc = loop$acc;
+    if (lists instanceof Empty) {
+      return reverse(acc);
+    } else {
+      let list4 = lists.head;
+      let further_lists = lists.tail;
+      loop$lists = further_lists;
+      loop$acc = reverse_and_prepend(list4, acc);
+    }
+  }
+}
+function flatten(lists) {
+  return flatten_loop(lists, toList([]));
+}
+function flat_map(list4, fun) {
+  return flatten(map(list4, fun));
 }
 function fold(loop$list, loop$initial, loop$fun) {
   while (true) {
@@ -1211,15 +1223,6 @@ function fold(loop$list, loop$initial, loop$fun) {
       loop$initial = fun(initial, first$1);
       loop$fun = fun;
     }
-  }
-}
-function fold_right(list4, initial, fun) {
-  if (list4 instanceof Empty) {
-    return initial;
-  } else {
-    let first$1 = list4.head;
-    let rest$1 = list4.tail;
-    return fun(fold_right(rest$1, initial, fun), first$1);
   }
 }
 function sequences(loop$list, loop$compare, loop$growing, loop$direction, loop$prev, loop$acc) {
@@ -1556,6 +1559,21 @@ function sort(list4, compare5) {
     }
   }
 }
+function key_filter(keyword_list, desired_key) {
+  return filter_map(
+    keyword_list,
+    (keyword) => {
+      let key = keyword[0];
+      let value = keyword[1];
+      let $ = isEqual(key, desired_key);
+      if ($) {
+        return new Ok(value);
+      } else {
+        return new Error(void 0);
+      }
+    }
+  );
+}
 function key_set_loop(loop$list, loop$key, loop$value, loop$inspected) {
   while (true) {
     let list4 = loop$list;
@@ -1592,20 +1610,15 @@ function concat_loop(loop$strings, loop$accumulator) {
     if (strings instanceof Empty) {
       return accumulator;
     } else {
-      let string6 = strings.head;
+      let string5 = strings.head;
       let strings$1 = strings.tail;
       loop$strings = strings$1;
-      loop$accumulator = accumulator + string6;
+      loop$accumulator = accumulator + string5;
     }
   }
 }
 function concat2(strings) {
   return concat_loop(strings, "");
-}
-function trim(string6) {
-  let _pipe = string6;
-  let _pipe$1 = trim_start(_pipe);
-  return trim_end(_pipe$1);
 }
 function split2(x, substring) {
   if (substring === "") {
@@ -1681,10 +1694,10 @@ function run_decoders(loop$data, loop$failure, loop$decoders) {
     }
   }
 }
-function one_of(first2, alternatives) {
+function one_of(first, alternatives) {
   return new Decoder(
     (dynamic_data) => {
-      let $ = first2.function(dynamic_data);
+      let $ = first.function(dynamic_data);
       let layer = $;
       let errors = $[1];
       if (errors instanceof Empty) {
@@ -1846,32 +1859,35 @@ function identity(x) {
 function to_string(term) {
   return term.toString();
 }
-function graphemes(string6) {
-  const iterator = graphemes_iterator(string6);
+function graphemes(string5) {
+  const iterator = graphemes_iterator(string5);
   if (iterator) {
     return List.fromArray(Array.from(iterator).map((item) => item.segment));
   } else {
-    return List.fromArray(string6.match(/./gsu));
+    return List.fromArray(string5.match(/./gsu));
   }
 }
 var segmenter = void 0;
-function graphemes_iterator(string6) {
+function graphemes_iterator(string5) {
   if (globalThis.Intl && Intl.Segmenter) {
     segmenter ||= new Intl.Segmenter();
-    return segmenter.segment(string6)[Symbol.iterator]();
+    return segmenter.segment(string5)[Symbol.iterator]();
   }
 }
 function pop_codeunit(str) {
   return [str.charCodeAt(0) | 0, str.slice(1)];
 }
-function lowercase(string6) {
-  return string6.toLowerCase();
+function lowercase(string5) {
+  return string5.toLowerCase();
 }
 function split(xs, pattern) {
   return List.fromArray(xs.split(pattern));
 }
 function string_codeunit_slice(str, from2, length4) {
   return str.slice(from2, from2 + length4);
+}
+function contains_string(haystack, needle) {
+  return haystack.indexOf(needle) >= 0;
 }
 function starts_with(haystack, needle) {
   return haystack.startsWith(needle);
@@ -1900,12 +1916,6 @@ var trim_start_regex = /* @__PURE__ */ new RegExp(
   `^[${unicode_whitespaces}]*`
 );
 var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
-function trim_start(string6) {
-  return string6.replace(trim_start_regex, "");
-}
-function trim_end(string6) {
-  return string6.replace(trim_end_regex, "");
-}
 function new_map() {
   return Dict.new();
 }
@@ -1945,6 +1955,19 @@ function classify_dynamic(data) {
   } else {
     const type = typeof data;
     return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+}
+function float_to_string(float2) {
+  const string5 = float2.toString().replace("+", "");
+  if (string5.indexOf(".") >= 0) {
+    return string5;
+  } else {
+    const index5 = string5.indexOf("e");
+    if (index5 >= 0) {
+      return string5.slice(0, index5) + ".0" + string5.slice(index5);
+    } else {
+      return string5 + ".0";
+    }
   }
 }
 function index2(data, key) {
@@ -2000,15 +2023,6 @@ function string(data) {
 function insert(dict2, key, value) {
   return map_insert(key, value, dict2);
 }
-function upsert(dict2, key, fun) {
-  let $ = map_get(dict2, key);
-  if ($ instanceof Ok) {
-    let value = $[0];
-    return insert(dict2, key, fun(new Some(value)));
-  } else {
-    return insert(dict2, key, fun(new None()));
-  }
-}
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
 function is_ok(result) {
@@ -2045,14 +2059,6 @@ function try$(result, fun) {
     return new Error(e);
   }
 }
-function unwrap2(result, default$) {
-  if (result instanceof Ok) {
-    let v = result[0];
-    return v;
-  } else {
-    return default$;
-  }
-}
 function unwrap_both(result) {
   if (result instanceof Ok) {
     let a = result[0];
@@ -2074,164 +2080,6 @@ function values2(results) {
   return filter_map(results, (result) => {
     return result;
   });
-}
-
-// build/dev/javascript/formal/formal/form.mjs
-var Form = class extends CustomType {
-  constructor(values3, errors) {
-    super();
-    this.values = values3;
-    this.errors = errors;
-  }
-};
-var InvalidForm = class extends CustomType {
-  constructor(values3, errors) {
-    super();
-    this.values = values3;
-    this.errors = errors;
-  }
-};
-var ValidForm = class extends CustomType {
-  constructor(values3, output) {
-    super();
-    this.values = values3;
-    this.output = output;
-  }
-};
-function decoding(constructor) {
-  return new ValidForm(new_map(), constructor);
-}
-function parameter(f) {
-  return f;
-}
-function new$() {
-  return new Form(new_map(), new_map());
-}
-function field_state(form2, name2) {
-  let $ = map_get(form2.errors, name2);
-  if ($ instanceof Ok) {
-    let e = $[0];
-    return new Error(e);
-  } else {
-    let e = $[0];
-    return new Ok(e);
-  }
-}
-function with_values_dict(form2, values3) {
-  if (form2 instanceof InvalidForm) {
-    let errors = form2.errors;
-    return new InvalidForm(values3, errors);
-  } else {
-    let output = form2.output;
-    return new ValidForm(values3, output);
-  }
-}
-function finish(form2) {
-  if (form2 instanceof InvalidForm) {
-    let values3 = form2.values;
-    let errors = form2.errors;
-    return new Error(new Form(values3, errors));
-  } else {
-    let output = form2.output;
-    return new Ok(output);
-  }
-}
-function and(previous, next) {
-  return (data) => {
-    let $ = previous(data);
-    if ($ instanceof Ok) {
-      let value$1 = $[0];
-      return next(value$1);
-    } else {
-      let error = $[0];
-      return new Error(error);
-    }
-  };
-}
-function string3(input2) {
-  return new Ok(trim(input2));
-}
-function kw_to_dict(values3) {
-  return fold_right(
-    values3,
-    new_map(),
-    (acc, pair) => {
-      return upsert(
-        acc,
-        pair[0],
-        (previous) => {
-          return prepend(pair[1], unwrap(previous, toList([])));
-        }
-      );
-    }
-  );
-}
-function with_values(form2, values3) {
-  let _pipe = values3;
-  let _pipe$1 = kw_to_dict(_pipe);
-  return ((_capture) => {
-    return with_values_dict(form2, _capture);
-  })(_pipe$1);
-}
-function must_not_be_empty(input2) {
-  if (input2 === "") {
-    return new Error("Must not be blank");
-  } else {
-    return new Ok(input2);
-  }
-}
-function get_values(form2) {
-  if (form2 instanceof InvalidForm) {
-    let values3 = form2.values;
-    return values3;
-  } else {
-    let values3 = form2.values;
-    return values3;
-  }
-}
-function multifield(form2, name2, decoder) {
-  let _block;
-  let _pipe = form2;
-  let _pipe$1 = get_values(_pipe);
-  let _pipe$2 = map_get(_pipe$1, name2);
-  let _pipe$3 = unwrap2(_pipe$2, toList([]));
-  _block = decoder(_pipe$3);
-  let result = _block;
-  if (form2 instanceof InvalidForm) {
-    let values3 = form2.values;
-    let errors = form2.errors;
-    if (result instanceof Ok) {
-      return new InvalidForm(values3, errors);
-    } else {
-      let message$1 = result[0];
-      return new InvalidForm(values3, insert(errors, name2, message$1));
-    }
-  } else {
-    let values3 = form2.values;
-    let output = form2.output;
-    if (result instanceof Ok) {
-      let next = result[0];
-      return new ValidForm(values3, output(next));
-    } else {
-      let message$1 = result[0];
-      return new InvalidForm(
-        values3,
-        insert(new_map(), name2, message$1)
-      );
-    }
-  }
-}
-function field2(form2, name2, decoder) {
-  return multifield(
-    form2,
-    name2,
-    (value) => {
-      let _pipe = value;
-      let _pipe$1 = first(_pipe);
-      let _pipe$2 = unwrap2(_pipe$1, "");
-      return decoder(_pipe$2);
-    }
-  );
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
@@ -2263,7 +2111,7 @@ function identity3(x) {
 function to_string2(json2) {
   return json_to_string(json2);
 }
-function string4(input2) {
+function string3(input2) {
   return identity3(input2);
 }
 function object2(entries) {
@@ -2277,7 +2125,7 @@ var Set2 = class extends CustomType {
     this.dict = dict2;
   }
 };
-function new$2() {
+function new$() {
   return new Set2(new_map());
 }
 function contains(set, member) {
@@ -2292,7 +2140,7 @@ function insert2(set, member) {
 
 // build/dev/javascript/lustre/lustre/internals/constants.ffi.mjs
 var EMPTY_DICT = /* @__PURE__ */ Dict.new();
-var EMPTY_SET = /* @__PURE__ */ new$2();
+var EMPTY_SET = /* @__PURE__ */ new$();
 var empty_dict = () => EMPTY_DICT;
 var empty_set = () => EMPTY_SET;
 var document2 = () => globalThis?.document;
@@ -2526,6 +2374,9 @@ function attribute2(name2, value) {
 }
 function class$(name2) {
   return attribute2("class", name2);
+}
+function method(http_method) {
+  return attribute2("method", http_method);
 }
 function name(element_name) {
   return attribute2("name", element_name);
@@ -3018,7 +2869,7 @@ var Events = class extends CustomType {
     this.next_dispatched_paths = next_dispatched_paths;
   }
 };
-function new$4() {
+function new$3() {
   return new Events(
     empty2(),
     empty_list,
@@ -3420,7 +3271,7 @@ var Remove = class extends CustomType {
     this.count = count;
   }
 };
-function new$6(index5, removed, changes, children) {
+function new$5(index5, removed, changes, children) {
   return new Patch(index5, removed, changes, children);
 }
 var replace_text_kind = 0;
@@ -4265,7 +4116,7 @@ function do_diff(loop$old, loop$old_keyed, loop$new, loop$new_keyed, loop$moved,
               let next$2 = $1;
               let new$1 = new$9.tail;
               let old$1 = old.tail;
-              let child = new$6(
+              let child = new$5(
                 node_index,
                 0,
                 toList([replace_text(next$2.content)]),
@@ -4373,7 +4224,7 @@ function do_diff(loop$old, loop$old_keyed, loop$new, loop$new_keyed, loop$moved,
               _block$2 = children;
             } else {
               _block$2 = prepend(
-                new$6(node_index, 0, child_changes$1, toList([])),
+                new$5(node_index, 0, child_changes$1, toList([])),
                 children
               );
             }
@@ -4866,8 +4717,8 @@ var SYNCED_ATTRIBUTES = {
 var virtualise = (root3) => {
   const vdom = virtualiseNode(null, root3, "");
   if (vdom === null || vdom.children instanceof Empty) {
-    const empty4 = emptyTextNode(root3);
-    root3.appendChild(empty4);
+    const empty5 = emptyTextNode(root3);
+    root3.appendChild(empty5);
     return none2();
   } else if (vdom.children instanceof NonEmpty && vdom.children.tail instanceof Empty) {
     return vdom.children.head;
@@ -4973,10 +4824,10 @@ var virtualiseAttribute = (attr) => {
 // build/dev/javascript/lustre/lustre/runtime/client/runtime.ffi.mjs
 var is_browser = () => !!document2();
 var Runtime = class {
-  constructor(root3, [model, effects], view7, update5) {
+  constructor(root3, [model, effects], view8, update5) {
     this.root = root3;
     this.#model = model;
-    this.#view = view7;
+    this.#view = view8;
     this.#update = update5;
     this.#reconciler = new Reconciler(this.root, (event4, path, name2) => {
       const [events, result] = handle(this.#events, path, name2, event4);
@@ -4989,7 +4840,7 @@ var Runtime = class {
       }
     });
     this.#vdom = virtualise(this.root);
-    this.#events = new$4();
+    this.#events = new$3();
     this.#shouldFlush = true;
     this.#tick(effects);
   }
@@ -5136,7 +4987,7 @@ var Config2 = class extends CustomType {
     this.on_form_restore = on_form_restore;
   }
 };
-function new$7(options) {
+function new$6(options) {
   let init3 = new Config2(
     false,
     true,
@@ -5158,15 +5009,15 @@ function new$7(options) {
 
 // build/dev/javascript/lustre/lustre/runtime/client/spa.ffi.mjs
 var Spa = class _Spa {
-  static start({ init: init3, update: update5, view: view7 }, selector, flags) {
+  static start({ init: init3, update: update5, view: view8 }, selector, flags) {
     if (!is_browser()) return new Error(new NotABrowser());
     const root3 = selector instanceof HTMLElement ? selector : document2().querySelector(selector);
     if (!root3) return new Error(new ElementNotFound(selector));
-    return new Ok(new _Spa(root3, init3(flags), update5, view7));
+    return new Ok(new _Spa(root3, init3(flags), update5, view8));
   }
   #runtime;
-  constructor(root3, [init3, effects], update5, view7) {
-    this.#runtime = new Runtime(root3, [init3, effects], view7, update5);
+  constructor(root3, [init3, effects], update5, view8) {
+    this.#runtime = new Runtime(root3, [init3, effects], view8, update5);
   }
   send(message2) {
     switch (message2.constructor) {
@@ -5193,11 +5044,11 @@ var start = Spa.start;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init3, update5, view7, config) {
+  constructor(init3, update5, view8, config) {
     super();
     this.init = init3;
     this.update = update5;
-    this.view = view7;
+    this.view = view8;
     this.config = config;
   }
 };
@@ -5209,8 +5060,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init3, update5, view7) {
-  return new App(init3, update5, view7, new$7(empty_list));
+function application(init3, update5, view8) {
+  return new App(init3, update5, view8, new$6(empty_list));
 }
 function start3(app, selector, start_args) {
   return guard(
@@ -5845,8 +5696,8 @@ function parse_userinfo_loop(loop$original, loop$uri_string, loop$pieces, loop$s
     }
   }
 }
-function parse_authority_pieces(string6, pieces) {
-  return parse_userinfo_loop(string6, string6, pieces, 0);
+function parse_authority_pieces(string5, pieces) {
+  return parse_userinfo_loop(string5, string5, pieces, 0);
 }
 function parse_authority_with_slashes(uri_string, pieces) {
   if (uri_string === "//") {
@@ -6133,8 +5984,8 @@ function parse(uri_string) {
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/pair.mjs
-function new$8(first2, second2) {
-  return [first2, second2];
+function new$7(first, second2) {
+  return [first, second2];
 }
 
 // build/dev/javascript/modem/modem.ffi.mjs
@@ -6241,6 +6092,295 @@ function init(handler) {
   );
 }
 
+// build/dev/javascript/formal/formal/form.mjs
+var Form = class extends CustomType {
+  constructor(translator, values3, errors, run3) {
+    super();
+    this.translator = translator;
+    this.values = values3;
+    this.errors = errors;
+    this.run = run3;
+  }
+};
+var Schema = class extends CustomType {
+  constructor(run3) {
+    super();
+    this.run = run3;
+  }
+};
+var MustBePresent = class extends CustomType {
+};
+var MustBeInt = class extends CustomType {
+};
+var MustBeFloat = class extends CustomType {
+};
+var MustBeEmail = class extends CustomType {
+};
+var MustBePhoneNumber = class extends CustomType {
+};
+var MustBeUrl = class extends CustomType {
+};
+var MustBeDate = class extends CustomType {
+};
+var MustBeTime = class extends CustomType {
+};
+var MustBeDateTime = class extends CustomType {
+};
+var MustBeColour = class extends CustomType {
+};
+var MustBeStringLengthMoreThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeStringLengthLessThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeIntMoreThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeIntLessThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeFloatMoreThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeFloatLessThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeAccepted = class extends CustomType {
+};
+var MustConfirm = class extends CustomType {
+};
+var MustBeUnique = class extends CustomType {
+};
+var Parser = class extends CustomType {
+  constructor(run3) {
+    super();
+    this.run = run3;
+  }
+};
+var Check = class extends CustomType {
+};
+var DontCheck = class extends CustomType {
+};
+function run2(form2) {
+  let $ = form2.run(form2.values, toList([]));
+  let value = $[0];
+  let errors = $[1];
+  if (errors instanceof Empty) {
+    return new Ok(value);
+  } else {
+    return new Error(
+      (() => {
+        let _record = form2;
+        return new Form(_record.translator, _record.values, errors, _record.run);
+      })()
+    );
+  }
+}
+function field2(name2, parser, continuation) {
+  return new Schema(
+    (values3, errors) => {
+      let input2 = key_filter(values3, name2);
+      let $ = parser.run(input2, new Check());
+      let value = $[0];
+      let new_errors = $[2];
+      let _block;
+      if (new_errors instanceof Empty) {
+        _block = errors;
+      } else {
+        _block = prepend([name2, new_errors], errors);
+      }
+      let errors$1 = _block;
+      return continuation(value).run(values3, errors$1);
+    }
+  );
+}
+function success2(value) {
+  return new Schema((_, errors) => {
+    return [value, errors];
+  });
+}
+function add_values(form2, values3) {
+  let _record = form2;
+  return new Form(
+    _record.translator,
+    append(values3, form2.values),
+    _record.errors,
+    _record.run
+  );
+}
+function string_parser(inputs, status) {
+  if (inputs instanceof Empty) {
+    return ["", status, toList([])];
+  } else {
+    let input2 = inputs.head;
+    return [input2, status, toList([])];
+  }
+}
+function value_parser(inputs, zero, status, error, next) {
+  if (inputs instanceof Empty) {
+    return [zero, new DontCheck(), toList([error])];
+  } else {
+    let input2 = inputs.head;
+    let $ = next(input2);
+    if ($ instanceof Ok) {
+      let t = $[0];
+      return [t, status, toList([])];
+    } else {
+      return [zero, new DontCheck(), toList([error])];
+    }
+  }
+}
+function email_parser(inputs, status) {
+  return value_parser(
+    inputs,
+    "",
+    status,
+    new MustBeEmail(),
+    (input2) => {
+      let $ = contains_string(input2, "@");
+      if ($) {
+        return new Ok(input2);
+      } else {
+        return new Error(void 0);
+      }
+    }
+  );
+}
+function en_gb(error) {
+  if (error instanceof MustBePresent) {
+    return "must not be blank";
+  } else if (error instanceof MustBeInt) {
+    return "must be a whole number";
+  } else if (error instanceof MustBeFloat) {
+    return "must be a number";
+  } else if (error instanceof MustBeEmail) {
+    return "must be an email";
+  } else if (error instanceof MustBePhoneNumber) {
+    return "must be a phone number";
+  } else if (error instanceof MustBeUrl) {
+    return "must be a URL";
+  } else if (error instanceof MustBeDate) {
+    return "must be a date";
+  } else if (error instanceof MustBeTime) {
+    return "must be a time";
+  } else if (error instanceof MustBeDateTime) {
+    return "must be a date and time";
+  } else if (error instanceof MustBeColour) {
+    return "must be a hex colour code";
+  } else if (error instanceof MustBeStringLengthMoreThan) {
+    let limit = error.limit;
+    return "must be more than " + to_string(limit) + " characters";
+  } else if (error instanceof MustBeStringLengthLessThan) {
+    let limit = error.limit;
+    return "must be less than " + to_string(limit) + " characters";
+  } else if (error instanceof MustBeIntMoreThan) {
+    let limit = error.limit;
+    return "must be more than " + to_string(limit);
+  } else if (error instanceof MustBeIntLessThan) {
+    let limit = error.limit;
+    return "must be less than " + to_string(limit);
+  } else if (error instanceof MustBeFloatMoreThan) {
+    let limit = error.limit;
+    return "must be more than " + float_to_string(limit);
+  } else if (error instanceof MustBeFloatLessThan) {
+    let limit = error.limit;
+    return "must be less than " + float_to_string(limit);
+  } else if (error instanceof MustBeAccepted) {
+    return "must be accepted";
+  } else if (error instanceof MustConfirm) {
+    return "doesn't match";
+  } else if (error instanceof MustBeUnique) {
+    return "is already in use";
+  } else {
+    let message2 = error.message;
+    return message2;
+  }
+}
+function new$8(schema) {
+  return new Form(en_gb, toList([]), toList([]), schema.run);
+}
+function field_error_messages(form2, name2) {
+  let _pipe = form2.errors;
+  let _pipe$1 = key_filter(_pipe, name2);
+  return flat_map(
+    _pipe$1,
+    (_capture) => {
+      return map(_capture, form2.translator);
+    }
+  );
+}
+var parse_string = /* @__PURE__ */ new Parser(string_parser);
+var parse_email = /* @__PURE__ */ new Parser(email_parser);
+
+// build/dev/javascript/client/forms.mjs
+var SignInFormData = class extends CustomType {
+  constructor(email, password) {
+    super();
+    this.email = email;
+    this.password = password;
+  }
+};
+var SignUpFormData = class extends CustomType {
+  constructor(email, password) {
+    super();
+    this.email = email;
+    this.password = password;
+  }
+};
+function sign_in_form() {
+  return new$8(
+    field2(
+      "email",
+      parse_email,
+      (email) => {
+        return field2(
+          "password",
+          parse_string,
+          (password) => {
+            return success2(new SignInFormData(email, password));
+          }
+        );
+      }
+    )
+  );
+}
+function sign_up_form() {
+  return new$8(
+    field2(
+      "email",
+      parse_email,
+      (email) => {
+        return field2(
+          "password",
+          parse_string,
+          (password) => {
+            return success2(new SignUpFormData(email, password));
+          }
+        );
+      }
+    )
+  );
+}
+
 // build/dev/javascript/gleam_http/gleam/http.mjs
 var Get = class extends CustomType {
 };
@@ -6264,27 +6404,27 @@ var Http = class extends CustomType {
 };
 var Https = class extends CustomType {
 };
-function method_to_string(method) {
-  if (method instanceof Get) {
+function method_to_string(method2) {
+  if (method2 instanceof Get) {
     return "GET";
-  } else if (method instanceof Post) {
+  } else if (method2 instanceof Post) {
     return "POST";
-  } else if (method instanceof Head) {
+  } else if (method2 instanceof Head) {
     return "HEAD";
-  } else if (method instanceof Put) {
+  } else if (method2 instanceof Put) {
     return "PUT";
-  } else if (method instanceof Delete) {
+  } else if (method2 instanceof Delete) {
     return "DELETE";
-  } else if (method instanceof Trace) {
+  } else if (method2 instanceof Trace) {
     return "TRACE";
-  } else if (method instanceof Connect) {
+  } else if (method2 instanceof Connect) {
     return "CONNECT";
-  } else if (method instanceof Options) {
+  } else if (method2 instanceof Options) {
     return "OPTIONS";
-  } else if (method instanceof Patch2) {
+  } else if (method2 instanceof Patch2) {
     return "PATCH";
   } else {
-    let s = method[0];
+    let s = method2[0];
     return s;
   }
 }
@@ -6318,9 +6458,9 @@ var Response = class extends CustomType {
 
 // build/dev/javascript/gleam_http/gleam/http/request.mjs
 var Request = class extends CustomType {
-  constructor(method, headers, body, scheme, host, port, path, query) {
+  constructor(method2, headers, body, scheme, host, port, path, query) {
     super();
-    this.method = method;
+    this.method = method2;
     this.headers = headers;
     this.body = body;
     this.scheme = scheme;
@@ -6386,19 +6526,19 @@ function set_header2(request, key, value) {
   );
 }
 function set_body(req, body) {
-  let method = req.method;
+  let method2 = req.method;
   let headers = req.headers;
   let scheme = req.scheme;
   let host = req.host;
   let port = req.port;
   let path = req.path;
   let query = req.query;
-  return new Request(method, headers, body, scheme, host, port, path, query);
+  return new Request(method2, headers, body, scheme, host, port, path, query);
 }
-function set_method(req, method) {
+function set_method(req, method2) {
   let _record = req;
   return new Request(
-    method,
+    method2,
     _record.headers,
     _record.body,
     _record.scheme,
@@ -6477,10 +6617,10 @@ function from_fetch_response(response) {
 }
 function request_common(request) {
   let url = to_string5(to_uri(request));
-  let method = method_to_string(request.method).toUpperCase();
+  let method2 = method_to_string(request.method).toUpperCase();
   let options = {
     headers: make_headers(request.headers),
-    method
+    method: method2
   };
   return [url, options];
 }
@@ -6576,9 +6716,9 @@ var UnhandledResponse = class extends CustomType {
   }
 };
 var Handler2 = class extends CustomType {
-  constructor(run2) {
+  constructor(run3) {
     super();
-    this.run = run2;
+    this.run = run3;
   }
 };
 function expect_ok_response(handler) {
@@ -6755,12 +6895,37 @@ function initial_route() {
 }
 
 // build/dev/javascript/client/model.mjs
-var Model = class extends CustomType {
-  constructor(route, sign_in_form, sign_up_form) {
+var Base = class extends CustomType {
+  constructor(route, session_id) {
     super();
     this.route = route;
-    this.sign_in_form = sign_in_form;
-    this.sign_up_form = sign_up_form;
+    this.session_id = session_id;
+  }
+};
+var Model = class extends CustomType {
+  constructor(base) {
+    super();
+    this.base = base;
+  }
+};
+var SignIn2 = class extends CustomType {
+  constructor(base, form2) {
+    super();
+    this.base = base;
+    this.form = form2;
+  }
+};
+var SignUp2 = class extends CustomType {
+  constructor(base, form2) {
+    super();
+    this.base = base;
+    this.form = form2;
+  }
+};
+var ApiAuthenticatedUser = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
   }
 };
 var UserNavigatedTo = class extends CustomType {
@@ -6770,26 +6935,25 @@ var UserNavigatedTo = class extends CustomType {
   }
 };
 var UserSubmittedSignInForm = class extends CustomType {
-  constructor(data) {
+  constructor(result) {
     super();
-    this.data = data;
+    this.result = result;
   }
 };
 var UserSubmittedSignUpForm = class extends CustomType {
-  constructor(data) {
+  constructor(result) {
     super();
-    this.data = data;
-  }
-};
-var ApiAuthenticatedUser = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
+    this.result = result;
   }
 };
 
-// build/dev/javascript/client/routes/index.mjs
+// build/dev/javascript/client/routes/about.mjs
 function view2() {
+  return span(toList([]), toList([text3("about")]));
+}
+
+// build/dev/javascript/client/routes/index.mjs
+function view3() {
   return span(toList([]), toList([text3("index")]));
 }
 
@@ -6863,7 +7027,7 @@ function formdata_decoder() {
           let _pipe$12 = map3(
             _pipe2,
             (_capture) => {
-              return new$8(key, _capture);
+              return new$7(key, _capture);
             }
           );
           return success(_pipe$12);
@@ -6900,8 +7064,8 @@ function submit(label2) {
 }
 
 // build/dev/javascript/client/components/input.mjs
-function view3(form2, type_2, name2, label2) {
-  let state = field_state(form2, name2);
+function view4(form2, type_2, name2, label2) {
+  let errors = field_error_messages(form2, name2);
   return label(
     toList([]),
     toList([
@@ -6911,20 +7075,20 @@ function view3(form2, type_2, name2, label2) {
       ),
       div(
         toList([class$("mt-2")]),
-        toList([
+        prepend(
           input(
             toList([
               type_(type_2),
               name(name2),
               placeholder(label2),
               class$(
-                "block w-full rounded-md bg-white px-3 py-1.5 text-base "
+                "block w-full rounded-md bg-white px-3 py-1.5 text-base"
               ),
               class$("outline-1 -outline-offset-1 "),
               class$("focus:outline-2 focus:-outline-offset-2"),
               class$("sm:text-sm/6"),
               (() => {
-                if (state instanceof Ok) {
+                if (errors instanceof Empty) {
                   return class$(
                     "text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-indigo-600"
                   );
@@ -6936,226 +7100,130 @@ function view3(form2, type_2, name2, label2) {
               })()
             ])
           ),
-          (() => {
-            if (state instanceof Ok) {
-              return none2();
-            } else {
-              let error_message = state[0];
+          map(
+            errors,
+            (error) => {
               return p(
                 toList([class$("mt-2 text-sm text-red-600")]),
-                toList([text3(error_message)])
+                toList([text3(error)])
               );
             }
-          })()
-        ])
+          )
+        )
       )
     ])
   );
 }
 
 // build/dev/javascript/client/routes/sign_in.mjs
-var FormData2 = class extends CustomType {
-  constructor(email, password) {
-    super();
-    this.email = email;
-    this.password = password;
-  }
-};
-function view4(form2) {
+function view5(form2) {
+  let submit2 = (fields) => {
+    let _pipe = form2;
+    let _pipe$1 = add_values(_pipe, fields);
+    let _pipe$2 = run2(_pipe$1);
+    return new UserSubmittedSignInForm(_pipe$2);
+  };
   return div(
     toList([class$("p-4")]),
     toList([
       h1(toList([]), toList([text3("Sign in")])),
       form(
         toList([
-          class$("flex flex-col gap-4"),
-          on_submit(
-            (var0) => {
-              return new UserSubmittedSignInForm(var0);
-            }
-          )
+          method("POST"),
+          on_submit(submit2),
+          class$("flex flex-col gap-4")
         ]),
         toList([
-          view3(form2, "text", "email", "Email"),
-          view3(form2, "password", "password", "Password"),
+          view4(form2, "text", "email", "Email"),
+          view4(form2, "password", "password", "Password"),
           submit("Sign in")
         ])
       )
     ])
   );
 }
-function decode_formdata(values3) {
-  let _pipe = decoding(
-    parameter(
-      (email) => {
-        return parameter(
-          (password) => {
-            return new FormData2(email, password);
-          }
-        );
-      }
-    )
-  );
-  let _pipe$1 = with_values(_pipe, values3);
-  let _pipe$2 = field2(
-    _pipe$1,
-    "email",
-    (() => {
-      let _pipe$22 = string3;
-      return and(_pipe$22, must_not_be_empty);
-    })()
-  );
-  let _pipe$3 = field2(
-    _pipe$2,
-    "password",
-    (() => {
-      let _pipe$32 = string3;
-      return and(_pipe$32, must_not_be_empty);
-    })()
-  );
-  return finish(_pipe$3);
-}
-function sign_in(email, password, handle_response) {
+function sign_in(values3, handle_response) {
   let url = "http://localhost:8000/api/auth/sign-in";
   let handler = expect_ok_response(handle_response);
   let body = object2(
     toList([
-      ["email", string4(email)],
-      ["password", string4(password)]
+      ["email", string3(values3.email)],
+      ["password", string3(values3.password)]
     ])
   );
   return post(url, body, handler);
 }
-function update2(model, values3) {
-  let $ = decode_formdata(values3);
-  if ($ instanceof Ok) {
-    let email = $[0].email;
-    let password = $[0].password;
+function update2(model, result) {
+  if (result instanceof Ok) {
+    let values3 = result[0];
     return [
-      (() => {
-        let _record = model;
-        return new Model(_record.route, new$(), _record.sign_up_form);
-      })(),
+      model,
       sign_in(
-        email,
-        password,
+        values3,
         (var0) => {
           return new ApiAuthenticatedUser(var0);
         }
       )
     ];
   } else {
-    let form2 = $[0];
-    return [
-      (() => {
-        let _record = model;
-        return new Model(_record.route, form2, _record.sign_up_form);
-      })(),
-      none()
-    ];
+    let form2 = result[0];
+    return [new SignIn2(model.base, form2), none()];
   }
 }
 
 // build/dev/javascript/client/routes/sign_up.mjs
-var FormData3 = class extends CustomType {
-  constructor(email, password) {
-    super();
-    this.email = email;
-    this.password = password;
-  }
-};
-function view5(form2) {
+function view6(form2) {
+  let submit2 = (fields) => {
+    let _pipe = form2;
+    let _pipe$1 = add_values(_pipe, fields);
+    let _pipe$2 = run2(_pipe$1);
+    return new UserSubmittedSignUpForm(_pipe$2);
+  };
   return div(
     toList([class$("p-4")]),
     toList([
       h1(toList([]), toList([text3("Sign up")])),
       form(
         toList([
-          class$("flex flex-col gap-4"),
-          on_submit(
-            (var0) => {
-              return new UserSubmittedSignUpForm(var0);
-            }
-          )
+          method("POST"),
+          on_submit(submit2),
+          class$("flex flex-col gap-4")
         ]),
         toList([
-          view3(form2, "text", "email", "Email"),
-          view3(form2, "password", "password", "Password"),
+          view4(form2, "text", "email", "Email"),
+          view4(form2, "password", "password", "Password"),
           submit("Sign up")
         ])
       )
     ])
   );
 }
-function decode_formdata2(values3) {
-  let _pipe = decoding(
-    parameter(
-      (email) => {
-        return parameter(
-          (password) => {
-            return new FormData3(email, password);
-          }
-        );
-      }
-    )
-  );
-  let _pipe$1 = with_values(_pipe, values3);
-  let _pipe$2 = field2(
-    _pipe$1,
-    "email",
-    (() => {
-      let _pipe$22 = string3;
-      return and(_pipe$22, must_not_be_empty);
-    })()
-  );
-  let _pipe$3 = field2(
-    _pipe$2,
-    "password",
-    (() => {
-      let _pipe$32 = string3;
-      return and(_pipe$32, must_not_be_empty);
-    })()
-  );
-  return finish(_pipe$3);
-}
-function sign_up(email, password, handle_response) {
+function sign_up(values3, handle_response) {
   let url = "http://localhost:8000/api/auth/sign-up";
   let handler = expect_ok_response(handle_response);
   let body = object2(
     toList([
-      ["email", string4(email)],
-      ["password", string4(password)]
+      ["email", string3(values3.email)],
+      ["password", string3(values3.password)]
     ])
   );
   return post(url, body, handler);
 }
-function update3(model, values3) {
-  let $ = decode_formdata2(values3);
-  if ($ instanceof Ok) {
-    let email = $[0].email;
-    let password = $[0].password;
+function update3(model, result) {
+  if (result instanceof Ok) {
+    let values3 = result[0];
     return [
-      (() => {
-        let _record = model;
-        return new Model(_record.route, _record.sign_in_form, new$());
-      })(),
+      model,
       sign_up(
-        email,
-        password,
+        values3,
         (var0) => {
           return new ApiAuthenticatedUser(var0);
         }
       )
     ];
   } else {
-    let form2 = $[0];
-    return [
-      (() => {
-        let _record = model;
-        return new Model(_record.route, _record.sign_in_form, form2);
-      })(),
-      none()
-    ];
+    let form2 = result[0];
+    return [new SignUp2(model.base, form2), none()];
   }
 }
 
@@ -7163,7 +7231,9 @@ function update3(model, values3) {
 var FILEPATH = "src/client.gleam";
 function init2(_) {
   let initial_route2 = initial_route();
-  let model = new Model(initial_route2, new$(), new$());
+  let model = new Model(
+    new Base(initial_route2, new None())
+  );
   let effect = init(
     (uri) => {
       let _pipe = uri;
@@ -7174,77 +7244,101 @@ function init2(_) {
   return [model, effect];
 }
 function update4(model, msg) {
-  if (msg instanceof UserNavigatedTo) {
-    let route = msg.route;
-    return [
-      (() => {
-        let _record = model;
-        return new Model(route, _record.sign_in_form, _record.sign_up_form);
-      })(),
-      none()
-    ];
-  } else if (msg instanceof UserSubmittedSignInForm) {
-    let values3 = msg.data;
-    return update2(model, values3);
-  } else if (msg instanceof UserSubmittedSignUpForm) {
-    let values3 = msg.data;
-    return update3(model, values3);
-  } else {
+  if (msg instanceof ApiAuthenticatedUser) {
     let $ = msg[0];
     if ($ instanceof Ok) {
       return [
-        (() => {
-          let _record = model;
-          return new Model(
-            new Index2(),
-            _record.sign_in_form,
-            _record.sign_up_form
-          );
-        })(),
+        new Model(
+          (() => {
+            let _record = model.base;
+            return new Base(new About(), _record.session_id);
+          })()
+        ),
         none()
       ];
     } else {
       return [
-        (() => {
-          let _record = model;
-          return new Model(
-            new About(),
-            _record.sign_in_form,
-            _record.sign_up_form
-          );
-        })(),
+        new Model(
+          (() => {
+            let _record = model.base;
+            return new Base(new SignIn(), _record.session_id);
+          })()
+        ),
         none()
       ];
     }
+  } else if (msg instanceof UserNavigatedTo) {
+    let route = msg.route;
+    if (route instanceof SignIn) {
+      return [
+        new SignIn2(
+          (() => {
+            let _record = model.base;
+            return new Base(route, _record.session_id);
+          })(),
+          sign_in_form()
+        ),
+        none()
+      ];
+    } else if (route instanceof SignUp) {
+      return [
+        new SignUp2(
+          (() => {
+            let _record = model.base;
+            return new Base(route, _record.session_id);
+          })(),
+          sign_up_form()
+        ),
+        none()
+      ];
+    } else {
+      return [
+        new Model(
+          (() => {
+            let _record = model.base;
+            return new Base(route, _record.session_id);
+          })()
+        ),
+        none()
+      ];
+    }
+  } else if (msg instanceof UserSubmittedSignInForm) {
+    let result = msg.result;
+    return update2(model, result);
+  } else {
+    let result = msg.result;
+    return update3(model, result);
   }
 }
 function view_not_found() {
   return span(toList([]), toList([text3("not found")]));
 }
-function view6(model) {
-  let $ = model.route;
+function view7(model) {
+  let $ = model.base.route;
   if ($ instanceof Index2) {
-    return view2();
+    return view3();
   } else if ($ instanceof SignIn) {
-    return view4(model.sign_in_form);
+    return view5(sign_in_form());
   } else if ($ instanceof SignUp) {
-    return view5(model.sign_up_form);
+    return view6(sign_up_form());
+  } else if ($ instanceof About) {
+    return view2();
   } else {
     return view_not_found();
   }
 }
 function main() {
-  let app = application(init2, update4, view6);
+  let app = application(init2, update4, view7);
   let $ = start3(app, "#app", toList([]));
   if (!($ instanceof Ok)) {
     throw makeError(
       "let_assert",
       FILEPATH,
       "client",
-      15,
+      17,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      { value: $, start: 336, end: 384, pattern_start: 347, pattern_end: 352 }
+      { value: $, start: 363, end: 411, pattern_start: 374, pattern_end: 379 }
     );
   }
   return void 0;

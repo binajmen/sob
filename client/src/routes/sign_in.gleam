@@ -1,4 +1,3 @@
-import components/button
 import components/input
 import formal/form.{type Form}
 import forms.{type SignInFormData}
@@ -13,24 +12,25 @@ import model.{type Model, type Msg}
 import rsvp
 
 pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
+  echo form
   let submit = fn(fields) {
-    form |> form.add_values(fields) |> form.run |> model.UserSubmittedSignInForm
+    form
+    |> form.add_values(fields)
+    |> form.run
+    |> model.UserSubmittedSignInForm
+    |> echo
   }
 
   html.div([attribute.class("p-4")], [
     html.h1([], [html.text("Sign in")]),
-    html.form(
-      [
-        attribute.method("POST"),
-        event.on_submit(submit),
-        attribute.class("flex flex-col gap-4"),
-      ],
-      [
-        input.view(form, is: "text", name: "email", label: "Email"),
-        input.view(form, is: "password", name: "password", label: "Password"),
-        button.submit(label: "Sign in"),
-      ],
-    ),
+    html.form([event.on_submit(submit), attribute.class("space-y-2")], [
+      input.view(form, is: "text", name: "email", label: "Email"),
+      input.view(form, is: "password", name: "password", label: "Password"),
+      html.button(
+        [attribute.type_("submit"), attribute.class("btn btn-primary")],
+        [html.text("Sign in")],
+      ),
+    ]),
   ])
 }
 
@@ -40,7 +40,7 @@ pub fn update(
 ) -> #(Model, Effect(Msg)) {
   case result {
     Ok(values) -> #(model, sign_in(values, model.ApiAuthenticatedUser))
-    Error(form) -> #(model.SignIn(app: model.app, form:), effect.none())
+    Error(form) -> #(model.SignIn(app: model.app, form:), effect.none()) |> echo
   }
 }
 

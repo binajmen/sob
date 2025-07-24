@@ -1,7 +1,7 @@
 import components/button
 import components/input
 import formal/form.{type Form}
-import forms
+import forms.{type SignUpFormData}
 import gleam/http/response
 import gleam/json
 import lustre/attribute
@@ -12,7 +12,7 @@ import lustre/event
 import model.{type Model, type Msg}
 import rsvp
 
-pub fn view(form: Form(forms.SignUpFormData)) -> Element(Msg) {
+pub fn view(form: Form(SignUpFormData)) -> Element(Msg) {
   let submit = fn(fields) {
     form |> form.add_values(fields) |> form.run |> model.UserSubmittedSignUpForm
   }
@@ -36,16 +36,16 @@ pub fn view(form: Form(forms.SignUpFormData)) -> Element(Msg) {
 
 pub fn update(
   model: Model,
-  result: Result(forms.SignUpFormData, form.Form(forms.SignUpFormData)),
+  result: Result(SignUpFormData, Form(SignUpFormData)),
 ) -> #(Model, Effect(Msg)) {
   case result {
     Ok(values) -> #(model, sign_up(values, model.ApiAuthenticatedUser))
-    Error(form) -> #(model.SignUp(base: model.base, form:), effect.none())
+    Error(form) -> #(model.SignUp(app: model.app, form:), effect.none())
   }
 }
 
 fn sign_up(
-  values: forms.SignUpFormData,
+  values: SignUpFormData,
   on_response handle_response: fn(Result(response.Response(String), rsvp.Error)) ->
     msg,
 ) -> Effect(msg) {

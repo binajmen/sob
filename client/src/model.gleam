@@ -1,18 +1,17 @@
 import formal/form.{type Form}
 import forms.{type SignInFormData, type SignUpFormData}
 import gleam/http/response
-import gleam/option
 import router.{type Route}
 import rsvp
 
-pub type Base {
-  Base(route: Route, session_id: option.Option(String))
+pub type App {
+  App(route: Route, lang: String)
 }
 
 pub type Model {
-  Model(base: Base)
-  SignIn(base: Base, form: Form(SignInFormData))
-  SignUp(base: Base, form: Form(SignUpFormData))
+  Base(app: App)
+  SignIn(app: App, form: Form(SignInFormData))
+  SignUp(app: App, form: Form(SignUpFormData))
 }
 
 pub type Msg {

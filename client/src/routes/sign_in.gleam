@@ -12,13 +12,11 @@ import model.{type Model, type Msg}
 import rsvp
 
 pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
-  echo form
   let submit = fn(fields) {
     form
     |> form.add_values(fields)
     |> form.run
     |> model.UserSubmittedSignInForm
-    |> echo
   }
 
   html.div([], [
@@ -40,7 +38,7 @@ pub fn update(
 ) -> #(Model, Effect(Msg)) {
   case result {
     Ok(values) -> #(model, sign_in(values, model.ApiAuthenticatedUser))
-    Error(form) -> #(model.SignIn(app: model.app, form:), effect.none()) |> echo
+    Error(form) -> #(model.SignIn(app: model.app, form:), effect.none())
   }
 }
 

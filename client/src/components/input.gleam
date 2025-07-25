@@ -11,7 +11,7 @@ pub fn view(
   name name: String,
   label label: String,
 ) -> Element(Msg) {
-  let errors = form.field_error_messages(form, name) |> echo
+  let errors = form.field_error_messages(form, name)
 
   html.fieldset([attribute.class("fieldset")], [
     html.legend([attribute.class("fieldset-legend")], [html.text(label)]),

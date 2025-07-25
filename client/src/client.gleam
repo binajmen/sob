@@ -1,3 +1,4 @@
+import formal/form
 import forms
 import lustre
 import lustre/effect.{type Effect}
@@ -20,7 +21,20 @@ pub fn main() {
 
 fn init(_options) -> #(Model, Effect(Msg)) {
   let initial_route = router.initial_route()
-  let model = model.Base(app: model.App(route: initial_route, lang: "en"))
+  let model = case initial_route {
+    router.Index -> model.Base(app: model.App(route: initial_route, lang: "en"))
+    router.SignIn ->
+      model.SignIn(
+        app: model.App(route: initial_route, lang: "en"),
+        form: forms.sign_in_form(),
+      )
+    router.SignUp ->
+      model.SignUp(
+        app: model.App(route: initial_route, lang: "en"),
+        form: forms.sign_up_form(),
+      )
+    _ -> model.Base(app: model.App(route: initial_route, lang: "en"))
+  }
   let effect =
     modem.init(fn(uri) { uri |> router.parse_route |> model.UserNavigatedTo })
 
@@ -47,27 +61,33 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       model.Base(app: model.App(..model.app, route:)),
       effect.none(),
     )
-    model.UserSubmittedSignInForm(result) ->
-      sign_in.update(model, result) |> echo
+    model.UserSubmittedSignInForm(result) -> sign_in.update(model, result)
     model.UserSubmittedSignUpForm(result) -> sign_up.update(model, result)
     model.ApiAuthenticatedUser(Ok(_)) -> #(
       model.Base(app: model.App(..model.app, route: router.About)),
       effect.none(),
     )
     model.ApiAuthenticatedUser(Error(_)) -> #(
-      model.Base(app: model.App(..model.app, route: router.SignIn)),
+      model.SignIn(
+        app: model.App(..model.app, route: router.SignIn),
+        form: forms.sign_in_form()
+          |> form.add_error(
+            "password",
+            form.CustomError("Email or password is incorrect"),
+          ),
+      ),
       effect.none(),
     )
   }
 }
 
 fn view(model: Model) -> Element(Msg) {
-  case model.app.route {
-    router.Index -> index.view()
-    router.SignIn -> sign_in.view(forms.sign_in_form())
-    router.SignUp -> sign_up.view(forms.sign_up_form())
-    router.About -> about.view()
-    _ -> view_not_found()
+  case model.app.route, model {
+    router.Index, _ -> index.view()
+    router.About, _ -> about.view()
+    router.SignIn, model.SignIn(_, form) -> sign_in.view(form)
+    router.SignUp, model.SignUp(_, form) -> sign_up.view(form)
+    _, _ -> view_not_found()
   }
 }
 

@@ -183,15 +183,15 @@ var BitArray = class {
       }
     } else {
       for (let i = 0; i < wholeByteCount; i++) {
-        const a = bitArrayByteAt(this.rawBuffer, this.bitOffset, i);
+        const a2 = bitArrayByteAt(this.rawBuffer, this.bitOffset, i);
         const b = bitArrayByteAt(other.rawBuffer, other.bitOffset, i);
-        if (a !== b) {
+        if (a2 !== b) {
           return false;
         }
       }
       const trailingBitsCount = this.bitSize % 8;
       if (trailingBitsCount) {
-        const a = bitArrayByteAt(
+        const a2 = bitArrayByteAt(
           this.rawBuffer,
           this.bitOffset,
           wholeByteCount
@@ -202,7 +202,7 @@ var BitArray = class {
           wholeByteCount
         );
         const unusedLowBitCount = 8 - trailingBitsCount;
-        if (a >> unusedLowBitCount !== b >> unusedLowBitCount) {
+        if (a2 >> unusedLowBitCount !== b >> unusedLowBitCount) {
           return false;
         }
       }
@@ -252,9 +252,9 @@ function bitArrayByteAt(buffer, bitOffset, index5) {
   if (bitOffset === 0) {
     return buffer[index5] ?? 0;
   } else {
-    const a = buffer[index5] << bitOffset & 255;
+    const a2 = buffer[index5] << bitOffset & 255;
     const b = buffer[index5 + 1] >> 8 - bitOffset;
-    return a | b;
+    return a2 | b;
   }
 }
 var UtfCodepoint = class {
@@ -572,23 +572,23 @@ var Error = class extends Result {
 function isEqual(x, y) {
   let values3 = [x, y];
   while (values3.length) {
-    let a = values3.pop();
+    let a2 = values3.pop();
     let b = values3.pop();
-    if (a === b) continue;
-    if (!isObject(a) || !isObject(b)) return false;
-    let unequal = !structurallyCompatibleObjects(a, b) || unequalDates(a, b) || unequalBuffers(a, b) || unequalArrays(a, b) || unequalMaps(a, b) || unequalSets(a, b) || unequalRegExps(a, b);
+    if (a2 === b) continue;
+    if (!isObject(a2) || !isObject(b)) return false;
+    let unequal = !structurallyCompatibleObjects(a2, b) || unequalDates(a2, b) || unequalBuffers(a2, b) || unequalArrays(a2, b) || unequalMaps(a2, b) || unequalSets(a2, b) || unequalRegExps(a2, b);
     if (unequal) return false;
-    const proto = Object.getPrototypeOf(a);
+    const proto = Object.getPrototypeOf(a2);
     if (proto !== null && typeof proto.equals === "function") {
       try {
-        if (a.equals(b)) continue;
+        if (a2.equals(b)) continue;
         else return false;
       } catch {
       }
     }
-    let [keys2, get3] = getters(a);
-    for (let k of keys2(a)) {
-      values3.push(get3(a, k), get3(b, k));
+    let [keys2, get3] = getters(a2);
+    for (let k of keys2(a2)) {
+      values3.push(get3(a2, k), get3(b, k));
     }
   }
   return true;
@@ -601,33 +601,33 @@ function getters(object4) {
     return [(x) => [...extra, ...Object.keys(x)], (x, y) => x[y]];
   }
 }
-function unequalDates(a, b) {
-  return a instanceof Date && (a > b || a < b);
+function unequalDates(a2, b) {
+  return a2 instanceof Date && (a2 > b || a2 < b);
 }
-function unequalBuffers(a, b) {
-  return !(a instanceof BitArray) && a.buffer instanceof ArrayBuffer && a.BYTES_PER_ELEMENT && !(a.byteLength === b.byteLength && a.every((n, i) => n === b[i]));
+function unequalBuffers(a2, b) {
+  return !(a2 instanceof BitArray) && a2.buffer instanceof ArrayBuffer && a2.BYTES_PER_ELEMENT && !(a2.byteLength === b.byteLength && a2.every((n, i) => n === b[i]));
 }
-function unequalArrays(a, b) {
-  return Array.isArray(a) && a.length !== b.length;
+function unequalArrays(a2, b) {
+  return Array.isArray(a2) && a2.length !== b.length;
 }
-function unequalMaps(a, b) {
-  return a instanceof Map && a.size !== b.size;
+function unequalMaps(a2, b) {
+  return a2 instanceof Map && a2.size !== b.size;
 }
-function unequalSets(a, b) {
-  return a instanceof Set && (a.size != b.size || [...a].some((e) => !b.has(e)));
+function unequalSets(a2, b) {
+  return a2 instanceof Set && (a2.size != b.size || [...a2].some((e) => !b.has(e)));
 }
-function unequalRegExps(a, b) {
-  return a instanceof RegExp && (a.source !== b.source || a.flags !== b.flags);
+function unequalRegExps(a2, b) {
+  return a2 instanceof RegExp && (a2.source !== b.source || a2.flags !== b.flags);
 }
-function isObject(a) {
-  return typeof a === "object" && a !== null;
+function isObject(a2) {
+  return typeof a2 === "object" && a2 !== null;
 }
-function structurallyCompatibleObjects(a, b) {
-  if (typeof a !== "object" && typeof b !== "object" && (!a || !b))
+function structurallyCompatibleObjects(a2, b) {
+  if (typeof a2 !== "object" && typeof b !== "object" && (!a2 || !b))
     return false;
   let nonstructural = [Promise, WeakSet, WeakMap, Function];
-  if (nonstructural.some((c) => a instanceof c)) return false;
-  return a.constructor === b.constructor;
+  if (nonstructural.some((c) => a2 instanceof c)) return false;
+  return a2.constructor === b.constructor;
 }
 function makeError(variant, file, module, line, fn, message2, extra) {
   let error = new globalThis.Error(message2);
@@ -660,8 +660,8 @@ var None = class extends CustomType {
 };
 function to_result(option, e) {
   if (option instanceof Some) {
-    let a = option[0];
-    return new Ok(a);
+    let a2 = option[0];
+    return new Ok(a2);
   } else {
     return new Error(e);
   }
@@ -693,8 +693,8 @@ function hashByReference(o) {
   referenceMap.set(o, hash);
   return hash;
 }
-function hashMerge(a, b) {
-  return a ^ b + 2654435769 + (a << 6) + (a >> 2) | 0;
+function hashMerge(a2, b) {
+  return a2 ^ b + 2654435769 + (a2 << 6) + (a2 >> 2) | 0;
 }
 function hashString(s) {
   let hash = 0;
@@ -2426,11 +2426,11 @@ function then$(result, fun) {
 }
 function unwrap_both(result) {
   if (result instanceof Ok) {
-    let a = result[0];
-    return a;
+    let a2 = result[0];
+    return a2;
   } else {
-    let a = result[0];
-    return a;
+    let a2 = result[0];
+    return a2;
   }
 }
 function replace_error(result, error) {
@@ -3824,10 +3824,10 @@ var option_none = /* @__PURE__ */ new None();
 var GT = /* @__PURE__ */ new Gt();
 var LT = /* @__PURE__ */ new Lt();
 var EQ = /* @__PURE__ */ new Eq();
-function compare3(a, b) {
-  if (a.name === b.name) {
+function compare3(a2, b) {
+  if (a2.name === b.name) {
     return EQ;
-  } else if (a.name < b.name) {
+  } else if (a2.name < b.name) {
     return LT;
   } else {
     return GT;
@@ -4003,8 +4003,8 @@ function prepare(attributes) {
       return attributes;
     } else {
       let _pipe = attributes;
-      let _pipe$1 = sort(_pipe, (a, b) => {
-        return compare3(b, a);
+      let _pipe$1 = sort(_pipe, (a2, b) => {
+        return compare3(b, a2);
       });
       return merge(_pipe$1, empty_list);
     }
@@ -4040,6 +4040,9 @@ function attribute2(name2, value) {
 }
 function class$(name2) {
   return attribute2("class", name2);
+}
+function href(url) {
+  return attribute2("href", url);
 }
 function name(element_name) {
   return attribute2("name", element_name);
@@ -4479,44 +4482,44 @@ function to_keyed(key, node) {
 }
 
 // build/dev/javascript/lustre/lustre/internals/equals.ffi.mjs
-var isReferenceEqual = (a, b) => a === b;
-var isEqual2 = (a, b) => {
-  if (a === b) {
+var isReferenceEqual = (a2, b) => a2 === b;
+var isEqual2 = (a2, b) => {
+  if (a2 === b) {
     return true;
   }
-  if (a == null || b == null) {
+  if (a2 == null || b == null) {
     return false;
   }
-  const type = typeof a;
+  const type = typeof a2;
   if (type !== typeof b) {
     return false;
   }
   if (type !== "object") {
     return false;
   }
-  const ctor = a.constructor;
+  const ctor = a2.constructor;
   if (ctor !== b.constructor) {
     return false;
   }
-  if (Array.isArray(a)) {
-    return areArraysEqual(a, b);
+  if (Array.isArray(a2)) {
+    return areArraysEqual(a2, b);
   }
-  return areObjectsEqual(a, b);
+  return areObjectsEqual(a2, b);
 };
-var areArraysEqual = (a, b) => {
-  let index5 = a.length;
+var areArraysEqual = (a2, b) => {
+  let index5 = a2.length;
   if (index5 !== b.length) {
     return false;
   }
   while (index5--) {
-    if (!isEqual2(a[index5], b[index5])) {
+    if (!isEqual2(a2[index5], b[index5])) {
       return false;
     }
   }
   return true;
 };
-var areObjectsEqual = (a, b) => {
-  const properties = Object.keys(a);
+var areObjectsEqual = (a2, b) => {
+  const properties = Object.keys(a2);
   let index5 = properties.length;
   if (Object.keys(b).length !== index5) {
     return false;
@@ -4526,7 +4529,7 @@ var areObjectsEqual = (a, b) => {
     if (!Object.hasOwn(b, property3)) {
       return false;
     }
-    if (!isEqual2(a[property3], b[property3])) {
+    if (!isEqual2(a2[property3], b[property3])) {
       return false;
     }
   }
@@ -4859,6 +4862,9 @@ function p(attrs, children) {
 }
 function ul(attrs, children) {
   return element2("ul", attrs, children);
+}
+function a(attrs, children) {
+  return element2("a", attrs, children);
 }
 function span(attrs, children) {
   return element2("span", attrs, children);
@@ -6628,13 +6634,13 @@ function makeEffect(synchronous) {
     before_paint: empty_list
   };
 }
-function listAppend(a, b) {
-  if (a instanceof Empty) {
+function listAppend(a2, b) {
+  if (a2 instanceof Empty) {
     return b;
   } else if (b instanceof Empty) {
-    return a;
+    return a2;
   } else {
-    return append(a, b);
+    return append(a2, b);
   }
 }
 
@@ -6775,17 +6781,17 @@ var do_initial_uri = () => {
 };
 var do_init = (dispatch, options = defaults) => {
   document.addEventListener("click", (event4) => {
-    const a = find_anchor(event4.target);
-    if (!a) return;
+    const a2 = find_anchor(event4.target);
+    if (!a2) return;
     try {
-      const url = new URL(a.href);
+      const url = new URL(a2.href);
       const uri = uri_from_url(url);
       const is_external = url.host !== window.location.host;
       if (!options.handle_external_links && is_external) return;
       if (!options.handle_internal_links && !is_external) return;
       event4.preventDefault();
       if (!is_external) {
-        window.history.pushState({}, "", a.href);
+        window.history.pushState({}, "", a2.href);
         window.requestAnimationFrame(() => {
           if (url.hash) {
             document.getElementById(url.hash.slice(1))?.scrollIntoView();
@@ -7141,9 +7147,9 @@ function tap(promise, callback) {
   let _pipe = promise;
   return map_promise(
     _pipe,
-    (a) => {
-      callback(a);
-      return a;
+    (a2) => {
+      callback(a2);
+      return a2;
     }
   );
 }
@@ -7153,8 +7159,8 @@ function try_await(promise, callback) {
     _pipe,
     (result) => {
       if (result instanceof Ok) {
-        let a = result[0];
-        return callback(a);
+        let a2 = result[0];
+        return callback(a2);
       } else {
         let e = result[0];
         return resolve(new Error(e));
@@ -7541,6 +7547,27 @@ function initial_route() {
     return new Index2();
   }
 }
+function href2(route) {
+  let _block;
+  if (route instanceof Index2) {
+    _block = "/";
+  } else if (route instanceof About) {
+    _block = "/about";
+  } else if (route instanceof SignIn) {
+    _block = "/sign-in";
+  } else if (route instanceof SignUp) {
+    _block = "/sign-up";
+  } else if (route instanceof AdminPolls) {
+    _block = "/admin/polls";
+  } else if (route instanceof Session) {
+    let id = route.id;
+    _block = "/session/" + id;
+  } else {
+    _block = "/not-found";
+  }
+  let url = _block;
+  return href(url);
+}
 
 // build/dev/javascript/client/model.mjs
 var App2 = class extends CustomType {
@@ -7680,13 +7707,21 @@ function init2(model) {
 
 // build/dev/javascript/client/routes/index.mjs
 function view4() {
-  return span(
-    toList([]),
+  return div(
+    toList([class$("card")]),
     toList([
       text3("index"),
-      button(
-        toList([class$("btn btn-primary")]),
-        toList([text3("Click me")])
+      a(
+        toList([href2(new SignIn())]),
+        toList([text3("Sign In")])
+      ),
+      a(
+        toList([href2(new About())]),
+        toList([text3("About")])
+      ),
+      a(
+        toList([href2(new AdminPolls())]),
+        toList([text3("Admin Polls")])
       )
     ])
   );

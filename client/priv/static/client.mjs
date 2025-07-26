@@ -641,6 +641,32 @@ function makeError(variant, file, module, line, fn, message2, extra) {
   return error;
 }
 
+// build/dev/javascript/gleam_stdlib/gleam/option.mjs
+var Some = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var None = class extends CustomType {
+};
+function to_result(option, e) {
+  if (option instanceof Some) {
+    let a2 = option[0];
+    return new Ok(a2);
+  } else {
+    return new Error(e);
+  }
+}
+function unwrap(option, default$) {
+  if (option instanceof Some) {
+    let x = option[0];
+    return x;
+  } else {
+    return default$;
+  }
+}
+
 // build/dev/javascript/gleam_stdlib/dict.mjs
 var referenceMap = /* @__PURE__ */ new WeakMap();
 var tempDataView = /* @__PURE__ */ new DataView(
@@ -1344,32 +1370,6 @@ var Dict = class _Dict {
   }
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
-
-// build/dev/javascript/gleam_stdlib/gleam/option.mjs
-var Some = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var None = class extends CustomType {
-};
-function to_result(option, e) {
-  if (option instanceof Some) {
-    let a2 = option[0];
-    return new Ok(a2);
-  } else {
-    return new Error(e);
-  }
-}
-function unwrap(option, default$) {
-  if (option instanceof Some) {
-    let x = option[0];
-    return x;
-  } else {
-    return default$;
-  }
-}
 
 // build/dev/javascript/gleam_stdlib/gleam/order.mjs
 var Lt = class extends CustomType {
@@ -8015,10 +8015,9 @@ function sign_in(values3, handle_response) {
 function update3(model, msg) {
   if (msg instanceof UserSubmittedSignInForm) {
     let result = msg[0];
-    let _block;
     if (result instanceof Ok) {
       let values3 = result[0];
-      _block = [
+      return [
         model,
         sign_in(values3, (var0) => {
           return new ApiAuthenticatedUser(var0);
@@ -8026,14 +8025,12 @@ function update3(model, msg) {
       ];
     } else {
       let form2 = result[0];
-      _block = [new Model2(form2), none()];
+      return [new Model2(form2), none()];
     }
-    let _pipe = _block;
-    return echo2(_pipe, "src/routes/sign_in.gleam", 48);
   } else {
     let $ = msg[0];
     if ($ instanceof Ok) {
-      let _pipe = [
+      return [
         model,
         push(
           to_path(new AdminPolls()),
@@ -8041,14 +8038,13 @@ function update3(model, msg) {
           new None()
         )
       ];
-      return echo2(_pipe, "src/routes/sign_in.gleam", 51);
     } else {
-      let _pipe = [
+      return [
         new Model2(
           (() => {
-            let _pipe2 = sign_in_form();
+            let _pipe = sign_in_form();
             return add_error(
-              _pipe2,
+              _pipe,
               "password",
               new CustomError("Email or password is incorrect")
             );
@@ -8056,144 +8052,7 @@ function update3(model, msg) {
         ),
         none()
       ];
-      return echo2(_pipe, "src/routes/sign_in.gleam", 63);
     }
-  }
-}
-function echo2(value, file, line) {
-  const grey = "\x1B[90m";
-  const reset_color = "\x1B[39m";
-  const file_line = `${file}:${line}`;
-  const string_value = echo$inspect2(value);
-  if (globalThis.process?.stderr?.write) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    process.stderr.write(string5);
-  } else if (globalThis.Deno) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
-  } else {
-    const string5 = `${file_line}
-${string_value}`;
-    globalThis.console.log(string5);
-  }
-  return value;
-}
-function echo$inspectString2(str) {
-  let new_str = '"';
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    if (char == "\n") new_str += "\\n";
-    else if (char == "\r") new_str += "\\r";
-    else if (char == "	") new_str += "\\t";
-    else if (char == "\f") new_str += "\\f";
-    else if (char == "\\") new_str += "\\\\";
-    else if (char == '"') new_str += '\\"';
-    else if (char < " " || char > "~" && char < "\xA0") {
-      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-    } else {
-      new_str += char;
-    }
-  }
-  new_str += '"';
-  return new_str;
-}
-function echo$inspectDict2(map8) {
-  let body = "dict.from_list([";
-  let first = true;
-  let key_value_pairs = [];
-  map8.forEach((value, key) => {
-    key_value_pairs.push([key, value]);
-  });
-  key_value_pairs.sort();
-  key_value_pairs.forEach(([key, value]) => {
-    if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value) + ")";
-    first = false;
-  });
-  return body + "])";
-}
-function echo$inspectCustomType2(record) {
-  const props = globalThis.Object.keys(record).map((label) => {
-    const value = echo$inspect2(record[label]);
-    return isNaN(parseInt(label)) ? `${label}: ${value}` : value;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function echo$inspectObject2(v) {
-  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect2(k)}: ${echo$inspect2(v[k])}`);
-  }
-  const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name2 === "Object" ? "" : name2 + " ";
-  return `//js(${head}{${body}})`;
-}
-function echo$inspect2(v) {
-  const t = typeof v;
-  if (v === true) return "True";
-  if (v === false) return "False";
-  if (v === null) return "//js(null)";
-  if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString2(v);
-  if (t === "bigint" || t === "number") return v.toString();
-  if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect2).join(", ")})`;
-  if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect2).join(", ")}]`;
-  if (v instanceof UtfCodepoint)
-    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray2(v);
-  if (v instanceof CustomType) return echo$inspectCustomType2(v);
-  if (echo$isDict2(v)) return echo$inspectDict2(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect2).join(", ")}))`;
-  if (v instanceof RegExp) return `//js(${v})`;
-  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return echo$inspectObject2(v);
-}
-function echo$inspectBitArray2(bitArray) {
-  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
-  let alignedBytes = bitArraySlice(
-    bitArray,
-    bitArray.bitOffset,
-    endOfAlignedBytes
-  );
-  let remainingUnalignedBits = bitArray.bitSize % 8;
-  if (remainingUnalignedBits > 0) {
-    let remainingBits = bitArraySliceToInt(
-      bitArray,
-      endOfAlignedBytes,
-      bitArray.bitSize,
-      false,
-      false
-    );
-    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
-    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
-    if (alignedBytesArray.length === 0) {
-      return `<<${suffix}>>`;
-    } else {
-      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
-    }
-  } else {
-    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
-  }
-}
-function echo$isDict2(value) {
-  try {
-    return value instanceof Dict;
-  } catch {
-    return false;
   }
 }
 
@@ -8290,8 +8149,7 @@ function init4(_) {
         (uri) => {
           let _pipe = uri;
           let _pipe$1 = parse_route(_pipe);
-          let _pipe$2 = new UserNavigatedTo(_pipe$1);
-          return echo3(_pipe$2, "src/client.gleam", 41);
+          return new UserNavigatedTo(_pipe$1);
         }
       ),
       page_effect
@@ -8302,26 +8160,24 @@ function init4(_) {
 function update4(model, msg) {
   if (msg instanceof UserNavigatedTo) {
     let route = msg.route;
-    let _pipe = init_route(route, model);
-    return echo3(_pipe, "src/client.gleam", 72);
+    return init_route(route, model);
   } else if (msg instanceof SignInMsg) {
     let msg$1 = msg[0];
-    echo3(msg$1, "src/client.gleam", 74);
     let $ = model.page;
     if (!($ instanceof SignIn2)) {
       throw makeError(
         "let_assert",
         FILEPATH,
         "client",
-        75,
+        72,
         "update",
         "Pattern match failed, no pattern matched the value.",
         {
           value: $,
-          start: 1800,
-          end: 1842,
-          pattern_start: 1811,
-          pattern_end: 1829
+          start: 1755,
+          end: 1797,
+          pattern_start: 1766,
+          pattern_end: 1784
         }
       );
     }
@@ -8340,22 +8196,21 @@ function update4(model, msg) {
     ];
   } else {
     let msg$1 = msg[0];
-    echo3(msg$1, "src/client.gleam", 83);
     let $ = model.page;
     if (!($ instanceof AdminPolls2)) {
       throw makeError(
         "let_assert",
         FILEPATH,
         "client",
-        84,
+        80,
         "update",
         "Pattern match failed, no pattern matched the value.",
         {
           value: $,
-          start: 2087,
-          end: 2133,
-          pattern_start: 2098,
-          pattern_end: 2120
+          start: 2027,
+          end: 2073,
+          pattern_start: 2038,
+          pattern_end: 2060
         }
       );
     }
@@ -8425,142 +8280,6 @@ function main() {
     );
   }
   return void 0;
-}
-function echo3(value, file, line) {
-  const grey = "\x1B[90m";
-  const reset_color = "\x1B[39m";
-  const file_line = `${file}:${line}`;
-  const string_value = echo$inspect3(value);
-  if (globalThis.process?.stderr?.write) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    process.stderr.write(string5);
-  } else if (globalThis.Deno) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
-  } else {
-    const string5 = `${file_line}
-${string_value}`;
-    globalThis.console.log(string5);
-  }
-  return value;
-}
-function echo$inspectString3(str) {
-  let new_str = '"';
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    if (char == "\n") new_str += "\\n";
-    else if (char == "\r") new_str += "\\r";
-    else if (char == "	") new_str += "\\t";
-    else if (char == "\f") new_str += "\\f";
-    else if (char == "\\") new_str += "\\\\";
-    else if (char == '"') new_str += '\\"';
-    else if (char < " " || char > "~" && char < "\xA0") {
-      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-    } else {
-      new_str += char;
-    }
-  }
-  new_str += '"';
-  return new_str;
-}
-function echo$inspectDict3(map8) {
-  let body = "dict.from_list([";
-  let first = true;
-  let key_value_pairs = [];
-  map8.forEach((value, key) => {
-    key_value_pairs.push([key, value]);
-  });
-  key_value_pairs.sort();
-  key_value_pairs.forEach(([key, value]) => {
-    if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect3(key) + ", " + echo$inspect3(value) + ")";
-    first = false;
-  });
-  return body + "])";
-}
-function echo$inspectCustomType3(record) {
-  const props = globalThis.Object.keys(record).map((label) => {
-    const value = echo$inspect3(record[label]);
-    return isNaN(parseInt(label)) ? `${label}: ${value}` : value;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function echo$inspectObject3(v) {
-  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect3(k)}: ${echo$inspect3(v[k])}`);
-  }
-  const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name2 === "Object" ? "" : name2 + " ";
-  return `//js(${head}{${body}})`;
-}
-function echo$inspect3(v) {
-  const t = typeof v;
-  if (v === true) return "True";
-  if (v === false) return "False";
-  if (v === null) return "//js(null)";
-  if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString3(v);
-  if (t === "bigint" || t === "number") return v.toString();
-  if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect3).join(", ")})`;
-  if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect3).join(", ")}]`;
-  if (v instanceof UtfCodepoint)
-    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray3(v);
-  if (v instanceof CustomType) return echo$inspectCustomType3(v);
-  if (echo$isDict3(v)) return echo$inspectDict3(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect3).join(", ")}))`;
-  if (v instanceof RegExp) return `//js(${v})`;
-  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return echo$inspectObject3(v);
-}
-function echo$inspectBitArray3(bitArray) {
-  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
-  let alignedBytes = bitArraySlice(
-    bitArray,
-    bitArray.bitOffset,
-    endOfAlignedBytes
-  );
-  let remainingUnalignedBits = bitArray.bitSize % 8;
-  if (remainingUnalignedBits > 0) {
-    let remainingBits = bitArraySliceToInt(
-      bitArray,
-      endOfAlignedBytes,
-      bitArray.bitSize,
-      false,
-      false
-    );
-    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
-    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
-    if (alignedBytesArray.length === 0) {
-      return `<<${suffix}>>`;
-    } else {
-      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
-    }
-  } else {
-    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
-  }
-}
-function echo$isDict3(value) {
-  try {
-    return value instanceof Dict;
-  } catch {
-    return false;
-  }
 }
 
 // build/.lustre/entry.mjs

@@ -37,9 +37,7 @@ fn init(_options) -> #(Model, Effect(Msg)) {
   let #(model, page_effect) = init_route(route, model)
   let effect =
     effect.batch([
-      modem.init(fn(uri) {
-        uri |> router.parse_route |> UserNavigatedTo |> echo
-      }),
+      modem.init(fn(uri) { uri |> router.parse_route |> UserNavigatedTo }),
       page_effect,
     ])
 
@@ -69,9 +67,8 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    UserNavigatedTo(route) -> init_route(route, model) |> echo
+    UserNavigatedTo(route) -> init_route(route, model)
     SignInMsg(msg) -> {
-      echo msg
       let assert SignIn(page_model) = model.page
       let #(page_model, effect) = sign_in.update(page_model, msg)
       #(
@@ -80,7 +77,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
     }
     AdminPollsMsg(msg) -> {
-      echo msg
       let assert AdminPolls(page_model) = model.page
       let #(page_model, effect) = admin_polls.update(page_model, msg)
       #(

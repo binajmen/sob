@@ -4,6 +4,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import modem
 import router.{type Route}
+import routes/admin_polls
 import routes/index
 import routes/sign_in
 
@@ -21,11 +22,13 @@ pub type Model {
 pub type Page {
   Index
   SignIn(sign_in.Model)
+  AdminPolls(admin_polls.Model)
 }
 
 pub type Msg {
   UserNavigatedTo(route: Route)
   SignInMsg(sign_in.Msg)
+  AdminPollsMsg(admin_polls.Msg)
 }
 
 fn init(_options) -> #(Model, Effect(Msg)) {
@@ -53,6 +56,13 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
         effect.map(effect, fn(msg) { SignInMsg(msg) }),
       )
     }
+    router.AdminPolls -> {
+      let #(page_model, effect) = admin_polls.init()
+      #(
+        Model(..model, route:, page: AdminPolls(page_model)),
+        effect.map(effect, fn(msg) { AdminPollsMsg(msg) }),
+      )
+    }
     _ -> #(model, effect.none())
   }
 }
@@ -69,6 +79,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.map(effect, fn(msg) { SignInMsg(msg) }),
       )
     }
+    AdminPollsMsg(msg) -> {
+      echo msg
+      let assert AdminPolls(page_model) = model.page
+      let #(page_model, effect) = admin_polls.update(page_model, msg)
+      #(
+        Model(..model, page: AdminPolls(page_model)),
+        effect.map(effect, fn(msg) { AdminPollsMsg(msg) }),
+      )
+    }
   }
 }
 
@@ -78,6 +97,9 @@ fn view(model: Model) -> Element(Msg) {
     router.SignIn, SignIn(sign_in_model) ->
       sign_in.view(sign_in_model.form)
       |> element.map(fn(msg) { SignInMsg(msg) })
+    router.AdminPolls, AdminPolls(admin_polls_model) ->
+      admin_polls.view(admin_polls_model.polls)
+      |> element.map(fn(msg) { AdminPollsMsg(msg) })
     _, _ -> view_not_found()
   }
 }

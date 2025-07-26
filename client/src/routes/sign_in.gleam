@@ -9,6 +9,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import modem
+import router
 import rsvp
 
 pub type Model {
@@ -46,7 +47,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
       |> echo
     ApiAuthenticatedUser(Ok(_)) ->
-      #(model, modem.push("/", None, None))
+      #(model, modem.push(router.to_path(router.AdminPolls), None, None))
       |> echo
     ApiAuthenticatedUser(Error(_)) ->
       #(

@@ -9,7 +9,7 @@ pub fn sign_in_form() -> Form(SignInFormData) {
     use email <- form.field("email", form.parse_email)
     use password <- form.field(
       "password",
-      form.parse_string |> form.check_string_length_more_than(8),
+      form.parse_string |> form.check_string_length_more_than(2),
     )
     form.success(SignInFormData(email:, password:))
   })

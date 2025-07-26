@@ -5,6 +5,7 @@ import lustre/attribute
 import lustre/element
 import lustre/element/html
 import lustre/server_component
+import poll/router as poll
 import server/context.{type Context}
 import session/router as session
 import wisp.{type Request, type Response}
@@ -19,6 +20,7 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         Get, ["auth", "me"] -> auth.me(req, ctx)
         Post, ["auth", "sign-in"] -> auth.sign_in(req, ctx)
         Post, ["auth", "sign-up"] -> auth.sign_up(req, ctx)
+        Get, ["admin", "polls"] -> poll.list_polls(req, ctx)
         Get, ["sessions"] -> session.list_sessions(req, ctx)
         Get, ["sessions", id] -> session.find_session(req, ctx, id)
         // Post, ["sessions", id] -> session.update_session(req, ctx, id)

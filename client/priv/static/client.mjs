@@ -257,6 +257,11 @@ function bitArrayByteAt(buffer, bitOffset, index5) {
     return a | b;
   }
 }
+var UtfCodepoint = class {
+  constructor(value) {
+    this.value = value;
+  }
+};
 var isBitArrayDeprecationMessagePrinted = {};
 function bitArrayPrintDeprecationWarning(name2, message2) {
   if (isBitArrayDeprecationMessagePrinted[name2]) {
@@ -266,6 +271,277 @@ function bitArrayPrintDeprecationWarning(name2, message2) {
     `Deprecated BitArray.${name2} property used in JavaScript FFI code. ${message2}.`
   );
   isBitArrayDeprecationMessagePrinted[name2] = true;
+}
+function bitArraySlice(bitArray, start4, end) {
+  end ??= bitArray.bitSize;
+  bitArrayValidateRange(bitArray, start4, end);
+  if (start4 === end) {
+    return new BitArray(new Uint8Array());
+  }
+  if (start4 === 0 && end === bitArray.bitSize) {
+    return bitArray;
+  }
+  start4 += bitArray.bitOffset;
+  end += bitArray.bitOffset;
+  const startByteIndex = Math.trunc(start4 / 8);
+  const endByteIndex = Math.trunc((end + 7) / 8);
+  const byteLength = endByteIndex - startByteIndex;
+  let buffer;
+  if (startByteIndex === 0 && byteLength === bitArray.rawBuffer.byteLength) {
+    buffer = bitArray.rawBuffer;
+  } else {
+    buffer = new Uint8Array(
+      bitArray.rawBuffer.buffer,
+      bitArray.rawBuffer.byteOffset + startByteIndex,
+      byteLength
+    );
+  }
+  return new BitArray(buffer, end - start4, start4 % 8);
+}
+function bitArraySliceToInt(bitArray, start4, end, isBigEndian, isSigned) {
+  bitArrayValidateRange(bitArray, start4, end);
+  if (start4 === end) {
+    return 0;
+  }
+  start4 += bitArray.bitOffset;
+  end += bitArray.bitOffset;
+  const isStartByteAligned = start4 % 8 === 0;
+  const isEndByteAligned = end % 8 === 0;
+  if (isStartByteAligned && isEndByteAligned) {
+    return intFromAlignedSlice(
+      bitArray,
+      start4 / 8,
+      end / 8,
+      isBigEndian,
+      isSigned
+    );
+  }
+  const size2 = end - start4;
+  const startByteIndex = Math.trunc(start4 / 8);
+  const endByteIndex = Math.trunc((end - 1) / 8);
+  if (startByteIndex == endByteIndex) {
+    const mask2 = 255 >> start4 % 8;
+    const unusedLowBitCount = (8 - end % 8) % 8;
+    let value = (bitArray.rawBuffer[startByteIndex] & mask2) >> unusedLowBitCount;
+    if (isSigned) {
+      const highBit = 2 ** (size2 - 1);
+      if (value >= highBit) {
+        value -= highBit * 2;
+      }
+    }
+    return value;
+  }
+  if (size2 <= 53) {
+    return intFromUnalignedSliceUsingNumber(
+      bitArray.rawBuffer,
+      start4,
+      end,
+      isBigEndian,
+      isSigned
+    );
+  } else {
+    return intFromUnalignedSliceUsingBigInt(
+      bitArray.rawBuffer,
+      start4,
+      end,
+      isBigEndian,
+      isSigned
+    );
+  }
+}
+function intFromAlignedSlice(bitArray, start4, end, isBigEndian, isSigned) {
+  const byteSize = end - start4;
+  if (byteSize <= 6) {
+    return intFromAlignedSliceUsingNumber(
+      bitArray.rawBuffer,
+      start4,
+      end,
+      isBigEndian,
+      isSigned
+    );
+  } else {
+    return intFromAlignedSliceUsingBigInt(
+      bitArray.rawBuffer,
+      start4,
+      end,
+      isBigEndian,
+      isSigned
+    );
+  }
+}
+function intFromAlignedSliceUsingNumber(buffer, start4, end, isBigEndian, isSigned) {
+  const byteSize = end - start4;
+  let value = 0;
+  if (isBigEndian) {
+    for (let i = start4; i < end; i++) {
+      value *= 256;
+      value += buffer[i];
+    }
+  } else {
+    for (let i = end - 1; i >= start4; i--) {
+      value *= 256;
+      value += buffer[i];
+    }
+  }
+  if (isSigned) {
+    const highBit = 2 ** (byteSize * 8 - 1);
+    if (value >= highBit) {
+      value -= highBit * 2;
+    }
+  }
+  return value;
+}
+function intFromAlignedSliceUsingBigInt(buffer, start4, end, isBigEndian, isSigned) {
+  const byteSize = end - start4;
+  let value = 0n;
+  if (isBigEndian) {
+    for (let i = start4; i < end; i++) {
+      value *= 256n;
+      value += BigInt(buffer[i]);
+    }
+  } else {
+    for (let i = end - 1; i >= start4; i--) {
+      value *= 256n;
+      value += BigInt(buffer[i]);
+    }
+  }
+  if (isSigned) {
+    const highBit = 1n << BigInt(byteSize * 8 - 1);
+    if (value >= highBit) {
+      value -= highBit * 2n;
+    }
+  }
+  return Number(value);
+}
+function intFromUnalignedSliceUsingNumber(buffer, start4, end, isBigEndian, isSigned) {
+  const isStartByteAligned = start4 % 8 === 0;
+  let size2 = end - start4;
+  let byteIndex = Math.trunc(start4 / 8);
+  let value = 0;
+  if (isBigEndian) {
+    if (!isStartByteAligned) {
+      const leadingBitsCount = 8 - start4 % 8;
+      value = buffer[byteIndex++] & (1 << leadingBitsCount) - 1;
+      size2 -= leadingBitsCount;
+    }
+    while (size2 >= 8) {
+      value *= 256;
+      value += buffer[byteIndex++];
+      size2 -= 8;
+    }
+    if (size2 > 0) {
+      value *= 2 ** size2;
+      value += buffer[byteIndex] >> 8 - size2;
+    }
+  } else {
+    if (isStartByteAligned) {
+      let size3 = end - start4;
+      let scale = 1;
+      while (size3 >= 8) {
+        value += buffer[byteIndex++] * scale;
+        scale *= 256;
+        size3 -= 8;
+      }
+      value += (buffer[byteIndex] >> 8 - size3) * scale;
+    } else {
+      const highBitsCount = start4 % 8;
+      const lowBitsCount = 8 - highBitsCount;
+      let size3 = end - start4;
+      let scale = 1;
+      while (size3 >= 8) {
+        const byte = buffer[byteIndex] << highBitsCount | buffer[byteIndex + 1] >> lowBitsCount;
+        value += (byte & 255) * scale;
+        scale *= 256;
+        size3 -= 8;
+        byteIndex++;
+      }
+      if (size3 > 0) {
+        const lowBitsUsed = size3 - Math.max(0, size3 - lowBitsCount);
+        let trailingByte = (buffer[byteIndex] & (1 << lowBitsCount) - 1) >> lowBitsCount - lowBitsUsed;
+        size3 -= lowBitsUsed;
+        if (size3 > 0) {
+          trailingByte *= 2 ** size3;
+          trailingByte += buffer[byteIndex + 1] >> 8 - size3;
+        }
+        value += trailingByte * scale;
+      }
+    }
+  }
+  if (isSigned) {
+    const highBit = 2 ** (end - start4 - 1);
+    if (value >= highBit) {
+      value -= highBit * 2;
+    }
+  }
+  return value;
+}
+function intFromUnalignedSliceUsingBigInt(buffer, start4, end, isBigEndian, isSigned) {
+  const isStartByteAligned = start4 % 8 === 0;
+  let size2 = end - start4;
+  let byteIndex = Math.trunc(start4 / 8);
+  let value = 0n;
+  if (isBigEndian) {
+    if (!isStartByteAligned) {
+      const leadingBitsCount = 8 - start4 % 8;
+      value = BigInt(buffer[byteIndex++] & (1 << leadingBitsCount) - 1);
+      size2 -= leadingBitsCount;
+    }
+    while (size2 >= 8) {
+      value *= 256n;
+      value += BigInt(buffer[byteIndex++]);
+      size2 -= 8;
+    }
+    if (size2 > 0) {
+      value <<= BigInt(size2);
+      value += BigInt(buffer[byteIndex] >> 8 - size2);
+    }
+  } else {
+    if (isStartByteAligned) {
+      let size3 = end - start4;
+      let shift = 0n;
+      while (size3 >= 8) {
+        value += BigInt(buffer[byteIndex++]) << shift;
+        shift += 8n;
+        size3 -= 8;
+      }
+      value += BigInt(buffer[byteIndex] >> 8 - size3) << shift;
+    } else {
+      const highBitsCount = start4 % 8;
+      const lowBitsCount = 8 - highBitsCount;
+      let size3 = end - start4;
+      let shift = 0n;
+      while (size3 >= 8) {
+        const byte = buffer[byteIndex] << highBitsCount | buffer[byteIndex + 1] >> lowBitsCount;
+        value += BigInt(byte & 255) << shift;
+        shift += 8n;
+        size3 -= 8;
+        byteIndex++;
+      }
+      if (size3 > 0) {
+        const lowBitsUsed = size3 - Math.max(0, size3 - lowBitsCount);
+        let trailingByte = (buffer[byteIndex] & (1 << lowBitsCount) - 1) >> lowBitsCount - lowBitsUsed;
+        size3 -= lowBitsUsed;
+        if (size3 > 0) {
+          trailingByte <<= size3;
+          trailingByte += buffer[byteIndex + 1] >> 8 - size3;
+        }
+        value += BigInt(trailingByte) << shift;
+      }
+    }
+  }
+  if (isSigned) {
+    const highBit = 2n ** BigInt(end - start4 - 1);
+    if (value >= highBit) {
+      value -= highBit * 2n;
+    }
+  }
+  return Number(value);
+}
+function bitArrayValidateRange(bitArray, start4, end) {
+  if (start4 < 0 || start4 > bitArray.bitSize || end < start4 || end > bitArray.bitSize) {
+    const msg = `Invalid bit array slice: start = ${start4}, end = ${end}, bit size = ${bitArray.bitSize}`;
+    throw new globalThis.Error(msg);
+  }
 }
 var Result = class _Result extends CustomType {
   // @internal
@@ -310,9 +586,9 @@ function isEqual(x, y) {
       } catch {
       }
     }
-    let [keys2, get2] = getters(a);
+    let [keys2, get3] = getters(a);
     for (let k of keys2(a)) {
-      values3.push(get2(a, k), get2(b, k));
+      values3.push(get3(a, k), get3(b, k));
     }
   }
   return true;
@@ -1177,6 +1453,30 @@ function map_loop(loop$list, loop$fun, loop$acc) {
 function map(list4, fun) {
   return map_loop(list4, fun, toList([]));
 }
+function take_loop(loop$list, loop$n, loop$acc) {
+  while (true) {
+    let list4 = loop$list;
+    let n = loop$n;
+    let acc = loop$acc;
+    let $ = n <= 0;
+    if ($) {
+      return reverse(acc);
+    } else {
+      if (list4 instanceof Empty) {
+        return reverse(acc);
+      } else {
+        let first$1 = list4.head;
+        let rest$1 = list4.tail;
+        loop$list = rest$1;
+        loop$n = n - 1;
+        loop$acc = prepend(first$1, acc);
+      }
+    }
+  }
+}
+function take(list4, n) {
+  return take_loop(list4, n, toList([]));
+}
 function append_loop(loop$first, loop$second) {
   while (true) {
     let first = loop$first;
@@ -1193,6 +1493,9 @@ function append_loop(loop$first, loop$second) {
 }
 function append(first, second2) {
   return append_loop(reverse(first), second2);
+}
+function prepend2(list4, item) {
+  return prepend(item, list4);
 }
 function flatten_loop(loop$lists, loop$acc) {
   while (true) {
@@ -1227,6 +1530,26 @@ function fold(loop$list, loop$initial, loop$fun) {
       loop$list = rest$1;
       loop$initial = fun(initial, first$1);
       loop$fun = fun;
+    }
+  }
+}
+function find_map(loop$list, loop$fun) {
+  while (true) {
+    let list4 = loop$list;
+    let fun = loop$fun;
+    if (list4 instanceof Empty) {
+      return new Error(void 0);
+    } else {
+      let first$1 = list4.head;
+      let rest$1 = list4.tail;
+      let $ = fun(first$1);
+      if ($ instanceof Ok) {
+        let first$2 = $[0];
+        return new Ok(first$2);
+      } else {
+        loop$list = rest$1;
+        loop$fun = fun;
+      }
     }
   }
 }
@@ -1563,6 +1886,21 @@ function sort(list4, compare5) {
       return merge_all(sequences$1, new Ascending(), compare5);
     }
   }
+}
+function key_find(keyword_list, desired_key) {
+  return find_map(
+    keyword_list,
+    (keyword) => {
+      let key = keyword[0];
+      let value = keyword[1];
+      let $ = isEqual(key, desired_key);
+      if ($) {
+        return new Ok(value);
+      } else {
+        return new Error(void 0);
+      }
+    }
+  );
 }
 function key_filter(keyword_list, desired_key) {
   return filter_map(
@@ -2082,6 +2420,9 @@ function try$(result, fun) {
     let e = result[0];
     return new Error(e);
   }
+}
+function then$(result, fun) {
+  return try$(result, fun);
 }
 function unwrap_both(result) {
   if (result instanceof Ok) {
@@ -3322,8 +3663,117 @@ function object(entries) {
 function identity3(x) {
   return x;
 }
+function decode(string5) {
+  try {
+    const result = JSON.parse(string5);
+    return new Ok(result);
+  } catch (err) {
+    return new Error(getJsonDecodeError(err, string5));
+  }
+}
+function getJsonDecodeError(stdErr, json2) {
+  if (isUnexpectedEndOfInput(stdErr)) return new UnexpectedEndOfInput();
+  return toUnexpectedByteError(stdErr, json2);
+}
+function isUnexpectedEndOfInput(err) {
+  const unexpectedEndOfInputRegex = /((unexpected (end|eof))|(end of data)|(unterminated string)|(json( parse error|\.parse)\: expected '(\:|\}|\])'))/i;
+  return unexpectedEndOfInputRegex.test(err.message);
+}
+function toUnexpectedByteError(err, json2) {
+  let converters = [
+    v8UnexpectedByteError,
+    oldV8UnexpectedByteError,
+    jsCoreUnexpectedByteError,
+    spidermonkeyUnexpectedByteError
+  ];
+  for (let converter of converters) {
+    let result = converter(err, json2);
+    if (result) return result;
+  }
+  return new UnexpectedByte("", 0);
+}
+function v8UnexpectedByteError(err) {
+  const regex = /unexpected token '(.)', ".+" is not valid JSON/i;
+  const match = regex.exec(err.message);
+  if (!match) return null;
+  const byte = toHex(match[1]);
+  return new UnexpectedByte(byte, -1);
+}
+function oldV8UnexpectedByteError(err) {
+  const regex = /unexpected token (.) in JSON at position (\d+)/i;
+  const match = regex.exec(err.message);
+  if (!match) return null;
+  const byte = toHex(match[1]);
+  const position = Number(match[2]);
+  return new UnexpectedByte(byte, position);
+}
+function spidermonkeyUnexpectedByteError(err, json2) {
+  const regex = /(unexpected character|expected .*) at line (\d+) column (\d+)/i;
+  const match = regex.exec(err.message);
+  if (!match) return null;
+  const line = Number(match[2]);
+  const column = Number(match[3]);
+  const position = getPositionFromMultiline(line, column, json2);
+  const byte = toHex(json2[position]);
+  return new UnexpectedByte(byte, position);
+}
+function jsCoreUnexpectedByteError(err) {
+  const regex = /unexpected (identifier|token) "(.)"/i;
+  const match = regex.exec(err.message);
+  if (!match) return null;
+  const byte = toHex(match[2]);
+  return new UnexpectedByte(byte, 0);
+}
+function toHex(char) {
+  return "0x" + char.charCodeAt(0).toString(16).toUpperCase();
+}
+function getPositionFromMultiline(line, column, string5) {
+  if (line === 1) return column - 1;
+  let currentLn = 1;
+  let position = 0;
+  string5.split("").find((char, idx) => {
+    if (char === "\n") currentLn += 1;
+    if (currentLn === line) {
+      position = idx + column;
+      return true;
+    }
+    return false;
+  });
+  return position;
+}
 
 // build/dev/javascript/gleam_json/gleam/json.mjs
+var UnexpectedEndOfInput = class extends CustomType {
+};
+var UnexpectedByte = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var UnableToDecode = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function do_parse(json2, decoder) {
+  return try$(
+    decode(json2),
+    (dynamic_value) => {
+      let _pipe = run(dynamic_value, decoder);
+      return map_error(
+        _pipe,
+        (var0) => {
+          return new UnableToDecode(var0);
+        }
+      );
+    }
+  );
+}
+function parse2(json2, decoder) {
+  return do_parse(json2, decoder);
+}
 function to_string3(json2) {
   return json_to_string(json2);
 }
@@ -3622,6 +4072,19 @@ function from(effect) {
   };
   let _record = empty3;
   return new Effect(toList([task]), _record.before_paint, _record.after_paint);
+}
+function batch(effects) {
+  return fold(
+    effects,
+    empty3,
+    (acc, eff) => {
+      return new Effect(
+        fold(eff.synchronous, acc.synchronous, prepend2),
+        fold(eff.before_paint, acc.before_paint, prepend2),
+        fold(eff.after_paint, acc.after_paint, prepend2)
+      );
+    }
+  );
 }
 
 // build/dev/javascript/lustre/lustre/internals/mutable_map.ffi.mjs
@@ -4388,8 +4851,14 @@ function h1(attrs, children) {
 function div(attrs, children) {
   return element2("div", attrs, children);
 }
+function li(attrs, children) {
+  return element2("li", attrs, children);
+}
 function p(attrs, children) {
   return element2("p", attrs, children);
+}
+function ul(attrs, children) {
+  return element2("ul", attrs, children);
 }
 function span(attrs, children) {
   return element2("span", attrs, children);
@@ -6037,10 +6506,10 @@ var virtualiseAttribute = (attr) => {
 // build/dev/javascript/lustre/lustre/runtime/client/runtime.ffi.mjs
 var is_browser = () => !!document2();
 var Runtime = class {
-  constructor(root3, [model, effects], view8, update5) {
+  constructor(root3, [model, effects], view9, update5) {
     this.root = root3;
     this.#model = model;
-    this.#view = view8;
+    this.#view = view9;
     this.#update = update5;
     this.#reconciler = new Reconciler(this.root, (event4, path, name2) => {
       const [events, result] = handle(this.#events, path, name2, event4);
@@ -6201,7 +6670,7 @@ var Config2 = class extends CustomType {
   }
 };
 function new$7(options) {
-  let init3 = new Config2(
+  let init4 = new Config2(
     false,
     true,
     empty_dict(),
@@ -6213,7 +6682,7 @@ function new$7(options) {
   );
   return fold(
     options,
-    init3,
+    init4,
     (config, option) => {
       return option.apply(config);
     }
@@ -6222,15 +6691,15 @@ function new$7(options) {
 
 // build/dev/javascript/lustre/lustre/runtime/client/spa.ffi.mjs
 var Spa = class _Spa {
-  static start({ init: init3, update: update5, view: view8 }, selector, flags) {
+  static start({ init: init4, update: update5, view: view9 }, selector, flags) {
     if (!is_browser()) return new Error(new NotABrowser());
     const root3 = selector instanceof HTMLElement ? selector : document2().querySelector(selector);
     if (!root3) return new Error(new ElementNotFound(selector));
-    return new Ok(new _Spa(root3, init3(flags), update5, view8));
+    return new Ok(new _Spa(root3, init4(flags), update5, view9));
   }
   #runtime;
-  constructor(root3, [init3, effects], update5, view8) {
-    this.#runtime = new Runtime(root3, [init3, effects], view8, update5);
+  constructor(root3, [init4, effects], update5, view9) {
+    this.#runtime = new Runtime(root3, [init4, effects], view9, update5);
   }
   send(message2) {
     switch (message2.constructor) {
@@ -6257,11 +6726,11 @@ var start = Spa.start;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init3, update5, view8, config) {
+  constructor(init4, update5, view9, config) {
     super();
-    this.init = init3;
+    this.init = init4;
     this.update = update5;
-    this.view = view8;
+    this.view = view9;
     this.config = config;
   }
 };
@@ -6273,8 +6742,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init3, update5, view8) {
-  return new App(init3, update5, view8, new$7(empty_list));
+function application(init4, update5, view9) {
+  return new App(init4, update5, view9, new$7(empty_list));
 }
 function start3(app, selector, start_args) {
   return guard(
@@ -6395,6 +6864,30 @@ function init(handler) {
   );
 }
 
+// build/dev/javascript/shared/shared/poll.mjs
+var Poll = class extends CustomType {
+  constructor(id, name2) {
+    super();
+    this.id = id;
+    this.name = name2;
+  }
+};
+function poll_decoder() {
+  return field(
+    "id",
+    string2,
+    (id) => {
+      return field(
+        "name",
+        string2,
+        (name2) => {
+          return success(new Poll(id, name2));
+        }
+      );
+    }
+  );
+}
+
 // build/dev/javascript/client/forms.mjs
 var SignInFormData = class extends CustomType {
   constructor(email, password) {
@@ -6420,7 +6913,7 @@ function sign_in_form() {
           "password",
           (() => {
             let _pipe = parse_string;
-            return check_string_length_more_than(_pipe, 8);
+            return check_string_length_more_than(_pipe, 2);
           })(),
           (password) => {
             return success2(new SignInFormData(email, password));
@@ -6522,6 +7015,9 @@ var Response = class extends CustomType {
     this.body = body;
   }
 };
+function get_header(response, key) {
+  return key_find(response.headers, lowercase(key));
+}
 
 // build/dev/javascript/gleam_http/gleam/http/request.mjs
 var Request = class extends CustomType {
@@ -6774,6 +7270,12 @@ var HttpError = class extends CustomType {
     this[0] = $0;
   }
 };
+var JsonError = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
 var NetworkError2 = class extends CustomType {
 };
 var UnhandledResponse = class extends CustomType {
@@ -6806,6 +7308,32 @@ function expect_ok_response(handler) {
               } else {
                 return new Error(new UnhandledResponse(response));
               }
+            }
+          }
+        )
+      );
+    }
+  );
+}
+function expect_json_response(handler) {
+  return expect_ok_response(
+    (result) => {
+      return handler(
+        try$(
+          result,
+          (response) => {
+            let $ = get_header(response, "content-type");
+            if ($ instanceof Ok) {
+              let $1 = $[0];
+              if ($1 === "application/json") {
+                return new Ok(response);
+              } else if ($1.startsWith("application/json;")) {
+                return new Ok(response);
+              } else {
+                return new Error(new UnhandledResponse(response));
+              }
+            } else {
+              return new Error(new UnhandledResponse(response));
             }
           }
         )
@@ -6853,6 +7381,27 @@ function reject(err, handler) {
     }
   );
 }
+function decode_json_body(response, decoder) {
+  let _pipe = response.body;
+  let _pipe$1 = parse2(_pipe, decoder);
+  return map_error(_pipe$1, (var0) => {
+    return new JsonError(var0);
+  });
+}
+function expect_json(decoder, handler) {
+  return expect_json_response(
+    (result) => {
+      let _pipe = result;
+      let _pipe$1 = then$(
+        _pipe,
+        (_capture) => {
+          return decode_json_body(_capture, decoder);
+        }
+      );
+      return handler(_pipe$1);
+    }
+  );
+}
 function to_uri2(uri_string) {
   let _block;
   if (uri_string.startsWith("./")) {
@@ -6864,6 +7413,29 @@ function to_uri2(uri_string) {
   }
   let _pipe = _block;
   return replace_error(_pipe, new BadUrl(uri_string));
+}
+function get2(url, handler) {
+  let $ = to_uri2(url);
+  if ($ instanceof Ok) {
+    let uri = $[0];
+    let _pipe = from_uri(uri);
+    let _pipe$1 = map3(
+      _pipe,
+      (_capture) => {
+        return send3(_capture, handler);
+      }
+    );
+    let _pipe$2 = map_error(
+      _pipe$1,
+      (_) => {
+        return reject(new BadUrl(url), handler);
+      }
+    );
+    return unwrap_both(_pipe$2);
+  } else {
+    let err = $[0];
+    return reject(err, handler);
+  }
 }
 function post(url, body, handler) {
   let $ = to_uri2(url);
@@ -6900,11 +7472,13 @@ function post(url, body, handler) {
 // build/dev/javascript/client/router.mjs
 var Index2 = class extends CustomType {
 };
+var About = class extends CustomType {
+};
 var SignIn = class extends CustomType {
 };
 var SignUp = class extends CustomType {
 };
-var About = class extends CustomType {
+var AdminPolls = class extends CustomType {
 };
 var Session = class extends CustomType {
   constructor(id) {
@@ -6926,12 +7500,12 @@ function parse_route(uri) {
     let $1 = $.tail;
     if ($1 instanceof Empty) {
       let $2 = $.head;
-      if ($2 === "sign-in") {
+      if ($2 === "about") {
+        return new About();
+      } else if ($2 === "sign-in") {
         return new SignIn();
       } else if ($2 === "sign-up") {
         return new SignUp();
-      } else if ($2 === "about") {
-        return new About();
       } else {
         return new NotFound(uri);
       }
@@ -6939,7 +7513,14 @@ function parse_route(uri) {
       let $2 = $1.tail;
       if ($2 instanceof Empty) {
         let $3 = $.head;
-        if ($3 === "session") {
+        if ($3 === "admin") {
+          let $4 = $1.head;
+          if ($4 === "polls") {
+            return new AdminPolls();
+          } else {
+            return new NotFound(uri);
+          }
+        } else if ($3 === "session") {
           let id = $1.head;
           return new Session(id);
         } else {
@@ -6989,7 +7570,20 @@ var SignUp2 = class extends CustomType {
     this.form = form2;
   }
 };
+var AdminPolls2 = class extends CustomType {
+  constructor(app, polls) {
+    super();
+    this.app = app;
+    this.polls = polls;
+  }
+};
 var ApiAuthenticatedUser = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var ApiReturnedPolls = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
@@ -7019,8 +7613,73 @@ function view2() {
   return span(toList([]), toList([text3("about")]));
 }
 
+// build/dev/javascript/client/routes/admin/polls.mjs
+function view3(polls) {
+  return div(
+    toList([]),
+    toList([
+      h1(toList([]), toList([text3("Polls")])),
+      ul(
+        toList([]),
+        map(
+          polls,
+          (poll) => {
+            return li(
+              toList([]),
+              toList([text3(poll.id + " - " + poll.name)])
+            );
+          }
+        )
+      )
+    ])
+  );
+}
+function fetch_polls(handle_response) {
+  let url = "http://localhost:8000/api/admin/polls";
+  let _block;
+  let _pipe = list2(poll_decoder());
+  _block = map2(
+    _pipe,
+    (_capture) => {
+      return take(_capture, 10);
+    }
+  );
+  let decoder = _block;
+  let handler = expect_json(decoder, handle_response);
+  return get2(url, handler);
+}
+function init_empty() {
+  let app = new App2(new AdminPolls(), "en");
+  return [
+    new AdminPolls2(app, toList([])),
+    fetch_polls((var0) => {
+      return new ApiReturnedPolls(var0);
+    })
+  ];
+}
+function init_with_model(model) {
+  let _block;
+  let _record = model.app;
+  _block = new App2(new AdminPolls(), _record.lang);
+  let app = _block;
+  return [
+    new AdminPolls2(app, toList([])),
+    fetch_polls((var0) => {
+      return new ApiReturnedPolls(var0);
+    })
+  ];
+}
+function init2(model) {
+  if (model instanceof Some) {
+    let model$1 = model[0];
+    return init_with_model(model$1);
+  } else {
+    return init_empty();
+  }
+}
+
 // build/dev/javascript/client/routes/index.mjs
-function view3() {
+function view4() {
   return span(
     toList([]),
     toList([
@@ -7132,7 +7791,7 @@ function on_submit(msg) {
 }
 
 // build/dev/javascript/client/components/input.mjs
-function view4(form2, type_2, name2, label) {
+function view5(form2, type_2, name2, label) {
   let errors = field_error_messages(form2, name2);
   return fieldset(
     toList([class$("fieldset")]),
@@ -7171,7 +7830,7 @@ function view4(form2, type_2, name2, label) {
 }
 
 // build/dev/javascript/client/routes/sign_in.mjs
-function view5(form2) {
+function view6(form2) {
   let submit = (fields) => {
     let _pipe = form2;
     let _pipe$1 = add_values(_pipe, fields);
@@ -7185,8 +7844,8 @@ function view5(form2) {
       form(
         toList([on_submit(submit), class$("space-y-2")]),
         toList([
-          view4(form2, "text", "email", "Email"),
-          view4(form2, "password", "password", "Password"),
+          view5(form2, "text", "email", "Email"),
+          view5(form2, "password", "password", "Password"),
           button(
             toList([
               type_("submit"),
@@ -7229,7 +7888,7 @@ function update2(model, result) {
 }
 
 // build/dev/javascript/client/routes/sign_up.mjs
-function view6(form2) {
+function view7(form2) {
   let submit = (fields) => {
     let _pipe = form2;
     let _pipe$1 = add_values(_pipe, fields);
@@ -7243,8 +7902,8 @@ function view6(form2) {
       form(
         toList([on_submit(submit), class$("space-y-2")]),
         toList([
-          view4(form2, "text", "email", "Email"),
-          view4(form2, "password", "password", "Password"),
+          view5(form2, "text", "email", "Email"),
+          view5(form2, "password", "password", "Password"),
           button(
             toList([
               type_("submit"),
@@ -7288,31 +7947,52 @@ function update3(model, result) {
 
 // build/dev/javascript/client/client.mjs
 var FILEPATH = "src/client.gleam";
-function init2(_) {
+function init3(_) {
   let initial_route2 = initial_route();
   let _block;
   if (initial_route2 instanceof Index2) {
-    _block = new Base(new App2(initial_route2, "en"));
+    _block = [
+      new Base(new App2(initial_route2, "en")),
+      none()
+    ];
   } else if (initial_route2 instanceof SignIn) {
-    _block = new SignIn2(
-      new App2(initial_route2, "en"),
-      sign_in_form()
-    );
+    _block = [
+      new SignIn2(
+        new App2(initial_route2, "en"),
+        sign_in_form()
+      ),
+      none()
+    ];
   } else if (initial_route2 instanceof SignUp) {
-    _block = new SignUp2(
-      new App2(initial_route2, "en"),
-      sign_up_form()
-    );
+    _block = [
+      new SignUp2(
+        new App2(initial_route2, "en"),
+        sign_up_form()
+      ),
+      none()
+    ];
+  } else if (initial_route2 instanceof AdminPolls) {
+    _block = init2(new None());
   } else {
-    _block = new Base(new App2(initial_route2, "en"));
+    _block = [
+      new Base(new App2(initial_route2, "en")),
+      none()
+    ];
   }
-  let model = _block;
-  let effect = init(
-    (uri) => {
-      let _pipe = uri;
-      let _pipe$1 = parse_route(_pipe);
-      return new UserNavigatedTo(_pipe$1);
-    }
+  let $ = _block;
+  let model = $[0];
+  let route_effect = $[1];
+  let effect = batch(
+    toList([
+      init(
+        (uri) => {
+          let _pipe = uri;
+          let _pipe$1 = parse_route(_pipe);
+          return new UserNavigatedTo(_pipe$1);
+        }
+      ),
+      route_effect
+    ])
   );
   return [model, effect];
 }
@@ -7320,15 +8000,7 @@ function update4(model, msg) {
   if (msg instanceof ApiAuthenticatedUser) {
     let $ = msg[0];
     if ($ instanceof Ok) {
-      return [
-        new Base(
-          (() => {
-            let _record = model.app;
-            return new App2(new About(), _record.lang);
-          })()
-        ),
-        none()
-      ];
+      return init2(new Some(model));
     } else {
       return [
         new SignIn2(
@@ -7344,6 +8016,23 @@ function update4(model, msg) {
               new CustomError("Email or password is incorrect")
             );
           })()
+        ),
+        none()
+      ];
+    }
+  } else if (msg instanceof ApiReturnedPolls) {
+    let $ = msg[0];
+    if ($ instanceof Ok) {
+      let polls = $[0];
+      return [new AdminPolls2(model.app, polls), none()];
+    } else {
+      return [
+        new AdminPolls2(
+          (() => {
+            let _record = model.app;
+            return new App2(new AdminPolls(), _record.lang);
+          })(),
+          toList([])
         ),
         none()
       ];
@@ -7372,6 +8061,8 @@ function update4(model, msg) {
         ),
         none()
       ];
+    } else if ($ instanceof AdminPolls) {
+      return init2(new Some(model));
     } else {
       let route = $;
       return [
@@ -7395,45 +8086,191 @@ function update4(model, msg) {
 function view_not_found() {
   return span(toList([]), toList([text3("not found")]));
 }
-function view7(model) {
+function view8(model) {
   let $ = model.app.route;
   if ($ instanceof Index2) {
-    return view3();
+    return view4();
+  } else if ($ instanceof About) {
+    return view2();
   } else if ($ instanceof SignIn) {
     if (model instanceof SignIn2) {
       let form2 = model.form;
-      return view5(form2);
+      return view6(form2);
     } else {
       return view_not_found();
     }
   } else if ($ instanceof SignUp) {
     if (model instanceof SignUp2) {
       let form2 = model.form;
-      return view6(form2);
+      return view7(form2);
     } else {
       return view_not_found();
     }
-  } else if ($ instanceof About) {
-    return view2();
+  } else if ($ instanceof AdminPolls) {
+    if (model instanceof SignIn2) {
+      return view3(toList([new Poll("1", "Sign in model?")]));
+    } else if (model instanceof AdminPolls2) {
+      let polls = model.polls;
+      return view3(polls);
+    } else {
+      echo(model, "src/client.gleam", 124);
+      return view3(toList([new Poll("1", "Wrong model?")]));
+    }
   } else {
     return view_not_found();
   }
 }
 function main() {
-  let app = application(init2, update4, view7);
+  let app = application(init3, update4, view8);
   let $ = start3(app, "#app", toList([]));
   if (!($ instanceof Ok)) {
     throw makeError(
       "let_assert",
       FILEPATH,
       "client",
-      17,
+      20,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      { value: $, start: 362, end: 410, pattern_start: 373, pattern_end: 378 }
+      { value: $, start: 440, end: 488, pattern_start: 451, pattern_end: 456 }
     );
   }
   return void 0;
+}
+function echo(value, file, line) {
+  const grey = "\x1B[90m";
+  const reset_color = "\x1B[39m";
+  const file_line = `${file}:${line}`;
+  const string_value = echo$inspect(value);
+  if (globalThis.process?.stderr?.write) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    process.stderr.write(string5);
+  } else if (globalThis.Deno) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
+  } else {
+    const string5 = `${file_line}
+${string_value}`;
+    globalThis.console.log(string5);
+  }
+  return value;
+}
+function echo$inspectString(str) {
+  let new_str = '"';
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    if (char == "\n") new_str += "\\n";
+    else if (char == "\r") new_str += "\\r";
+    else if (char == "	") new_str += "\\t";
+    else if (char == "\f") new_str += "\\f";
+    else if (char == "\\") new_str += "\\\\";
+    else if (char == '"') new_str += '\\"';
+    else if (char < " " || char > "~" && char < "\xA0") {
+      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
+    } else {
+      new_str += char;
+    }
+  }
+  new_str += '"';
+  return new_str;
+}
+function echo$inspectDict(map6) {
+  let body = "dict.from_list([";
+  let first = true;
+  let key_value_pairs = [];
+  map6.forEach((value, key) => {
+    key_value_pairs.push([key, value]);
+  });
+  key_value_pairs.sort();
+  key_value_pairs.forEach(([key, value]) => {
+    if (!first) body = body + ", ";
+    body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value) + ")";
+    first = false;
+  });
+  return body + "])";
+}
+function echo$inspectCustomType(record) {
+  const props = globalThis.Object.keys(record).map((label) => {
+    const value = echo$inspect(record[label]);
+    return isNaN(parseInt(label)) ? `${label}: ${value}` : value;
+  }).join(", ");
+  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
+}
+function echo$inspectObject(v) {
+  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const props = [];
+  for (const k of Object.keys(v)) {
+    props.push(`${echo$inspect(k)}: ${echo$inspect(v[k])}`);
+  }
+  const body = props.length ? " " + props.join(", ") + " " : "";
+  const head = name2 === "Object" ? "" : name2 + " ";
+  return `//js(${head}{${body}})`;
+}
+function echo$inspect(v) {
+  const t = typeof v;
+  if (v === true) return "True";
+  if (v === false) return "False";
+  if (v === null) return "//js(null)";
+  if (v === void 0) return "Nil";
+  if (t === "string") return echo$inspectString(v);
+  if (t === "bigint" || t === "number") return v.toString();
+  if (globalThis.Array.isArray(v))
+    return `#(${v.map(echo$inspect).join(", ")})`;
+  if (v instanceof List)
+    return `[${v.toArray().map(echo$inspect).join(", ")}]`;
+  if (v instanceof UtfCodepoint)
+    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
+  if (v instanceof BitArray) return echo$inspectBitArray(v);
+  if (v instanceof CustomType) return echo$inspectCustomType(v);
+  if (echo$isDict(v)) return echo$inspectDict(v);
+  if (v instanceof Set)
+    return `//js(Set(${[...v].map(echo$inspect).join(", ")}))`;
+  if (v instanceof RegExp) return `//js(${v})`;
+  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
+  if (v instanceof Function) {
+    const args = [];
+    for (const i of Array(v.length).keys())
+      args.push(String.fromCharCode(i + 97));
+    return `//fn(${args.join(", ")}) { ... }`;
+  }
+  return echo$inspectObject(v);
+}
+function echo$inspectBitArray(bitArray) {
+  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
+  let alignedBytes = bitArraySlice(
+    bitArray,
+    bitArray.bitOffset,
+    endOfAlignedBytes
+  );
+  let remainingUnalignedBits = bitArray.bitSize % 8;
+  if (remainingUnalignedBits > 0) {
+    let remainingBits = bitArraySliceToInt(
+      bitArray,
+      endOfAlignedBytes,
+      bitArray.bitSize,
+      false,
+      false
+    );
+    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
+    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
+    if (alignedBytesArray.length === 0) {
+      return `<<${suffix}>>`;
+    } else {
+      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
+    }
+  } else {
+    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
+  }
+}
+function echo$isDict(value) {
+  try {
+    return value instanceof Dict;
+  } catch {
+    return false;
+  }
 }
 
 // build/.lustre/entry.mjs

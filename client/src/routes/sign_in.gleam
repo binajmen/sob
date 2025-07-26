@@ -1,22 +1,72 @@
 import components/input
 import formal/form.{type Form}
-import forms.{type SignInFormData}
 import gleam/http/response
 import gleam/json
+import gleam/option.{None}
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import model.{type Model, type Msg}
+import modem
 import rsvp
+
+pub type Model {
+  Model(form: Form(SignInFormData))
+}
+
+pub type SignInFormData {
+  SignInFormData(email: String, password: String)
+}
+
+pub fn sign_in_form() -> Form(SignInFormData) {
+  form.new({
+    use email <- form.field("email", form.parse_email)
+    use password <- form.field("password", form.parse_string)
+    form.success(SignInFormData(email:, password:))
+  })
+}
+
+pub fn init() -> #(Model, effect.Effect(Msg)) {
+  let model = Model(form: sign_in_form())
+  #(model, effect.none())
+}
+
+pub type Msg {
+  UserSubmittedSignInForm(Result(SignInFormData, Form(SignInFormData)))
+  ApiAuthenticatedUser(Result(response.Response(String), rsvp.Error))
+}
+
+pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+  case msg {
+    UserSubmittedSignInForm(result) ->
+      case result {
+        Ok(values) -> #(model, sign_in(values, ApiAuthenticatedUser))
+        Error(form) -> #(Model(form:), effect.none())
+      }
+    ApiAuthenticatedUser(Ok(_)) -> #(
+      model,
+      modem.push("/admin/polls", None, None),
+    )
+    ApiAuthenticatedUser(Error(_)) -> #(
+      Model(
+        form: model.form
+        |> form.add_error(
+          "password",
+          form.CustomError("Email or password is incorrect"),
+        ),
+      ),
+      effect.none(),
+    )
+  }
+}
 
 pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
   let submit = fn(fields) {
     form
     |> form.add_values(fields)
     |> form.run
-    |> model.UserSubmittedSignInForm
+    |> UserSubmittedSignInForm
   }
 
   html.div([], [
@@ -30,16 +80,6 @@ pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
       ),
     ]),
   ])
-}
-
-pub fn update(
-  model: Model,
-  result: Result(SignInFormData, Form(SignInFormData)),
-) -> #(Model, Effect(Msg)) {
-  case result {
-    Ok(values) -> #(model, sign_in(values, model.ApiAuthenticatedUser))
-    Error(form) -> #(model.SignIn(app: model.app, form:), effect.none())
-  }
 }
 
 fn sign_in(

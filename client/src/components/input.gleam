@@ -3,14 +3,13 @@ import gleam/list
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
-import model.{type Msg}
 
 pub fn view(
   form: Form(a),
   is type_: String,
   name name: String,
   label label: String,
-) -> Element(Msg) {
+) -> Element(msg) {
   let errors = form.field_error_messages(form, name)
 
   html.fieldset([attribute.class("fieldset")], [

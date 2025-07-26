@@ -586,9 +586,9 @@ function isEqual(x, y) {
       } catch {
       }
     }
-    let [keys2, get3] = getters(a2);
+    let [keys2, get2] = getters(a2);
     for (let k of keys2(a2)) {
-      values3.push(get3(a2, k), get3(b, k));
+      values3.push(get2(a2, k), get2(b, k));
     }
   }
   return true;
@@ -639,40 +639,6 @@ function makeError(variant, file, module, line, fn, message2, extra) {
   error.fn = fn;
   for (let k in extra) error[k] = extra[k];
   return error;
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/order.mjs
-var Lt = class extends CustomType {
-};
-var Eq = class extends CustomType {
-};
-var Gt = class extends CustomType {
-};
-
-// build/dev/javascript/gleam_stdlib/gleam/option.mjs
-var Some = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var None = class extends CustomType {
-};
-function to_result(option, e) {
-  if (option instanceof Some) {
-    let a2 = option[0];
-    return new Ok(a2);
-  } else {
-    return new Error(e);
-  }
-}
-function unwrap(option, default$) {
-  if (option instanceof Some) {
-    let x = option[0];
-    return x;
-  } else {
-    return default$;
-  }
 }
 
 // build/dev/javascript/gleam_stdlib/dict.mjs
@@ -1379,10 +1345,23 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
-// build/dev/javascript/gleam_stdlib/gleam/dict.mjs
-function insert(dict2, key, value) {
-  return map_insert(key, value, dict2);
-}
+// build/dev/javascript/gleam_stdlib/gleam/option.mjs
+var Some = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var None = class extends CustomType {
+};
+
+// build/dev/javascript/gleam_stdlib/gleam/order.mjs
+var Lt = class extends CustomType {
+};
+var Eq = class extends CustomType {
+};
+var Gt = class extends CustomType {
+};
 
 // build/dev/javascript/gleam_stdlib/gleam/list.mjs
 var Ascending = class extends CustomType {
@@ -1453,30 +1432,6 @@ function map_loop(loop$list, loop$fun, loop$acc) {
 function map(list4, fun) {
   return map_loop(list4, fun, toList([]));
 }
-function take_loop(loop$list, loop$n, loop$acc) {
-  while (true) {
-    let list4 = loop$list;
-    let n = loop$n;
-    let acc = loop$acc;
-    let $ = n <= 0;
-    if ($) {
-      return reverse(acc);
-    } else {
-      if (list4 instanceof Empty) {
-        return reverse(acc);
-      } else {
-        let first$1 = list4.head;
-        let rest$1 = list4.tail;
-        loop$list = rest$1;
-        loop$n = n - 1;
-        loop$acc = prepend(first$1, acc);
-      }
-    }
-  }
-}
-function take(list4, n) {
-  return take_loop(list4, n, toList([]));
-}
 function append_loop(loop$first, loop$second) {
   while (true) {
     let first = loop$first;
@@ -1530,26 +1485,6 @@ function fold(loop$list, loop$initial, loop$fun) {
       loop$list = rest$1;
       loop$initial = fun(initial, first$1);
       loop$fun = fun;
-    }
-  }
-}
-function find_map(loop$list, loop$fun) {
-  while (true) {
-    let list4 = loop$list;
-    let fun = loop$fun;
-    if (list4 instanceof Empty) {
-      return new Error(void 0);
-    } else {
-      let first$1 = list4.head;
-      let rest$1 = list4.tail;
-      let $ = fun(first$1);
-      if ($ instanceof Ok) {
-        let first$2 = $[0];
-        return new Ok(first$2);
-      } else {
-        loop$list = rest$1;
-        loop$fun = fun;
-      }
     }
   }
 }
@@ -1887,21 +1822,6 @@ function sort(list4, compare5) {
     }
   }
 }
-function key_find(keyword_list, desired_key) {
-  return find_map(
-    keyword_list,
-    (keyword) => {
-      let key = keyword[0];
-      let value = keyword[1];
-      let $ = isEqual(key, desired_key);
-      if ($) {
-        return new Ok(value);
-      } else {
-        return new Error(void 0);
-      }
-    }
-  );
-}
 function key_filter(keyword_list, desired_key) {
   return filter_map(
     keyword_list,
@@ -1917,32 +1837,34 @@ function key_filter(keyword_list, desired_key) {
     }
   );
 }
-function key_set_loop(loop$list, loop$key, loop$value, loop$inspected) {
+
+// build/dev/javascript/gleam_stdlib/gleam/string.mjs
+function concat_loop(loop$strings, loop$accumulator) {
   while (true) {
-    let list4 = loop$list;
-    let key = loop$key;
-    let value = loop$value;
-    let inspected = loop$inspected;
-    if (list4 instanceof Empty) {
-      return reverse(prepend([key, value], inspected));
+    let strings = loop$strings;
+    let accumulator = loop$accumulator;
+    if (strings instanceof Empty) {
+      return accumulator;
     } else {
-      let k = list4.head[0];
-      if (isEqual(k, key)) {
-        let rest$1 = list4.tail;
-        return reverse_and_prepend(inspected, prepend([k, value], rest$1));
-      } else {
-        let first$1 = list4.head;
-        let rest$1 = list4.tail;
-        loop$list = rest$1;
-        loop$key = key;
-        loop$value = value;
-        loop$inspected = prepend(first$1, inspected);
-      }
+      let string5 = strings.head;
+      let strings$1 = strings.tail;
+      loop$strings = strings$1;
+      loop$accumulator = accumulator + string5;
     }
   }
 }
-function key_set(list4, key, value) {
-  return key_set_loop(list4, key, value, toList([]));
+function concat2(strings) {
+  return concat_loop(strings, "");
+}
+function split2(x, substring) {
+  if (substring === "") {
+    return graphemes(x);
+  } else {
+    let _pipe = x;
+    let _pipe$1 = identity(_pipe);
+    let _pipe$2 = split(_pipe$1, substring);
+    return map(_pipe$2, identity);
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/dynamic/decode.mjs
@@ -2173,21 +2095,6 @@ function identity(x) {
 function to_string(term) {
   return term.toString();
 }
-function string_length(string5) {
-  if (string5 === "") {
-    return 0;
-  }
-  const iterator = graphemes_iterator(string5);
-  if (iterator) {
-    let i = 0;
-    for (const _ of iterator) {
-      i++;
-    }
-    return i;
-  } else {
-    return string5.match(/./gsu).length;
-  }
-}
 function graphemes(string5) {
   const iterator = graphemes_iterator(string5);
   if (iterator) {
@@ -2203,17 +2110,8 @@ function graphemes_iterator(string5) {
     return segmenter.segment(string5)[Symbol.iterator]();
   }
 }
-function pop_codeunit(str) {
-  return [str.charCodeAt(0) | 0, str.slice(1)];
-}
-function lowercase(string5) {
-  return string5.toLowerCase();
-}
 function split(xs, pattern) {
   return List.fromArray(xs.split(pattern));
-}
-function string_codeunit_slice(str, from2, length4) {
-  return str.slice(from2, from2 + length4);
 }
 function contains_string(haystack, needle) {
   return haystack.indexOf(needle) >= 0;
@@ -2248,15 +2146,15 @@ var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
 function new_map() {
   return Dict.new();
 }
-function map_get(map6, key) {
-  const value = map6.get(key, NOT_FOUND);
+function map_get(map8, key) {
+  const value = map8.get(key, NOT_FOUND);
   if (value === NOT_FOUND) {
     return new Error(Nil);
   }
   return new Ok(value);
 }
-function map_insert(key, value, map6) {
-  return map6.set(key, value);
+function map_insert(key, value, map8) {
+  return map8.set(key, value);
 }
 function classify_dynamic(data) {
   if (typeof data === "string") {
@@ -2348,42 +2246,9 @@ function string(data) {
   return new Error("");
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/string.mjs
-function concat_loop(loop$strings, loop$accumulator) {
-  while (true) {
-    let strings = loop$strings;
-    let accumulator = loop$accumulator;
-    if (strings instanceof Empty) {
-      return accumulator;
-    } else {
-      let string5 = strings.head;
-      let strings$1 = strings.tail;
-      loop$strings = strings$1;
-      loop$accumulator = accumulator + string5;
-    }
-  }
-}
-function concat2(strings) {
-  return concat_loop(strings, "");
-}
-function split2(x, substring) {
-  if (substring === "") {
-    return graphemes(x);
-  } else {
-    let _pipe = x;
-    let _pipe$1 = identity(_pipe);
-    let _pipe$2 = split(_pipe$1, substring);
-    return map(_pipe$2, identity);
-  }
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/bool.mjs
-function guard(requirement, consequence, alternative) {
-  if (requirement) {
-    return consequence;
-  } else {
-    return alternative();
-  }
+// build/dev/javascript/gleam_stdlib/gleam/dict.mjs
+function insert(dict2, key, value) {
+  return map_insert(key, value, dict2);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
@@ -2403,1385 +2268,24 @@ function map3(result, fun) {
     return new Error(e);
   }
 }
-function map_error(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return new Ok(x);
-  } else {
-    let error = result[0];
-    return new Error(fun(error));
-  }
-}
-function try$(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return fun(x);
-  } else {
-    let e = result[0];
-    return new Error(e);
-  }
-}
-function then$(result, fun) {
-  return try$(result, fun);
-}
-function unwrap_both(result) {
-  if (result instanceof Ok) {
-    let a2 = result[0];
-    return a2;
-  } else {
-    let a2 = result[0];
-    return a2;
-  }
-}
-function replace_error(result, error) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return new Ok(x);
-  } else {
-    return new Error(error);
-  }
-}
 function values2(results) {
   return filter_map(results, (result) => {
     return result;
   });
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/uri.mjs
-var Uri = class extends CustomType {
-  constructor(scheme, userinfo, host, port, path, query, fragment3) {
-    super();
-    this.scheme = scheme;
-    this.userinfo = userinfo;
-    this.host = host;
-    this.port = port;
-    this.path = path;
-    this.query = query;
-    this.fragment = fragment3;
-  }
-};
-function is_valid_host_within_brackets_char(char) {
-  return 48 >= char && char <= 57 || 65 >= char && char <= 90 || 97 >= char && char <= 122 || char === 58 || char === 46;
-}
-function parse_fragment(rest, pieces) {
-  return new Ok(
-    (() => {
-      let _record = pieces;
-      return new Uri(
-        _record.scheme,
-        _record.userinfo,
-        _record.host,
-        _record.port,
-        _record.path,
-        _record.query,
-        new Some(rest)
-      );
-    })()
-  );
-}
-function parse_query_with_question_mark_loop(loop$original, loop$uri_string, loop$pieces, loop$size) {
-  while (true) {
-    let original = loop$original;
-    let uri_string = loop$uri_string;
-    let pieces = loop$pieces;
-    let size2 = loop$size;
-    if (uri_string.startsWith("#")) {
-      if (size2 === 0) {
-        let rest = uri_string.slice(1);
-        return parse_fragment(rest, pieces);
-      } else {
-        let rest = uri_string.slice(1);
-        let query = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          _record.scheme,
-          _record.userinfo,
-          _record.host,
-          _record.port,
-          _record.path,
-          new Some(query),
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_fragment(rest, pieces$1);
-      }
-    } else if (uri_string === "") {
-      return new Ok(
-        (() => {
-          let _record = pieces;
-          return new Uri(
-            _record.scheme,
-            _record.userinfo,
-            _record.host,
-            _record.port,
-            _record.path,
-            new Some(original),
-            _record.fragment
-          );
-        })()
-      );
-    } else {
-      let $ = pop_codeunit(uri_string);
-      let rest = $[1];
-      loop$original = original;
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$size = size2 + 1;
-    }
-  }
-}
-function parse_query_with_question_mark(uri_string, pieces) {
-  return parse_query_with_question_mark_loop(uri_string, uri_string, pieces, 0);
-}
-function parse_path_loop(loop$original, loop$uri_string, loop$pieces, loop$size) {
-  while (true) {
-    let original = loop$original;
-    let uri_string = loop$uri_string;
-    let pieces = loop$pieces;
-    let size2 = loop$size;
-    if (uri_string.startsWith("?")) {
-      let rest = uri_string.slice(1);
-      let path = string_codeunit_slice(original, 0, size2);
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        _record.host,
-        _record.port,
-        path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_query_with_question_mark(rest, pieces$1);
-    } else if (uri_string.startsWith("#")) {
-      let rest = uri_string.slice(1);
-      let path = string_codeunit_slice(original, 0, size2);
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        _record.host,
-        _record.port,
-        path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_fragment(rest, pieces$1);
-    } else if (uri_string === "") {
-      return new Ok(
-        (() => {
-          let _record = pieces;
-          return new Uri(
-            _record.scheme,
-            _record.userinfo,
-            _record.host,
-            _record.port,
-            original,
-            _record.query,
-            _record.fragment
-          );
-        })()
-      );
-    } else {
-      let $ = pop_codeunit(uri_string);
-      let rest = $[1];
-      loop$original = original;
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$size = size2 + 1;
-    }
-  }
-}
-function parse_path(uri_string, pieces) {
-  return parse_path_loop(uri_string, uri_string, pieces, 0);
-}
-function parse_port_loop(loop$uri_string, loop$pieces, loop$port) {
-  while (true) {
-    let uri_string = loop$uri_string;
-    let pieces = loop$pieces;
-    let port = loop$port;
-    if (uri_string.startsWith("0")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10;
-    } else if (uri_string.startsWith("1")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 1;
-    } else if (uri_string.startsWith("2")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 2;
-    } else if (uri_string.startsWith("3")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 3;
-    } else if (uri_string.startsWith("4")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 4;
-    } else if (uri_string.startsWith("5")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 5;
-    } else if (uri_string.startsWith("6")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 6;
-    } else if (uri_string.startsWith("7")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 7;
-    } else if (uri_string.startsWith("8")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 8;
-    } else if (uri_string.startsWith("9")) {
-      let rest = uri_string.slice(1);
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$port = port * 10 + 9;
-    } else if (uri_string.startsWith("?")) {
-      let rest = uri_string.slice(1);
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        _record.host,
-        new Some(port),
-        _record.path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_query_with_question_mark(rest, pieces$1);
-    } else if (uri_string.startsWith("#")) {
-      let rest = uri_string.slice(1);
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        _record.host,
-        new Some(port),
-        _record.path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_fragment(rest, pieces$1);
-    } else if (uri_string.startsWith("/")) {
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        _record.host,
-        new Some(port),
-        _record.path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_path(uri_string, pieces$1);
-    } else if (uri_string === "") {
-      return new Ok(
-        (() => {
-          let _record = pieces;
-          return new Uri(
-            _record.scheme,
-            _record.userinfo,
-            _record.host,
-            new Some(port),
-            _record.path,
-            _record.query,
-            _record.fragment
-          );
-        })()
-      );
-    } else {
-      return new Error(void 0);
-    }
-  }
-}
-function parse_port(uri_string, pieces) {
-  if (uri_string.startsWith(":0")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 0);
-  } else if (uri_string.startsWith(":1")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 1);
-  } else if (uri_string.startsWith(":2")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 2);
-  } else if (uri_string.startsWith(":3")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 3);
-  } else if (uri_string.startsWith(":4")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 4);
-  } else if (uri_string.startsWith(":5")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 5);
-  } else if (uri_string.startsWith(":6")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 6);
-  } else if (uri_string.startsWith(":7")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 7);
-  } else if (uri_string.startsWith(":8")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 8);
-  } else if (uri_string.startsWith(":9")) {
-    let rest = uri_string.slice(2);
-    return parse_port_loop(rest, pieces, 9);
-  } else if (uri_string.startsWith(":")) {
-    return new Error(void 0);
-  } else if (uri_string.startsWith("?")) {
-    let rest = uri_string.slice(1);
-    return parse_query_with_question_mark(rest, pieces);
-  } else if (uri_string.startsWith("#")) {
-    let rest = uri_string.slice(1);
-    return parse_fragment(rest, pieces);
-  } else if (uri_string.startsWith("/")) {
-    return parse_path(uri_string, pieces);
-  } else if (uri_string === "") {
-    return new Ok(pieces);
+// build/dev/javascript/gleam_stdlib/gleam/bool.mjs
+function guard(requirement, consequence, alternative) {
+  if (requirement) {
+    return consequence;
   } else {
-    return new Error(void 0);
+    return alternative();
   }
 }
-function parse_host_outside_of_brackets_loop(loop$original, loop$uri_string, loop$pieces, loop$size) {
-  while (true) {
-    let original = loop$original;
-    let uri_string = loop$uri_string;
-    let pieces = loop$pieces;
-    let size2 = loop$size;
-    if (uri_string === "") {
-      return new Ok(
-        (() => {
-          let _record = pieces;
-          return new Uri(
-            _record.scheme,
-            _record.userinfo,
-            new Some(original),
-            _record.port,
-            _record.path,
-            _record.query,
-            _record.fragment
-          );
-        })()
-      );
-    } else if (uri_string.startsWith(":")) {
-      let host = string_codeunit_slice(original, 0, size2);
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        new Some(host),
-        _record.port,
-        _record.path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_port(uri_string, pieces$1);
-    } else if (uri_string.startsWith("/")) {
-      let host = string_codeunit_slice(original, 0, size2);
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        new Some(host),
-        _record.port,
-        _record.path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_path(uri_string, pieces$1);
-    } else if (uri_string.startsWith("?")) {
-      let rest = uri_string.slice(1);
-      let host = string_codeunit_slice(original, 0, size2);
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        new Some(host),
-        _record.port,
-        _record.path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_query_with_question_mark(rest, pieces$1);
-    } else if (uri_string.startsWith("#")) {
-      let rest = uri_string.slice(1);
-      let host = string_codeunit_slice(original, 0, size2);
-      let _block;
-      let _record = pieces;
-      _block = new Uri(
-        _record.scheme,
-        _record.userinfo,
-        new Some(host),
-        _record.port,
-        _record.path,
-        _record.query,
-        _record.fragment
-      );
-      let pieces$1 = _block;
-      return parse_fragment(rest, pieces$1);
-    } else {
-      let $ = pop_codeunit(uri_string);
-      let rest = $[1];
-      loop$original = original;
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$size = size2 + 1;
-    }
-  }
-}
-function parse_host_within_brackets_loop(loop$original, loop$uri_string, loop$pieces, loop$size) {
-  while (true) {
-    let original = loop$original;
-    let uri_string = loop$uri_string;
-    let pieces = loop$pieces;
-    let size2 = loop$size;
-    if (uri_string === "") {
-      return new Ok(
-        (() => {
-          let _record = pieces;
-          return new Uri(
-            _record.scheme,
-            _record.userinfo,
-            new Some(uri_string),
-            _record.port,
-            _record.path,
-            _record.query,
-            _record.fragment
-          );
-        })()
-      );
-    } else if (uri_string.startsWith("]")) {
-      if (size2 === 0) {
-        let rest = uri_string.slice(1);
-        return parse_port(rest, pieces);
-      } else {
-        let rest = uri_string.slice(1);
-        let host = string_codeunit_slice(original, 0, size2 + 1);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          _record.scheme,
-          _record.userinfo,
-          new Some(host),
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_port(rest, pieces$1);
-      }
-    } else if (uri_string.startsWith("/")) {
-      if (size2 === 0) {
-        return parse_path(uri_string, pieces);
-      } else {
-        let host = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          _record.scheme,
-          _record.userinfo,
-          new Some(host),
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_path(uri_string, pieces$1);
-      }
-    } else if (uri_string.startsWith("?")) {
-      if (size2 === 0) {
-        let rest = uri_string.slice(1);
-        return parse_query_with_question_mark(rest, pieces);
-      } else {
-        let rest = uri_string.slice(1);
-        let host = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          _record.scheme,
-          _record.userinfo,
-          new Some(host),
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_query_with_question_mark(rest, pieces$1);
-      }
-    } else if (uri_string.startsWith("#")) {
-      if (size2 === 0) {
-        let rest = uri_string.slice(1);
-        return parse_fragment(rest, pieces);
-      } else {
-        let rest = uri_string.slice(1);
-        let host = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          _record.scheme,
-          _record.userinfo,
-          new Some(host),
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_fragment(rest, pieces$1);
-      }
-    } else {
-      let $ = pop_codeunit(uri_string);
-      let char = $[0];
-      let rest = $[1];
-      let $1 = is_valid_host_within_brackets_char(char);
-      if ($1) {
-        loop$original = original;
-        loop$uri_string = rest;
-        loop$pieces = pieces;
-        loop$size = size2 + 1;
-      } else {
-        return parse_host_outside_of_brackets_loop(
-          original,
-          original,
-          pieces,
-          0
-        );
-      }
-    }
-  }
-}
-function parse_host_within_brackets(uri_string, pieces) {
-  return parse_host_within_brackets_loop(uri_string, uri_string, pieces, 0);
-}
-function parse_host_outside_of_brackets(uri_string, pieces) {
-  return parse_host_outside_of_brackets_loop(uri_string, uri_string, pieces, 0);
-}
-function parse_host(uri_string, pieces) {
-  if (uri_string.startsWith("[")) {
-    return parse_host_within_brackets(uri_string, pieces);
-  } else if (uri_string.startsWith(":")) {
-    let _block;
-    let _record = pieces;
-    _block = new Uri(
-      _record.scheme,
-      _record.userinfo,
-      new Some(""),
-      _record.port,
-      _record.path,
-      _record.query,
-      _record.fragment
-    );
-    let pieces$1 = _block;
-    return parse_port(uri_string, pieces$1);
-  } else if (uri_string === "") {
-    return new Ok(
-      (() => {
-        let _record = pieces;
-        return new Uri(
-          _record.scheme,
-          _record.userinfo,
-          new Some(""),
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-      })()
-    );
-  } else {
-    return parse_host_outside_of_brackets(uri_string, pieces);
-  }
-}
-function parse_userinfo_loop(loop$original, loop$uri_string, loop$pieces, loop$size) {
-  while (true) {
-    let original = loop$original;
-    let uri_string = loop$uri_string;
-    let pieces = loop$pieces;
-    let size2 = loop$size;
-    if (uri_string.startsWith("@")) {
-      if (size2 === 0) {
-        let rest = uri_string.slice(1);
-        return parse_host(rest, pieces);
-      } else {
-        let rest = uri_string.slice(1);
-        let userinfo = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          _record.scheme,
-          new Some(userinfo),
-          _record.host,
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_host(rest, pieces$1);
-      }
-    } else if (uri_string === "") {
-      return parse_host(original, pieces);
-    } else if (uri_string.startsWith("/")) {
-      return parse_host(original, pieces);
-    } else if (uri_string.startsWith("?")) {
-      return parse_host(original, pieces);
-    } else if (uri_string.startsWith("#")) {
-      return parse_host(original, pieces);
-    } else {
-      let $ = pop_codeunit(uri_string);
-      let rest = $[1];
-      loop$original = original;
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$size = size2 + 1;
-    }
-  }
-}
-function parse_authority_pieces(string5, pieces) {
-  return parse_userinfo_loop(string5, string5, pieces, 0);
-}
-function parse_authority_with_slashes(uri_string, pieces) {
-  if (uri_string === "//") {
-    return new Ok(
-      (() => {
-        let _record = pieces;
-        return new Uri(
-          _record.scheme,
-          _record.userinfo,
-          new Some(""),
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-      })()
-    );
-  } else if (uri_string.startsWith("//")) {
-    let rest = uri_string.slice(2);
-    return parse_authority_pieces(rest, pieces);
-  } else {
-    return parse_path(uri_string, pieces);
-  }
-}
-function parse_scheme_loop(loop$original, loop$uri_string, loop$pieces, loop$size) {
-  while (true) {
-    let original = loop$original;
-    let uri_string = loop$uri_string;
-    let pieces = loop$pieces;
-    let size2 = loop$size;
-    if (uri_string.startsWith("/")) {
-      if (size2 === 0) {
-        return parse_authority_with_slashes(uri_string, pieces);
-      } else {
-        let scheme = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          new Some(lowercase(scheme)),
-          _record.userinfo,
-          _record.host,
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_authority_with_slashes(uri_string, pieces$1);
-      }
-    } else if (uri_string.startsWith("?")) {
-      if (size2 === 0) {
-        let rest = uri_string.slice(1);
-        return parse_query_with_question_mark(rest, pieces);
-      } else {
-        let rest = uri_string.slice(1);
-        let scheme = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          new Some(lowercase(scheme)),
-          _record.userinfo,
-          _record.host,
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_query_with_question_mark(rest, pieces$1);
-      }
-    } else if (uri_string.startsWith("#")) {
-      if (size2 === 0) {
-        let rest = uri_string.slice(1);
-        return parse_fragment(rest, pieces);
-      } else {
-        let rest = uri_string.slice(1);
-        let scheme = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          new Some(lowercase(scheme)),
-          _record.userinfo,
-          _record.host,
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_fragment(rest, pieces$1);
-      }
-    } else if (uri_string.startsWith(":")) {
-      if (size2 === 0) {
-        return new Error(void 0);
-      } else {
-        let rest = uri_string.slice(1);
-        let scheme = string_codeunit_slice(original, 0, size2);
-        let _block;
-        let _record = pieces;
-        _block = new Uri(
-          new Some(lowercase(scheme)),
-          _record.userinfo,
-          _record.host,
-          _record.port,
-          _record.path,
-          _record.query,
-          _record.fragment
-        );
-        let pieces$1 = _block;
-        return parse_authority_with_slashes(rest, pieces$1);
-      }
-    } else if (uri_string === "") {
-      return new Ok(
-        (() => {
-          let _record = pieces;
-          return new Uri(
-            _record.scheme,
-            _record.userinfo,
-            _record.host,
-            _record.port,
-            original,
-            _record.query,
-            _record.fragment
-          );
-        })()
-      );
-    } else {
-      let $ = pop_codeunit(uri_string);
-      let rest = $[1];
-      loop$original = original;
-      loop$uri_string = rest;
-      loop$pieces = pieces;
-      loop$size = size2 + 1;
-    }
-  }
-}
-function remove_dot_segments_loop(loop$input, loop$accumulator) {
-  while (true) {
-    let input2 = loop$input;
-    let accumulator = loop$accumulator;
-    if (input2 instanceof Empty) {
-      return reverse(accumulator);
-    } else {
-      let segment = input2.head;
-      let rest = input2.tail;
-      let _block;
-      if (segment === "") {
-        let accumulator$12 = accumulator;
-        _block = accumulator$12;
-      } else if (segment === ".") {
-        let accumulator$12 = accumulator;
-        _block = accumulator$12;
-      } else if (segment === "..") {
-        if (accumulator instanceof Empty) {
-          _block = toList([]);
-        } else {
-          let accumulator$12 = accumulator.tail;
-          _block = accumulator$12;
-        }
-      } else {
-        let segment$1 = segment;
-        let accumulator$12 = accumulator;
-        _block = prepend(segment$1, accumulator$12);
-      }
-      let accumulator$1 = _block;
-      loop$input = rest;
-      loop$accumulator = accumulator$1;
-    }
-  }
-}
-function remove_dot_segments(input2) {
-  return remove_dot_segments_loop(input2, toList([]));
-}
-function path_segments(path) {
-  return remove_dot_segments(split2(path, "/"));
-}
-function to_string2(uri) {
-  let _block;
-  let $ = uri.fragment;
-  if ($ instanceof Some) {
-    let fragment3 = $[0];
-    _block = toList(["#", fragment3]);
-  } else {
-    _block = toList([]);
-  }
-  let parts = _block;
-  let _block$1;
-  let $1 = uri.query;
-  if ($1 instanceof Some) {
-    let query = $1[0];
-    _block$1 = prepend("?", prepend(query, parts));
-  } else {
-    _block$1 = parts;
-  }
-  let parts$1 = _block$1;
-  let parts$2 = prepend(uri.path, parts$1);
-  let _block$2;
-  let $2 = uri.host;
-  let $3 = starts_with(uri.path, "/");
-  if (!$3) {
-    if ($2 instanceof Some) {
-      let host = $2[0];
-      if (host !== "") {
-        _block$2 = prepend("/", parts$2);
-      } else {
-        _block$2 = parts$2;
-      }
-    } else {
-      _block$2 = parts$2;
-    }
-  } else {
-    _block$2 = parts$2;
-  }
-  let parts$3 = _block$2;
-  let _block$3;
-  let $4 = uri.host;
-  let $5 = uri.port;
-  if ($5 instanceof Some) {
-    if ($4 instanceof Some) {
-      let port = $5[0];
-      _block$3 = prepend(":", prepend(to_string(port), parts$3));
-    } else {
-      _block$3 = parts$3;
-    }
-  } else {
-    _block$3 = parts$3;
-  }
-  let parts$4 = _block$3;
-  let _block$4;
-  let $6 = uri.scheme;
-  let $7 = uri.userinfo;
-  let $8 = uri.host;
-  if ($8 instanceof Some) {
-    if ($7 instanceof Some) {
-      if ($6 instanceof Some) {
-        let h = $8[0];
-        let u = $7[0];
-        let s = $6[0];
-        _block$4 = prepend(
-          s,
-          prepend(
-            "://",
-            prepend(u, prepend("@", prepend(h, parts$4)))
-          )
-        );
-      } else {
-        _block$4 = parts$4;
-      }
-    } else if ($6 instanceof Some) {
-      let h = $8[0];
-      let s = $6[0];
-      _block$4 = prepend(s, prepend("://", prepend(h, parts$4)));
-    } else {
-      let h = $8[0];
-      _block$4 = prepend("//", prepend(h, parts$4));
-    }
-  } else if ($7 instanceof Some) {
-    if ($6 instanceof Some) {
-      let s = $6[0];
-      _block$4 = prepend(s, prepend(":", parts$4));
-    } else {
-      _block$4 = parts$4;
-    }
-  } else if ($6 instanceof Some) {
-    let s = $6[0];
-    _block$4 = prepend(s, prepend(":", parts$4));
-  } else {
-    _block$4 = parts$4;
-  }
-  let parts$5 = _block$4;
-  return concat2(parts$5);
-}
-var empty = /* @__PURE__ */ new Uri(
-  /* @__PURE__ */ new None(),
-  /* @__PURE__ */ new None(),
-  /* @__PURE__ */ new None(),
-  /* @__PURE__ */ new None(),
-  "",
-  /* @__PURE__ */ new None(),
-  /* @__PURE__ */ new None()
-);
-function parse(uri_string) {
-  return parse_scheme_loop(uri_string, uri_string, empty, 0);
-}
-
-// build/dev/javascript/formal/formal/form.mjs
-var Form = class extends CustomType {
-  constructor(translator, values3, errors, run3) {
-    super();
-    this.translator = translator;
-    this.values = values3;
-    this.errors = errors;
-    this.run = run3;
-  }
-};
-var Schema = class extends CustomType {
-  constructor(run3) {
-    super();
-    this.run = run3;
-  }
-};
-var MustBePresent = class extends CustomType {
-};
-var MustBeInt = class extends CustomType {
-};
-var MustBeFloat = class extends CustomType {
-};
-var MustBeEmail = class extends CustomType {
-};
-var MustBePhoneNumber = class extends CustomType {
-};
-var MustBeUrl = class extends CustomType {
-};
-var MustBeDate = class extends CustomType {
-};
-var MustBeTime = class extends CustomType {
-};
-var MustBeDateTime = class extends CustomType {
-};
-var MustBeColour = class extends CustomType {
-};
-var MustBeStringLengthMoreThan = class extends CustomType {
-  constructor(limit) {
-    super();
-    this.limit = limit;
-  }
-};
-var MustBeStringLengthLessThan = class extends CustomType {
-  constructor(limit) {
-    super();
-    this.limit = limit;
-  }
-};
-var MustBeIntMoreThan = class extends CustomType {
-  constructor(limit) {
-    super();
-    this.limit = limit;
-  }
-};
-var MustBeIntLessThan = class extends CustomType {
-  constructor(limit) {
-    super();
-    this.limit = limit;
-  }
-};
-var MustBeFloatMoreThan = class extends CustomType {
-  constructor(limit) {
-    super();
-    this.limit = limit;
-  }
-};
-var MustBeFloatLessThan = class extends CustomType {
-  constructor(limit) {
-    super();
-    this.limit = limit;
-  }
-};
-var MustBeAccepted = class extends CustomType {
-};
-var MustConfirm = class extends CustomType {
-};
-var MustBeUnique = class extends CustomType {
-};
-var CustomError = class extends CustomType {
-  constructor(message2) {
-    super();
-    this.message = message2;
-  }
-};
-var Parser = class extends CustomType {
-  constructor(run3) {
-    super();
-    this.run = run3;
-  }
-};
-var Check = class extends CustomType {
-};
-var DontCheck = class extends CustomType {
-};
-function run2(form2) {
-  let $ = form2.run(form2.values, toList([]));
-  let value = $[0];
-  let errors = $[1];
-  if (errors instanceof Empty) {
-    return new Ok(value);
-  } else {
-    return new Error(
-      (() => {
-        let _record = form2;
-        return new Form(_record.translator, _record.values, errors, _record.run);
-      })()
-    );
-  }
-}
-function field2(name2, parser, continuation) {
-  return new Schema(
-    (values3, errors) => {
-      let input2 = key_filter(values3, name2);
-      let $ = parser.run(input2, new Check());
-      let value = $[0];
-      let new_errors = $[2];
-      let _block;
-      if (new_errors instanceof Empty) {
-        _block = errors;
-      } else {
-        _block = prepend([name2, new_errors], errors);
-      }
-      let errors$1 = _block;
-      return continuation(value).run(values3, errors$1);
-    }
-  );
-}
-function success2(value) {
-  return new Schema((_, errors) => {
-    return [value, errors];
-  });
-}
-function add_values(form2, values3) {
-  let _record = form2;
-  return new Form(
-    _record.translator,
-    append(values3, form2.values),
-    _record.errors,
-    _record.run
-  );
-}
-function string_parser(inputs, status) {
-  if (inputs instanceof Empty) {
-    return ["", status, toList([])];
-  } else {
-    let input2 = inputs.head;
-    return [input2, status, toList([])];
-  }
-}
-function value_parser(inputs, zero, status, error, next) {
-  if (inputs instanceof Empty) {
-    return [zero, new DontCheck(), toList([error])];
-  } else {
-    let input2 = inputs.head;
-    let $ = next(input2);
-    if ($ instanceof Ok) {
-      let t = $[0];
-      return [t, status, toList([])];
-    } else {
-      return [zero, new DontCheck(), toList([error])];
-    }
-  }
-}
-function email_parser(inputs, status) {
-  return value_parser(
-    inputs,
-    "",
-    status,
-    new MustBeEmail(),
-    (input2) => {
-      let $ = contains_string(input2, "@");
-      if ($) {
-        return new Ok(input2);
-      } else {
-        return new Error(void 0);
-      }
-    }
-  );
-}
-function add_check(parser, checker) {
-  return new Parser(
-    (inputs, status) => {
-      let $ = parser.run(inputs, status);
-      let value = $[0];
-      let status$1 = $[1];
-      let errors = $[2];
-      let _block;
-      if (status$1 instanceof Check) {
-        let $1 = checker(value);
-        if ($1 instanceof Ok) {
-          _block = errors;
-        } else {
-          let error = $1[0];
-          _block = prepend(error, errors);
-        }
-      } else {
-        _block = errors;
-      }
-      let errors$1 = _block;
-      return [value, status$1, errors$1];
-    }
-  );
-}
-function check_string_length_more_than(parser, limit) {
-  return add_check(
-    parser,
-    (x) => {
-      let $ = string_length(x) > limit;
-      if ($) {
-        return new Ok(x);
-      } else {
-        return new Error(new MustBeStringLengthMoreThan(limit));
-      }
-    }
-  );
-}
-function en_gb(error) {
-  if (error instanceof MustBePresent) {
-    return "must not be blank";
-  } else if (error instanceof MustBeInt) {
-    return "must be a whole number";
-  } else if (error instanceof MustBeFloat) {
-    return "must be a number";
-  } else if (error instanceof MustBeEmail) {
-    return "must be an email";
-  } else if (error instanceof MustBePhoneNumber) {
-    return "must be a phone number";
-  } else if (error instanceof MustBeUrl) {
-    return "must be a URL";
-  } else if (error instanceof MustBeDate) {
-    return "must be a date";
-  } else if (error instanceof MustBeTime) {
-    return "must be a time";
-  } else if (error instanceof MustBeDateTime) {
-    return "must be a date and time";
-  } else if (error instanceof MustBeColour) {
-    return "must be a hex colour code";
-  } else if (error instanceof MustBeStringLengthMoreThan) {
-    let limit = error.limit;
-    return "must be more than " + to_string(limit) + " characters";
-  } else if (error instanceof MustBeStringLengthLessThan) {
-    let limit = error.limit;
-    return "must be less than " + to_string(limit) + " characters";
-  } else if (error instanceof MustBeIntMoreThan) {
-    let limit = error.limit;
-    return "must be more than " + to_string(limit);
-  } else if (error instanceof MustBeIntLessThan) {
-    let limit = error.limit;
-    return "must be less than " + to_string(limit);
-  } else if (error instanceof MustBeFloatMoreThan) {
-    let limit = error.limit;
-    return "must be more than " + float_to_string(limit);
-  } else if (error instanceof MustBeFloatLessThan) {
-    let limit = error.limit;
-    return "must be less than " + float_to_string(limit);
-  } else if (error instanceof MustBeAccepted) {
-    return "must be accepted";
-  } else if (error instanceof MustConfirm) {
-    return "doesn't match";
-  } else if (error instanceof MustBeUnique) {
-    return "is already in use";
-  } else {
-    let message2 = error.message;
-    return message2;
-  }
-}
-function new$(schema) {
-  return new Form(en_gb, toList([]), toList([]), schema.run);
-}
-function field_error_messages(form2, name2) {
-  let _pipe = form2.errors;
-  let _pipe$1 = key_filter(_pipe, name2);
-  return flat_map(
-    _pipe$1,
-    (_capture) => {
-      return map(_capture, form2.translator);
-    }
-  );
-}
-function add_error(form2, name2, error) {
-  let _record = form2;
-  return new Form(
-    _record.translator,
-    _record.values,
-    prepend([name2, toList([error])], form2.errors),
-    _record.run
-  );
-}
-var parse_string = /* @__PURE__ */ new Parser(string_parser);
-var parse_email = /* @__PURE__ */ new Parser(email_parser);
 
 // build/dev/javascript/gleam_stdlib/gleam/function.mjs
 function identity2(x) {
   return x;
-}
-
-// build/dev/javascript/gleam_json/gleam_json_ffi.mjs
-function json_to_string(json2) {
-  return JSON.stringify(json2);
-}
-function object(entries) {
-  return Object.fromEntries(entries);
-}
-function identity3(x) {
-  return x;
-}
-function decode(string5) {
-  try {
-    const result = JSON.parse(string5);
-    return new Ok(result);
-  } catch (err) {
-    return new Error(getJsonDecodeError(err, string5));
-  }
-}
-function getJsonDecodeError(stdErr, json2) {
-  if (isUnexpectedEndOfInput(stdErr)) return new UnexpectedEndOfInput();
-  return toUnexpectedByteError(stdErr, json2);
-}
-function isUnexpectedEndOfInput(err) {
-  const unexpectedEndOfInputRegex = /((unexpected (end|eof))|(end of data)|(unterminated string)|(json( parse error|\.parse)\: expected '(\:|\}|\])'))/i;
-  return unexpectedEndOfInputRegex.test(err.message);
-}
-function toUnexpectedByteError(err, json2) {
-  let converters = [
-    v8UnexpectedByteError,
-    oldV8UnexpectedByteError,
-    jsCoreUnexpectedByteError,
-    spidermonkeyUnexpectedByteError
-  ];
-  for (let converter of converters) {
-    let result = converter(err, json2);
-    if (result) return result;
-  }
-  return new UnexpectedByte("", 0);
-}
-function v8UnexpectedByteError(err) {
-  const regex = /unexpected token '(.)', ".+" is not valid JSON/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[1]);
-  return new UnexpectedByte(byte, -1);
-}
-function oldV8UnexpectedByteError(err) {
-  const regex = /unexpected token (.) in JSON at position (\d+)/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[1]);
-  const position = Number(match[2]);
-  return new UnexpectedByte(byte, position);
-}
-function spidermonkeyUnexpectedByteError(err, json2) {
-  const regex = /(unexpected character|expected .*) at line (\d+) column (\d+)/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const line = Number(match[2]);
-  const column = Number(match[3]);
-  const position = getPositionFromMultiline(line, column, json2);
-  const byte = toHex(json2[position]);
-  return new UnexpectedByte(byte, position);
-}
-function jsCoreUnexpectedByteError(err) {
-  const regex = /unexpected (identifier|token) "(.)"/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[2]);
-  return new UnexpectedByte(byte, 0);
-}
-function toHex(char) {
-  return "0x" + char.charCodeAt(0).toString(16).toUpperCase();
-}
-function getPositionFromMultiline(line, column, string5) {
-  if (line === 1) return column - 1;
-  let currentLn = 1;
-  let position = 0;
-  string5.split("").find((char, idx) => {
-    if (char === "\n") currentLn += 1;
-    if (currentLn === line) {
-      position = idx + column;
-      return true;
-    }
-    return false;
-  });
-  return position;
-}
-
-// build/dev/javascript/gleam_json/gleam/json.mjs
-var UnexpectedEndOfInput = class extends CustomType {
-};
-var UnexpectedByte = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var UnableToDecode = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-function do_parse(json2, decoder) {
-  return try$(
-    decode(json2),
-    (dynamic_value) => {
-      let _pipe = run(dynamic_value, decoder);
-      return map_error(
-        _pipe,
-        (var0) => {
-          return new UnableToDecode(var0);
-        }
-      );
-    }
-  );
-}
-function parse2(json2, decoder) {
-  return do_parse(json2, decoder);
-}
-function to_string3(json2) {
-  return json_to_string(json2);
-}
-function string3(input2) {
-  return identity3(input2);
-}
-function object2(entries) {
-  return object(entries);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/set.mjs
@@ -3791,7 +2295,7 @@ var Set2 = class extends CustomType {
     this.dict = dict2;
   }
 };
-function new$2() {
+function new$() {
   return new Set2(new_map());
 }
 function contains(set, member) {
@@ -3806,7 +2310,7 @@ function insert2(set, member) {
 
 // build/dev/javascript/lustre/lustre/internals/constants.ffi.mjs
 var EMPTY_DICT = /* @__PURE__ */ Dict.new();
-var EMPTY_SET = /* @__PURE__ */ new$2();
+var EMPTY_SET = /* @__PURE__ */ new$();
 var empty_dict = () => EMPTY_DICT;
 var empty_set = () => EMPTY_SET;
 var document2 = () => globalThis?.document;
@@ -4060,26 +2564,67 @@ var Effect = class extends CustomType {
     this.after_paint = after_paint;
   }
 };
-var empty3 = /* @__PURE__ */ new Effect(
+var Actions = class extends CustomType {
+  constructor(dispatch, emit, select, root3) {
+    super();
+    this.dispatch = dispatch;
+    this.emit = emit;
+    this.select = select;
+    this.root = root3;
+  }
+};
+function do_comap_select(_, _1, _2) {
+  return void 0;
+}
+function do_comap_actions(actions, f) {
+  return new Actions(
+    (msg) => {
+      return actions.dispatch(f(msg));
+    },
+    actions.emit,
+    (selector) => {
+      return do_comap_select(actions, selector, f);
+    },
+    actions.root
+  );
+}
+function do_map(effects, f) {
+  return map(
+    effects,
+    (effect) => {
+      return (actions) => {
+        return effect(do_comap_actions(actions, f));
+      };
+    }
+  );
+}
+function map4(effect, f) {
+  return new Effect(
+    do_map(effect.synchronous, f),
+    do_map(effect.before_paint, f),
+    do_map(effect.after_paint, f)
+  );
+}
+var empty = /* @__PURE__ */ new Effect(
   /* @__PURE__ */ toList([]),
   /* @__PURE__ */ toList([]),
   /* @__PURE__ */ toList([])
 );
 function none() {
-  return empty3;
+  return empty;
 }
 function from(effect) {
   let task = (actions) => {
     let dispatch = actions.dispatch;
     return effect(dispatch);
   };
-  let _record = empty3;
+  let _record = empty;
   return new Effect(toList([task]), _record.before_paint, _record.after_paint);
 }
 function batch(effects) {
   return fold(
     effects,
-    empty3,
+    empty,
     (acc, eff) => {
       return new Effect(
         fold(eff.synchronous, acc.synchronous, prepend2),
@@ -4091,25 +2636,25 @@ function batch(effects) {
 }
 
 // build/dev/javascript/lustre/lustre/internals/mutable_map.ffi.mjs
-function empty4() {
+function empty2() {
   return null;
 }
-function get(map6, key) {
-  const value = map6?.get(key);
+function get(map8, key) {
+  const value = map8?.get(key);
   if (value != null) {
     return new Ok(value);
   } else {
     return new Error(void 0);
   }
 }
-function insert3(map6, key, value) {
-  map6 ??= /* @__PURE__ */ new Map();
-  map6.set(key, value);
-  return map6;
+function insert3(map8, key, value) {
+  map8 ??= /* @__PURE__ */ new Map();
+  map8.set(key, value);
+  return map8;
 }
-function remove(map6, key) {
-  map6?.delete(key);
-  return map6;
+function remove(map8, key) {
+  map8?.delete(key);
+  return map8;
 }
 
 // build/dev/javascript/lustre/lustre/vdom/path.mjs
@@ -4184,14 +2729,14 @@ function do_to_string(loop$path, loop$acc) {
     }
   }
 }
-function to_string4(path) {
+function to_string2(path) {
   return do_to_string(path, toList([]));
 }
 function matches(path, candidates) {
   if (candidates instanceof Empty) {
     return false;
   } else {
-    return do_matches(to_string4(path), candidates);
+    return do_matches(to_string2(path), candidates);
   }
 }
 var separator_event = "\n";
@@ -4344,7 +2889,7 @@ function set_fragment_key(loop$key, loop$children, loop$index, loop$new_children
             node.children,
             0,
             empty_list,
-            empty4()
+            empty2()
           );
           let node_children = $1[0];
           let node_keyed_children = $1[1];
@@ -4437,7 +2982,7 @@ function to_keyed(key, node) {
       children,
       0,
       empty_list,
-      empty4()
+      empty2()
     );
     let children$1 = $[0];
     let keyed_children = $[1];
@@ -4545,9 +3090,9 @@ var Events = class extends CustomType {
     this.next_dispatched_paths = next_dispatched_paths;
   }
 };
-function new$4() {
+function new$3() {
   return new Events(
-    empty4(),
+    empty2(),
     empty_list,
     empty_list
   );
@@ -4796,7 +3341,7 @@ function element2(tag, attributes, children) {
     tag,
     attributes,
     children,
-    empty4(),
+    empty2(),
     false,
     false
   );
@@ -4809,7 +3354,7 @@ function namespaced(namespace, tag, attributes, children) {
     tag,
     attributes,
     children,
-    empty4(),
+    empty2(),
     false,
     false
   );
@@ -4839,9 +3384,56 @@ function fragment2(children) {
     "",
     identity2,
     children,
-    empty4(),
+    empty2(),
     count_fragment_children(children, 0)
   );
+}
+function map5(element3, f) {
+  let mapper = identity2(compose_mapper(identity2(f), element3.mapper));
+  if (element3 instanceof Fragment) {
+    let children = element3.children;
+    let keyed_children = element3.keyed_children;
+    let _record = element3;
+    return new Fragment(
+      _record.kind,
+      _record.key,
+      mapper,
+      identity2(children),
+      identity2(keyed_children),
+      _record.children_count
+    );
+  } else if (element3 instanceof Element) {
+    let attributes = element3.attributes;
+    let children = element3.children;
+    let keyed_children = element3.keyed_children;
+    let _record = element3;
+    return new Element(
+      _record.kind,
+      _record.key,
+      mapper,
+      _record.namespace,
+      _record.tag,
+      identity2(attributes),
+      identity2(children),
+      identity2(keyed_children),
+      _record.self_closing,
+      _record.void
+    );
+  } else if (element3 instanceof Text) {
+    return identity2(element3);
+  } else {
+    let attributes = element3.attributes;
+    let _record = element3;
+    return new UnsafeInnerHtml(
+      _record.kind,
+      _record.key,
+      mapper,
+      _record.namespace,
+      _record.tag,
+      identity2(attributes),
+      _record.inner_html
+    );
+  }
 }
 
 // build/dev/javascript/lustre/lustre/element/html.mjs
@@ -4854,14 +3446,8 @@ function h1(attrs, children) {
 function div(attrs, children) {
   return element2("div", attrs, children);
 }
-function li(attrs, children) {
-  return element2("li", attrs, children);
-}
 function p(attrs, children) {
   return element2("p", attrs, children);
-}
-function ul(attrs, children) {
-  return element2("ul", attrs, children);
 }
 function a(attrs, children) {
   return element2("a", attrs, children);
@@ -4959,7 +3545,7 @@ var Remove = class extends CustomType {
     this.count = count;
   }
 };
-function new$6(index5, removed, changes, children) {
+function new$5(index5, removed, changes, children) {
   return new Patch(index5, removed, changes, children);
 }
 var replace_text_kind = 0;
@@ -5804,7 +4390,7 @@ function do_diff(loop$old, loop$old_keyed, loop$new, loop$new_keyed, loop$moved,
               let next$2 = $1;
               let new$1 = new$9.tail;
               let old$1 = old.tail;
-              let child = new$6(
+              let child = new$5(
                 node_index,
                 0,
                 toList([replace_text(next$2.content)]),
@@ -5912,7 +4498,7 @@ function do_diff(loop$old, loop$old_keyed, loop$new, loop$new_keyed, loop$moved,
               _block$2 = children;
             } else {
               _block$2 = prepend(
-                new$6(node_index, 0, child_changes$1, toList([])),
+                new$5(node_index, 0, child_changes$1, toList([])),
                 children
               );
             }
@@ -5977,9 +4563,9 @@ function do_diff(loop$old, loop$old_keyed, loop$new, loop$new_keyed, loop$moved,
 function diff(events, old, new$9) {
   return do_diff(
     toList([old]),
-    empty4(),
+    empty2(),
     toList([new$9]),
-    empty4(),
+    empty2(),
     empty_set(),
     0,
     0,
@@ -6512,11 +5098,11 @@ var virtualiseAttribute = (attr) => {
 // build/dev/javascript/lustre/lustre/runtime/client/runtime.ffi.mjs
 var is_browser = () => !!document2();
 var Runtime = class {
-  constructor(root3, [model, effects], view9, update5) {
+  constructor(root3, [model, effects], view6, update3) {
     this.root = root3;
     this.#model = model;
-    this.#view = view9;
-    this.#update = update5;
+    this.#view = view6;
+    this.#update = update3;
     this.#reconciler = new Reconciler(this.root, (event4, path, name2) => {
       const [events, result] = handle(this.#events, path, name2, event4);
       this.#events = events;
@@ -6528,7 +5114,7 @@ var Runtime = class {
       }
     });
     this.#vdom = virtualise(this.root);
-    this.#events = new$4();
+    this.#events = new$3();
     this.#shouldFlush = true;
     this.#tick(effects);
   }
@@ -6675,7 +5261,7 @@ var Config2 = class extends CustomType {
     this.on_form_restore = on_form_restore;
   }
 };
-function new$7(options) {
+function new$6(options) {
   let init4 = new Config2(
     false,
     true,
@@ -6697,15 +5283,15 @@ function new$7(options) {
 
 // build/dev/javascript/lustre/lustre/runtime/client/spa.ffi.mjs
 var Spa = class _Spa {
-  static start({ init: init4, update: update5, view: view9 }, selector, flags) {
+  static start({ init: init4, update: update3, view: view6 }, selector, flags) {
     if (!is_browser()) return new Error(new NotABrowser());
     const root3 = selector instanceof HTMLElement ? selector : document2().querySelector(selector);
     if (!root3) return new Error(new ElementNotFound(selector));
-    return new Ok(new _Spa(root3, init4(flags), update5, view9));
+    return new Ok(new _Spa(root3, init4(flags), update3, view6));
   }
   #runtime;
-  constructor(root3, [init4, effects], update5, view9) {
-    this.#runtime = new Runtime(root3, [init4, effects], view9, update5);
+  constructor(root3, [init4, effects], update3, view6) {
+    this.#runtime = new Runtime(root3, [init4, effects], view6, update3);
   }
   send(message2) {
     switch (message2.constructor) {
@@ -6732,11 +5318,11 @@ var start = Spa.start;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init4, update5, view9, config) {
+  constructor(init4, update3, view6, config) {
     super();
     this.init = init4;
-    this.update = update5;
-    this.view = view9;
+    this.update = update3;
+    this.view = view6;
     this.config = config;
   }
 };
@@ -6748,8 +5334,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init4, update5, view9) {
-  return new App(init4, update5, view9, new$7(empty_list));
+function application(init4, update3, view6) {
+  return new App(init4, update3, view6, new$6(empty_list));
 }
 function start3(app, selector, start_args) {
   return guard(
@@ -6761,8 +5347,62 @@ function start3(app, selector, start_args) {
   );
 }
 
+// build/dev/javascript/gleam_stdlib/gleam/uri.mjs
+var Uri = class extends CustomType {
+  constructor(scheme, userinfo, host, port, path, query, fragment3) {
+    super();
+    this.scheme = scheme;
+    this.userinfo = userinfo;
+    this.host = host;
+    this.port = port;
+    this.path = path;
+    this.query = query;
+    this.fragment = fragment3;
+  }
+};
+function remove_dot_segments_loop(loop$input, loop$accumulator) {
+  while (true) {
+    let input2 = loop$input;
+    let accumulator = loop$accumulator;
+    if (input2 instanceof Empty) {
+      return reverse(accumulator);
+    } else {
+      let segment = input2.head;
+      let rest = input2.tail;
+      let _block;
+      if (segment === "") {
+        let accumulator$12 = accumulator;
+        _block = accumulator$12;
+      } else if (segment === ".") {
+        let accumulator$12 = accumulator;
+        _block = accumulator$12;
+      } else if (segment === "..") {
+        if (accumulator instanceof Empty) {
+          _block = toList([]);
+        } else {
+          let accumulator$12 = accumulator.tail;
+          _block = accumulator$12;
+        }
+      } else {
+        let segment$1 = segment;
+        let accumulator$12 = accumulator;
+        _block = prepend(segment$1, accumulator$12);
+      }
+      let accumulator$1 = _block;
+      loop$input = rest;
+      loop$accumulator = accumulator$1;
+    }
+  }
+}
+function remove_dot_segments(input2) {
+  return remove_dot_segments_loop(input2, toList([]));
+}
+function path_segments(path) {
+  return remove_dot_segments(split2(path, "/"));
+}
+
 // build/dev/javascript/gleam_stdlib/gleam/pair.mjs
-function new$8(first, second2) {
+function new$7(first, second2) {
   return [first, second2];
 }
 
@@ -6870,627 +5510,10 @@ function init(handler) {
   );
 }
 
-// build/dev/javascript/shared/shared/poll.mjs
-var Poll = class extends CustomType {
-  constructor(id, name2) {
-    super();
-    this.id = id;
-    this.name = name2;
-  }
-};
-function poll_decoder() {
-  return field(
-    "id",
-    string2,
-    (id) => {
-      return field(
-        "name",
-        string2,
-        (name2) => {
-          return success(new Poll(id, name2));
-        }
-      );
-    }
-  );
-}
-
-// build/dev/javascript/client/forms.mjs
-var SignInFormData = class extends CustomType {
-  constructor(email, password) {
-    super();
-    this.email = email;
-    this.password = password;
-  }
-};
-var SignUpFormData = class extends CustomType {
-  constructor(email, password) {
-    super();
-    this.email = email;
-    this.password = password;
-  }
-};
-function sign_in_form() {
-  return new$(
-    field2(
-      "email",
-      parse_email,
-      (email) => {
-        return field2(
-          "password",
-          (() => {
-            let _pipe = parse_string;
-            return check_string_length_more_than(_pipe, 2);
-          })(),
-          (password) => {
-            return success2(new SignInFormData(email, password));
-          }
-        );
-      }
-    )
-  );
-}
-function sign_up_form() {
-  return new$(
-    field2(
-      "email",
-      parse_email,
-      (email) => {
-        return field2(
-          "password",
-          parse_string,
-          (password) => {
-            return success2(new SignUpFormData(email, password));
-          }
-        );
-      }
-    )
-  );
-}
-
-// build/dev/javascript/gleam_http/gleam/http.mjs
-var Get = class extends CustomType {
-};
-var Post = class extends CustomType {
-};
-var Head = class extends CustomType {
-};
-var Put = class extends CustomType {
-};
-var Delete = class extends CustomType {
-};
-var Trace = class extends CustomType {
-};
-var Connect = class extends CustomType {
-};
-var Options = class extends CustomType {
-};
-var Patch2 = class extends CustomType {
-};
-var Http = class extends CustomType {
-};
-var Https = class extends CustomType {
-};
-function method_to_string(method) {
-  if (method instanceof Get) {
-    return "GET";
-  } else if (method instanceof Post) {
-    return "POST";
-  } else if (method instanceof Head) {
-    return "HEAD";
-  } else if (method instanceof Put) {
-    return "PUT";
-  } else if (method instanceof Delete) {
-    return "DELETE";
-  } else if (method instanceof Trace) {
-    return "TRACE";
-  } else if (method instanceof Connect) {
-    return "CONNECT";
-  } else if (method instanceof Options) {
-    return "OPTIONS";
-  } else if (method instanceof Patch2) {
-    return "PATCH";
-  } else {
-    let s = method[0];
-    return s;
-  }
-}
-function scheme_to_string(scheme) {
-  if (scheme instanceof Http) {
-    return "http";
-  } else {
-    return "https";
-  }
-}
-function scheme_from_string(scheme) {
-  let $ = lowercase(scheme);
-  if ($ === "http") {
-    return new Ok(new Http());
-  } else if ($ === "https") {
-    return new Ok(new Https());
-  } else {
-    return new Error(void 0);
-  }
-}
-
-// build/dev/javascript/gleam_http/gleam/http/response.mjs
-var Response = class extends CustomType {
-  constructor(status, headers, body) {
-    super();
-    this.status = status;
-    this.headers = headers;
-    this.body = body;
-  }
-};
-function get_header(response, key) {
-  return key_find(response.headers, lowercase(key));
-}
-
-// build/dev/javascript/gleam_http/gleam/http/request.mjs
-var Request = class extends CustomType {
-  constructor(method, headers, body, scheme, host, port, path, query) {
-    super();
-    this.method = method;
-    this.headers = headers;
-    this.body = body;
-    this.scheme = scheme;
-    this.host = host;
-    this.port = port;
-    this.path = path;
-    this.query = query;
-  }
-};
-function to_uri(request) {
-  return new Uri(
-    new Some(scheme_to_string(request.scheme)),
-    new None(),
-    new Some(request.host),
-    request.port,
-    request.path,
-    request.query,
-    new None()
-  );
-}
-function from_uri(uri) {
-  return try$(
-    (() => {
-      let _pipe = uri.scheme;
-      let _pipe$1 = unwrap(_pipe, "");
-      return scheme_from_string(_pipe$1);
-    })(),
-    (scheme) => {
-      return try$(
-        (() => {
-          let _pipe = uri.host;
-          return to_result(_pipe, void 0);
-        })(),
-        (host) => {
-          let req = new Request(
-            new Get(),
-            toList([]),
-            "",
-            scheme,
-            host,
-            uri.port,
-            uri.path,
-            uri.query
-          );
-          return new Ok(req);
-        }
-      );
-    }
-  );
-}
-function set_header2(request, key, value) {
-  let headers = key_set(request.headers, lowercase(key), value);
-  let _record = request;
-  return new Request(
-    _record.method,
-    headers,
-    _record.body,
-    _record.scheme,
-    _record.host,
-    _record.port,
-    _record.path,
-    _record.query
-  );
-}
-function set_body(req, body) {
-  let method = req.method;
-  let headers = req.headers;
-  let scheme = req.scheme;
-  let host = req.host;
-  let port = req.port;
-  let path = req.path;
-  let query = req.query;
-  return new Request(method, headers, body, scheme, host, port, path, query);
-}
-function set_method(req, method) {
-  let _record = req;
-  return new Request(
-    method,
-    _record.headers,
-    _record.body,
-    _record.scheme,
-    _record.host,
-    _record.port,
-    _record.path,
-    _record.query
-  );
-}
-
-// build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
-var PromiseLayer = class _PromiseLayer {
-  constructor(promise) {
-    this.promise = promise;
-  }
-  static wrap(value) {
-    return value instanceof Promise ? new _PromiseLayer(value) : value;
-  }
-  static unwrap(value) {
-    return value instanceof _PromiseLayer ? value.promise : value;
-  }
-};
-function resolve(value) {
-  return Promise.resolve(PromiseLayer.wrap(value));
-}
-function then_await(promise, fn) {
-  return promise.then((value) => fn(PromiseLayer.unwrap(value)));
-}
-function map_promise(promise, fn) {
-  return promise.then(
-    (value) => PromiseLayer.wrap(fn(PromiseLayer.unwrap(value)))
-  );
-}
-
-// build/dev/javascript/gleam_javascript/gleam/javascript/promise.mjs
-function tap(promise, callback) {
-  let _pipe = promise;
-  return map_promise(
-    _pipe,
-    (a2) => {
-      callback(a2);
-      return a2;
-    }
-  );
-}
-function try_await(promise, callback) {
-  let _pipe = promise;
-  return then_await(
-    _pipe,
-    (result) => {
-      if (result instanceof Ok) {
-        let a2 = result[0];
-        return callback(a2);
-      } else {
-        let e = result[0];
-        return resolve(new Error(e));
-      }
-    }
-  );
-}
-
-// build/dev/javascript/gleam_fetch/gleam_fetch_ffi.mjs
-async function raw_send(request) {
-  try {
-    return new Ok(await fetch(request));
-  } catch (error) {
-    return new Error(new NetworkError(error.toString()));
-  }
-}
-function from_fetch_response(response) {
-  return new Response(
-    response.status,
-    List.fromArray([...response.headers]),
-    response
-  );
-}
-function request_common(request) {
-  let url = to_string2(to_uri(request));
-  let method = method_to_string(request.method).toUpperCase();
-  let options = {
-    headers: make_headers(request.headers),
-    method
-  };
-  return [url, options];
-}
-function to_fetch_request(request) {
-  let [url, options] = request_common(request);
-  if (options.method !== "GET" && options.method !== "HEAD") options.body = request.body;
-  return new globalThis.Request(url, options);
-}
-function make_headers(headersList) {
-  let headers = new globalThis.Headers();
-  for (let [k, v] of headersList) headers.append(k.toLowerCase(), v);
-  return headers;
-}
-async function read_text_body(response) {
-  let body;
-  try {
-    body = await response.body.text();
-  } catch (error) {
-    return new Error(new UnableToReadBody());
-  }
-  return new Ok(response.withFields({ body }));
-}
-
-// build/dev/javascript/gleam_fetch/gleam/fetch.mjs
-var NetworkError = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var UnableToReadBody = class extends CustomType {
-};
-function send2(request) {
-  let _pipe = request;
-  let _pipe$1 = to_fetch_request(_pipe);
-  let _pipe$2 = raw_send(_pipe$1);
-  return try_await(
-    _pipe$2,
-    (resp) => {
-      return resolve(new Ok(from_fetch_response(resp)));
-    }
-  );
-}
-
-// build/dev/javascript/rsvp/rsvp.ffi.mjs
-var from_relative_url = (url_string) => {
-  if (!globalThis.location) return new Error(void 0);
-  const url = new URL(url_string, globalThis.location.href);
-  const uri = uri_from_url2(url);
-  return new Ok(uri);
-};
-var uri_from_url2 = (url) => {
-  const optional = (value) => value ? new Some(value) : new None();
-  return new Uri(
-    /* scheme   */
-    optional(url.protocol?.slice(0, -1)),
-    /* userinfo */
-    new None(),
-    /* host     */
-    optional(url.hostname),
-    /* port     */
-    optional(url.port && Number(url.port)),
-    /* path     */
-    url.pathname,
-    /* query    */
-    optional(url.search?.slice(1)),
-    /* fragment */
-    optional(url.hash?.slice(1))
-  );
-};
-
-// build/dev/javascript/rsvp/rsvp.mjs
-var BadBody = class extends CustomType {
-};
-var BadUrl = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var HttpError = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var JsonError = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var NetworkError2 = class extends CustomType {
-};
-var UnhandledResponse = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var Handler2 = class extends CustomType {
-  constructor(run3) {
-    super();
-    this.run = run3;
-  }
-};
-function expect_ok_response(handler) {
-  return new Handler2(
-    (result) => {
-      return handler(
-        try$(
-          result,
-          (response) => {
-            let $ = response.status;
-            let code = $;
-            if (code >= 200 && code < 300) {
-              return new Ok(response);
-            } else {
-              let code$1 = $;
-              if (code$1 >= 400 && code$1 < 600) {
-                return new Error(new HttpError(response));
-              } else {
-                return new Error(new UnhandledResponse(response));
-              }
-            }
-          }
-        )
-      );
-    }
-  );
-}
-function expect_json_response(handler) {
-  return expect_ok_response(
-    (result) => {
-      return handler(
-        try$(
-          result,
-          (response) => {
-            let $ = get_header(response, "content-type");
-            if ($ instanceof Ok) {
-              let $1 = $[0];
-              if ($1 === "application/json") {
-                return new Ok(response);
-              } else if ($1.startsWith("application/json;")) {
-                return new Ok(response);
-              } else {
-                return new Error(new UnhandledResponse(response));
-              }
-            } else {
-              return new Error(new UnhandledResponse(response));
-            }
-          }
-        )
-      );
-    }
-  );
-}
-function do_send(request, handler) {
-  return from(
-    (dispatch) => {
-      let _pipe = send2(request);
-      let _pipe$1 = try_await(_pipe, read_text_body);
-      let _pipe$2 = map_promise(
-        _pipe$1,
-        (_capture) => {
-          return map_error(
-            _capture,
-            (error) => {
-              if (error instanceof NetworkError) {
-                return new NetworkError2();
-              } else if (error instanceof UnableToReadBody) {
-                return new BadBody();
-              } else {
-                return new BadBody();
-              }
-            }
-          );
-        }
-      );
-      let _pipe$3 = map_promise(_pipe$2, handler.run);
-      tap(_pipe$3, dispatch);
-      return void 0;
-    }
-  );
-}
-function send3(request, handler) {
-  return do_send(request, handler);
-}
-function reject(err, handler) {
-  return from(
-    (dispatch) => {
-      let _pipe = new Error(err);
-      let _pipe$1 = handler.run(_pipe);
-      return dispatch(_pipe$1);
-    }
-  );
-}
-function decode_json_body(response, decoder) {
-  let _pipe = response.body;
-  let _pipe$1 = parse2(_pipe, decoder);
-  return map_error(_pipe$1, (var0) => {
-    return new JsonError(var0);
-  });
-}
-function expect_json(decoder, handler) {
-  return expect_json_response(
-    (result) => {
-      let _pipe = result;
-      let _pipe$1 = then$(
-        _pipe,
-        (_capture) => {
-          return decode_json_body(_capture, decoder);
-        }
-      );
-      return handler(_pipe$1);
-    }
-  );
-}
-function to_uri2(uri_string) {
-  let _block;
-  if (uri_string.startsWith("./")) {
-    _block = from_relative_url(uri_string);
-  } else if (uri_string.startsWith("/")) {
-    _block = from_relative_url(uri_string);
-  } else {
-    _block = parse(uri_string);
-  }
-  let _pipe = _block;
-  return replace_error(_pipe, new BadUrl(uri_string));
-}
-function get2(url, handler) {
-  let $ = to_uri2(url);
-  if ($ instanceof Ok) {
-    let uri = $[0];
-    let _pipe = from_uri(uri);
-    let _pipe$1 = map3(
-      _pipe,
-      (_capture) => {
-        return send3(_capture, handler);
-      }
-    );
-    let _pipe$2 = map_error(
-      _pipe$1,
-      (_) => {
-        return reject(new BadUrl(url), handler);
-      }
-    );
-    return unwrap_both(_pipe$2);
-  } else {
-    let err = $[0];
-    return reject(err, handler);
-  }
-}
-function post(url, body, handler) {
-  let $ = to_uri2(url);
-  if ($ instanceof Ok) {
-    let uri = $[0];
-    let _pipe = from_uri(uri);
-    let _pipe$1 = map3(
-      _pipe,
-      (request) => {
-        let _pipe$12 = request;
-        let _pipe$22 = set_method(_pipe$12, new Post());
-        let _pipe$3 = set_header2(
-          _pipe$22,
-          "content-type",
-          "application/json"
-        );
-        let _pipe$4 = set_body(_pipe$3, to_string3(body));
-        return send3(_pipe$4, handler);
-      }
-    );
-    let _pipe$2 = map_error(
-      _pipe$1,
-      (_) => {
-        return reject(new BadUrl(url), handler);
-      }
-    );
-    return unwrap_both(_pipe$2);
-  } else {
-    let err = $[0];
-    return reject(err, handler);
-  }
-}
-
 // build/dev/javascript/client/router.mjs
 var Index2 = class extends CustomType {
 };
-var About = class extends CustomType {
-};
 var SignIn = class extends CustomType {
-};
-var SignUp = class extends CustomType {
-};
-var AdminPolls = class extends CustomType {
-};
-var Session = class extends CustomType {
-  constructor(id) {
-    super();
-    this.id = id;
-  }
 };
 var NotFound = class extends CustomType {
   constructor(uri) {
@@ -7506,35 +5529,13 @@ function parse_route(uri) {
     let $1 = $.tail;
     if ($1 instanceof Empty) {
       let $2 = $.head;
-      if ($2 === "about") {
-        return new About();
-      } else if ($2 === "sign-in") {
+      if ($2 === "sign-in") {
         return new SignIn();
-      } else if ($2 === "sign-up") {
-        return new SignUp();
       } else {
         return new NotFound(uri);
       }
     } else {
-      let $2 = $1.tail;
-      if ($2 instanceof Empty) {
-        let $3 = $.head;
-        if ($3 === "admin") {
-          let $4 = $1.head;
-          if ($4 === "polls") {
-            return new AdminPolls();
-          } else {
-            return new NotFound(uri);
-          }
-        } else if ($3 === "session") {
-          let id = $1.head;
-          return new Session(id);
-        } else {
-          return new NotFound(uri);
-        }
-      } else {
-        return new NotFound(uri);
-      }
+      return new NotFound(uri);
     }
   }
 }
@@ -7547,166 +5548,23 @@ function initial_route() {
     return new Index2();
   }
 }
-function href2(route) {
-  let _block;
+function to_path(route) {
   if (route instanceof Index2) {
-    _block = "/";
-  } else if (route instanceof About) {
-    _block = "/about";
+    return "/";
   } else if (route instanceof SignIn) {
-    _block = "/sign-in";
-  } else if (route instanceof SignUp) {
-    _block = "/sign-up";
-  } else if (route instanceof AdminPolls) {
-    _block = "/admin/polls";
-  } else if (route instanceof Session) {
-    let id = route.id;
-    _block = "/session/" + id;
+    return "/sign-in";
   } else {
-    _block = "/not-found";
+    return "/not-found";
   }
-  let url = _block;
-  return href(url);
 }
-
-// build/dev/javascript/client/model.mjs
-var App2 = class extends CustomType {
-  constructor(route, lang) {
-    super();
-    this.route = route;
-    this.lang = lang;
-  }
-};
-var Base = class extends CustomType {
-  constructor(app) {
-    super();
-    this.app = app;
-  }
-};
-var SignIn2 = class extends CustomType {
-  constructor(app, form2) {
-    super();
-    this.app = app;
-    this.form = form2;
-  }
-};
-var SignUp2 = class extends CustomType {
-  constructor(app, form2) {
-    super();
-    this.app = app;
-    this.form = form2;
-  }
-};
-var AdminPolls2 = class extends CustomType {
-  constructor(app, polls) {
-    super();
-    this.app = app;
-    this.polls = polls;
-  }
-};
-var ApiAuthenticatedUser = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var ApiReturnedPolls = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var UserNavigatedTo = class extends CustomType {
-  constructor(route) {
-    super();
-    this.route = route;
-  }
-};
-var UserSubmittedSignInForm = class extends CustomType {
-  constructor(result) {
-    super();
-    this.result = result;
-  }
-};
-var UserSubmittedSignUpForm = class extends CustomType {
-  constructor(result) {
-    super();
-    this.result = result;
-  }
-};
-
-// build/dev/javascript/client/routes/about.mjs
-function view2() {
-  return span(toList([]), toList([text3("about")]));
-}
-
-// build/dev/javascript/client/routes/admin/polls.mjs
-function view3(polls) {
-  return div(
-    toList([]),
-    toList([
-      h1(toList([]), toList([text3("Polls")])),
-      ul(
-        toList([]),
-        map(
-          polls,
-          (poll) => {
-            return li(
-              toList([]),
-              toList([text3(poll.id + " - " + poll.name)])
-            );
-          }
-        )
-      )
-    ])
-  );
-}
-function fetch_polls(handle_response) {
-  let url = "http://localhost:8000/api/admin/polls";
-  let _block;
-  let _pipe = list2(poll_decoder());
-  _block = map2(
-    _pipe,
-    (_capture) => {
-      return take(_capture, 10);
-    }
-  );
-  let decoder = _block;
-  let handler = expect_json(decoder, handle_response);
-  return get2(url, handler);
-}
-function init_empty() {
-  let app = new App2(new AdminPolls(), "en");
-  return [
-    new AdminPolls2(app, toList([])),
-    fetch_polls((var0) => {
-      return new ApiReturnedPolls(var0);
-    })
-  ];
-}
-function init_with_model(model) {
-  let _block;
-  let _record = model.app;
-  _block = new App2(new AdminPolls(), _record.lang);
-  let app = _block;
-  return [
-    new AdminPolls2(app, toList([])),
-    fetch_polls((var0) => {
-      return new ApiReturnedPolls(var0);
-    })
-  ];
-}
-function init2(model) {
-  if (model instanceof Some) {
-    let model$1 = model[0];
-    return init_with_model(model$1);
-  } else {
-    return init_empty();
-  }
+function href2(route) {
+  let _pipe = route;
+  let _pipe$1 = to_path(_pipe);
+  return href(_pipe$1);
 }
 
 // build/dev/javascript/client/routes/index.mjs
-function view4() {
+function view2() {
   return div(
     toList([class$("card")]),
     toList([
@@ -7714,18 +5572,249 @@ function view4() {
       a(
         toList([href2(new SignIn())]),
         toList([text3("Sign In")])
-      ),
-      a(
-        toList([href2(new About())]),
-        toList([text3("About")])
-      ),
-      a(
-        toList([href2(new AdminPolls())]),
-        toList([text3("Admin Polls")])
       )
     ])
   );
 }
+
+// build/dev/javascript/formal/formal/form.mjs
+var Form = class extends CustomType {
+  constructor(translator, values3, errors, run3) {
+    super();
+    this.translator = translator;
+    this.values = values3;
+    this.errors = errors;
+    this.run = run3;
+  }
+};
+var Schema = class extends CustomType {
+  constructor(run3) {
+    super();
+    this.run = run3;
+  }
+};
+var MustBePresent = class extends CustomType {
+};
+var MustBeInt = class extends CustomType {
+};
+var MustBeFloat = class extends CustomType {
+};
+var MustBeEmail = class extends CustomType {
+};
+var MustBePhoneNumber = class extends CustomType {
+};
+var MustBeUrl = class extends CustomType {
+};
+var MustBeDate = class extends CustomType {
+};
+var MustBeTime = class extends CustomType {
+};
+var MustBeDateTime = class extends CustomType {
+};
+var MustBeColour = class extends CustomType {
+};
+var MustBeStringLengthMoreThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeStringLengthLessThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeIntMoreThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeIntLessThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeFloatMoreThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeFloatLessThan = class extends CustomType {
+  constructor(limit) {
+    super();
+    this.limit = limit;
+  }
+};
+var MustBeAccepted = class extends CustomType {
+};
+var MustConfirm = class extends CustomType {
+};
+var MustBeUnique = class extends CustomType {
+};
+var Parser = class extends CustomType {
+  constructor(run3) {
+    super();
+    this.run = run3;
+  }
+};
+var Check = class extends CustomType {
+};
+var DontCheck = class extends CustomType {
+};
+function run2(form2) {
+  let $ = form2.run(form2.values, toList([]));
+  let value = $[0];
+  let errors = $[1];
+  if (errors instanceof Empty) {
+    return new Ok(value);
+  } else {
+    return new Error(
+      (() => {
+        let _record = form2;
+        return new Form(_record.translator, _record.values, errors, _record.run);
+      })()
+    );
+  }
+}
+function field2(name2, parser, continuation) {
+  return new Schema(
+    (values3, errors) => {
+      let input2 = key_filter(values3, name2);
+      let $ = parser.run(input2, new Check());
+      let value = $[0];
+      let new_errors = $[2];
+      let _block;
+      if (new_errors instanceof Empty) {
+        _block = errors;
+      } else {
+        _block = prepend([name2, new_errors], errors);
+      }
+      let errors$1 = _block;
+      return continuation(value).run(values3, errors$1);
+    }
+  );
+}
+function success2(value) {
+  return new Schema((_, errors) => {
+    return [value, errors];
+  });
+}
+function add_values(form2, values3) {
+  let _record = form2;
+  return new Form(
+    _record.translator,
+    append(values3, form2.values),
+    _record.errors,
+    _record.run
+  );
+}
+function string_parser(inputs, status) {
+  if (inputs instanceof Empty) {
+    return ["", status, toList([])];
+  } else {
+    let input2 = inputs.head;
+    return [input2, status, toList([])];
+  }
+}
+function value_parser(inputs, zero, status, error, next) {
+  if (inputs instanceof Empty) {
+    return [zero, new DontCheck(), toList([error])];
+  } else {
+    let input2 = inputs.head;
+    let $ = next(input2);
+    if ($ instanceof Ok) {
+      let t = $[0];
+      return [t, status, toList([])];
+    } else {
+      return [zero, new DontCheck(), toList([error])];
+    }
+  }
+}
+function email_parser(inputs, status) {
+  return value_parser(
+    inputs,
+    "",
+    status,
+    new MustBeEmail(),
+    (input2) => {
+      let $ = contains_string(input2, "@");
+      if ($) {
+        return new Ok(input2);
+      } else {
+        return new Error(void 0);
+      }
+    }
+  );
+}
+function en_gb(error) {
+  if (error instanceof MustBePresent) {
+    return "must not be blank";
+  } else if (error instanceof MustBeInt) {
+    return "must be a whole number";
+  } else if (error instanceof MustBeFloat) {
+    return "must be a number";
+  } else if (error instanceof MustBeEmail) {
+    return "must be an email";
+  } else if (error instanceof MustBePhoneNumber) {
+    return "must be a phone number";
+  } else if (error instanceof MustBeUrl) {
+    return "must be a URL";
+  } else if (error instanceof MustBeDate) {
+    return "must be a date";
+  } else if (error instanceof MustBeTime) {
+    return "must be a time";
+  } else if (error instanceof MustBeDateTime) {
+    return "must be a date and time";
+  } else if (error instanceof MustBeColour) {
+    return "must be a hex colour code";
+  } else if (error instanceof MustBeStringLengthMoreThan) {
+    let limit = error.limit;
+    return "must be more than " + to_string(limit) + " characters";
+  } else if (error instanceof MustBeStringLengthLessThan) {
+    let limit = error.limit;
+    return "must be less than " + to_string(limit) + " characters";
+  } else if (error instanceof MustBeIntMoreThan) {
+    let limit = error.limit;
+    return "must be more than " + to_string(limit);
+  } else if (error instanceof MustBeIntLessThan) {
+    let limit = error.limit;
+    return "must be less than " + to_string(limit);
+  } else if (error instanceof MustBeFloatMoreThan) {
+    let limit = error.limit;
+    return "must be more than " + float_to_string(limit);
+  } else if (error instanceof MustBeFloatLessThan) {
+    let limit = error.limit;
+    return "must be less than " + float_to_string(limit);
+  } else if (error instanceof MustBeAccepted) {
+    return "must be accepted";
+  } else if (error instanceof MustConfirm) {
+    return "doesn't match";
+  } else if (error instanceof MustBeUnique) {
+    return "is already in use";
+  } else {
+    let message2 = error.message;
+    return message2;
+  }
+}
+function new$8(schema) {
+  return new Form(en_gb, toList([]), toList([]), schema.run);
+}
+function field_error_messages(form2, name2) {
+  let _pipe = form2.errors;
+  let _pipe$1 = key_filter(_pipe, name2);
+  return flat_map(
+    _pipe$1,
+    (_capture) => {
+      return map(_capture, form2.translator);
+    }
+  );
+}
+var parse_string = /* @__PURE__ */ new Parser(string_parser);
+var parse_email = /* @__PURE__ */ new Parser(email_parser);
 
 // build/dev/javascript/lustre/lustre/event.mjs
 function is_immediate_event(name2) {
@@ -7797,7 +5886,7 @@ function formdata_decoder() {
           let _pipe$12 = map3(
             _pipe2,
             (_capture) => {
-              return new$8(key, _capture);
+              return new$7(key, _capture);
             }
           );
           return success(_pipe$12);
@@ -7826,7 +5915,7 @@ function on_submit(msg) {
 }
 
 // build/dev/javascript/client/components/input.mjs
-function view5(form2, type_2, name2, label) {
+function view3(form2, type_2, name2, label) {
   let errors = field_error_messages(form2, name2);
   return fieldset(
     toList([class$("fieldset")]),
@@ -7865,7 +5954,47 @@ function view5(form2, type_2, name2, label) {
 }
 
 // build/dev/javascript/client/routes/sign_in.mjs
-function view6(form2) {
+var Model = class extends CustomType {
+  constructor(form2) {
+    super();
+    this.form = form2;
+  }
+};
+var SignInFormData = class extends CustomType {
+  constructor(email, password) {
+    super();
+    this.email = email;
+    this.password = password;
+  }
+};
+var UserSubmittedSignInForm = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function sign_in_form() {
+  return new$8(
+    field2(
+      "email",
+      parse_email,
+      (email) => {
+        return field2(
+          "password",
+          parse_string,
+          (password) => {
+            return success2(new SignInFormData(email, password));
+          }
+        );
+      }
+    )
+  );
+}
+function init2() {
+  let model = new Model(sign_in_form());
+  return [model, none()];
+}
+function view4(form2) {
   let submit = (fields) => {
     let _pipe = form2;
     let _pipe$1 = add_values(_pipe, fields);
@@ -7879,8 +6008,8 @@ function view6(form2) {
       form(
         toList([on_submit(submit), class$("space-y-2")]),
         toList([
-          view5(form2, "text", "email", "Email"),
-          view5(form2, "password", "password", "Password"),
+          view3(form2, "text", "email", "Email"),
+          view3(form2, "password", "password", "Password"),
           button(
             toList([
               type_("submit"),
@@ -7893,280 +6022,129 @@ function view6(form2) {
     ])
   );
 }
-function sign_in(values3, handle_response) {
-  let url = "http://localhost:8000/api/auth/sign-in";
-  let body = object2(
-    toList([
-      ["email", string3(values3.email)],
-      ["password", string3(values3.password)]
-    ])
-  );
-  let handler = expect_ok_response(handle_response);
-  return post(url, body, handler);
-}
-function update2(model, result) {
-  if (result instanceof Ok) {
-    let values3 = result[0];
-    return [
-      model,
-      sign_in(
-        values3,
-        (var0) => {
-          return new ApiAuthenticatedUser(var0);
-        }
-      )
-    ];
-  } else {
-    let form2 = result[0];
-    return [new SignIn2(model.app, form2), none()];
-  }
-}
-
-// build/dev/javascript/client/routes/sign_up.mjs
-function view7(form2) {
-  let submit = (fields) => {
-    let _pipe = form2;
-    let _pipe$1 = add_values(_pipe, fields);
-    let _pipe$2 = run2(_pipe$1);
-    return new UserSubmittedSignUpForm(_pipe$2);
-  };
-  return div(
-    toList([]),
-    toList([
-      h1(toList([]), toList([text3("Sign up")])),
-      form(
-        toList([on_submit(submit), class$("space-y-2")]),
-        toList([
-          view5(form2, "text", "email", "Email"),
-          view5(form2, "password", "password", "Password"),
-          button(
-            toList([
-              type_("submit"),
-              class$("btn btn-primary")
-            ]),
-            toList([text3("Sign up")])
-          )
-        ])
-      )
-    ])
-  );
-}
-function sign_up(values3, handle_response) {
-  let url = "http://localhost:8000/api/auth/sign-up";
-  let body = object2(
-    toList([
-      ["email", string3(values3.email)],
-      ["password", string3(values3.password)]
-    ])
-  );
-  let handler = expect_ok_response(handle_response);
-  return post(url, body, handler);
-}
-function update3(model, result) {
-  if (result instanceof Ok) {
-    let values3 = result[0];
-    return [
-      model,
-      sign_up(
-        values3,
-        (var0) => {
-          return new ApiAuthenticatedUser(var0);
-        }
-      )
-    ];
-  } else {
-    let form2 = result[0];
-    return [new SignUp2(model.app, form2), none()];
-  }
-}
 
 // build/dev/javascript/client/client.mjs
 var FILEPATH = "src/client.gleam";
-function init3(_) {
-  let initial_route2 = initial_route();
-  let _block;
-  if (initial_route2 instanceof Index2) {
-    _block = [
-      new Base(new App2(initial_route2, "en")),
-      none()
-    ];
-  } else if (initial_route2 instanceof SignIn) {
-    _block = [
-      new SignIn2(
-        new App2(initial_route2, "en"),
-        sign_in_form()
-      ),
-      none()
-    ];
-  } else if (initial_route2 instanceof SignUp) {
-    _block = [
-      new SignUp2(
-        new App2(initial_route2, "en"),
-        sign_up_form()
-      ),
-      none()
-    ];
-  } else if (initial_route2 instanceof AdminPolls) {
-    _block = init2(new None());
-  } else {
-    _block = [
-      new Base(new App2(initial_route2, "en")),
-      none()
-    ];
+var Model2 = class extends CustomType {
+  constructor(route, lang, page) {
+    super();
+    this.route = route;
+    this.lang = lang;
+    this.page = page;
   }
-  let $ = _block;
-  let model = $[0];
-  let route_effect = $[1];
+};
+var Index3 = class extends CustomType {
+};
+var SignIn2 = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var UserNavigatedTo = class extends CustomType {
+  constructor(route) {
+    super();
+    this.route = route;
+  }
+};
+var SignInMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function init_route(route, model) {
+  if (route instanceof Index2) {
+    return [
+      (() => {
+        let _record = model;
+        return new Model2(route, _record.lang, new Index3());
+      })(),
+      none()
+    ];
+  } else if (route instanceof SignIn) {
+    let $ = init2();
+    let page_model = $[0];
+    let effect = $[1];
+    return [
+      (() => {
+        let _record = model;
+        return new Model2(route, _record.lang, new SignIn2(page_model));
+      })(),
+      map4(effect, (msg) => {
+        return new SignInMsg(msg);
+      })
+    ];
+  } else {
+    return [model, none()];
+  }
+}
+function init3(_) {
+  let route = initial_route();
+  let model = new Model2(route, "en", new Index3());
+  let $ = init_route(route, model);
+  let model$1 = $[0];
+  let page_effect = $[1];
   let effect = batch(
     toList([
       init(
         (uri) => {
           let _pipe = uri;
           let _pipe$1 = parse_route(_pipe);
-          return new UserNavigatedTo(_pipe$1);
+          let _pipe$2 = new UserNavigatedTo(_pipe$1);
+          return echo(_pipe$2, "src/client.gleam", 38);
         }
       ),
-      route_effect
+      page_effect
     ])
   );
-  return [model, effect];
+  return [model$1, effect];
 }
-function update4(model, msg) {
-  if (msg instanceof ApiAuthenticatedUser) {
-    let $ = msg[0];
-    if ($ instanceof Ok) {
-      return init2(new Some(model));
-    } else {
-      return [
-        new SignIn2(
-          (() => {
-            let _record = model.app;
-            return new App2(new SignIn(), _record.lang);
-          })(),
-          (() => {
-            let _pipe = sign_in_form();
-            return add_error(
-              _pipe,
-              "password",
-              new CustomError("Email or password is incorrect")
-            );
-          })()
-        ),
-        none()
-      ];
-    }
-  } else if (msg instanceof ApiReturnedPolls) {
-    let $ = msg[0];
-    if ($ instanceof Ok) {
-      let polls = $[0];
-      return [new AdminPolls2(model.app, polls), none()];
-    } else {
-      return [
-        new AdminPolls2(
-          (() => {
-            let _record = model.app;
-            return new App2(new AdminPolls(), _record.lang);
-          })(),
-          toList([])
-        ),
-        none()
-      ];
-    }
-  } else if (msg instanceof UserNavigatedTo) {
-    let $ = msg.route;
-    if ($ instanceof SignIn) {
-      return [
-        new SignIn2(
-          (() => {
-            let _record = model.app;
-            return new App2(new SignIn(), _record.lang);
-          })(),
-          sign_in_form()
-        ),
-        none()
-      ];
-    } else if ($ instanceof SignUp) {
-      return [
-        new SignUp2(
-          (() => {
-            let _record = model.app;
-            return new App2(new SignUp(), _record.lang);
-          })(),
-          sign_up_form()
-        ),
-        none()
-      ];
-    } else if ($ instanceof AdminPolls) {
-      return init2(new Some(model));
-    } else {
-      let route = $;
-      return [
-        new Base(
-          (() => {
-            let _record = model.app;
-            return new App2(route, _record.lang);
-          })()
-        ),
-        none()
-      ];
-    }
-  } else if (msg instanceof UserSubmittedSignInForm) {
-    let result = msg.result;
-    return update2(model, result);
+function update2(model, msg) {
+  if (msg instanceof UserNavigatedTo) {
+    let route = msg.route;
+    let _pipe = init_route(route, model);
+    return echo(_pipe, "src/client.gleam", 62);
   } else {
-    let result = msg.result;
-    return update3(model, result);
+    let a2 = msg[0];
+    echo(a2, "src/client.gleam", 64);
+    return [model, none()];
   }
 }
 function view_not_found() {
   return span(toList([]), toList([text3("not found")]));
 }
-function view8(model) {
-  let $ = model.app.route;
-  if ($ instanceof Index2) {
-    return view4();
-  } else if ($ instanceof About) {
-    return view2();
+function view5(model) {
+  let $ = model.route;
+  let $1 = model.page;
+  if ($1 instanceof Index3) {
+    if ($ instanceof Index2) {
+      return view2();
+    } else {
+      return view_not_found();
+    }
   } else if ($ instanceof SignIn) {
-    if (model instanceof SignIn2) {
-      let form2 = model.form;
-      return view6(form2);
-    } else {
-      return view_not_found();
-    }
-  } else if ($ instanceof SignUp) {
-    if (model instanceof SignUp2) {
-      let form2 = model.form;
-      return view7(form2);
-    } else {
-      return view_not_found();
-    }
-  } else if ($ instanceof AdminPolls) {
-    if (model instanceof SignIn2) {
-      return view3(toList([new Poll("1", "Sign in model?")]));
-    } else if (model instanceof AdminPolls2) {
-      let polls = model.polls;
-      return view3(polls);
-    } else {
-      echo(model, "src/client.gleam", 124);
-      return view3(toList([new Poll("1", "Wrong model?")]));
-    }
+    let sign_in_model = $1[0];
+    let _pipe = view4(sign_in_model.form);
+    return map5(_pipe, (msg) => {
+      return new SignInMsg(msg);
+    });
   } else {
     return view_not_found();
   }
 }
 function main() {
-  let app = application(init3, update4, view8);
+  let app = application(init3, update2, view5);
   let $ = start3(app, "#app", toList([]));
   if (!($ instanceof Ok)) {
     throw makeError(
       "let_assert",
       FILEPATH,
       "client",
-      20,
+      12,
       "main",
       "Pattern match failed, no pattern matched the value.",
-      { value: $, start: 440, end: 488, pattern_start: 451, pattern_end: 456 }
+      { value: $, start: 265, end: 313, pattern_start: 276, pattern_end: 281 }
     );
   }
   return void 0;
@@ -8212,11 +6190,11 @@ function echo$inspectString(str) {
   new_str += '"';
   return new_str;
 }
-function echo$inspectDict(map6) {
+function echo$inspectDict(map8) {
   let body = "dict.from_list([";
   let first = true;
   let key_value_pairs = [];
-  map6.forEach((value, key) => {
+  map8.forEach((value, key) => {
     key_value_pairs.push([key, value]);
   });
   key_value_pairs.sort();

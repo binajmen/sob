@@ -44,20 +44,22 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Ok(values) -> #(model, sign_in(values, ApiAuthenticatedUser))
         Error(form) -> #(Model(form:), effect.none())
       }
-    ApiAuthenticatedUser(Ok(_)) -> #(
-      model,
-      modem.push("/admin/polls", None, None),
-    )
-    ApiAuthenticatedUser(Error(_)) -> #(
-      Model(
-        form: model.form
-        |> form.add_error(
-          "password",
-          form.CustomError("Email or password is incorrect"),
+      |> echo
+    ApiAuthenticatedUser(Ok(_)) ->
+      #(model, modem.push("/", None, None))
+      |> echo
+    ApiAuthenticatedUser(Error(_)) ->
+      #(
+        Model(
+          form: sign_in_form()
+          |> form.add_error(
+            "password",
+            form.CustomError("Email or password is incorrect"),
+          ),
         ),
-      ),
-      effect.none(),
-    )
+        effect.none(),
+      )
+      |> echo
   }
 }
 

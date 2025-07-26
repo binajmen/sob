@@ -60,9 +60,14 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     UserNavigatedTo(route) -> init_route(route, model) |> echo
-    SignInMsg(a) -> {
-      echo a
-      #(model, effect.none())
+    SignInMsg(msg) -> {
+      echo msg
+      let assert SignIn(page_model) = model.page
+      let #(page_model, effect) = sign_in.update(page_model, msg)
+      #(
+        Model(..model, page: SignIn(page_model)),
+        effect.map(effect, fn(msg) { SignInMsg(msg) }),
+      )
     }
   }
 }

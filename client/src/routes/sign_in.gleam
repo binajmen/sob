@@ -28,7 +28,7 @@ pub fn sign_in_form() -> Form(SignInFormData) {
   })
 }
 
-pub fn init() -> #(Model, effect.Effect(Msg)) {
+pub fn init() -> #(Model, Effect(Msg)) {
   let model = Model(form: sign_in_form())
   #(model, effect.none())
 }

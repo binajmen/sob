@@ -1,4 +1,3 @@
-import counter
 import gleam/erlang/process.{type Selector, type Subject}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
@@ -7,41 +6,42 @@ import gleam/option.{type Option, Some}
 import lustre
 import lustre/server_component
 import mist.{type Connection, type ResponseData}
+import poll/component
 
-pub fn serve(request: Request(Connection)) -> Response(ResponseData) {
+pub fn serve(
+  request: Request(Connection),
+  component: lustre.Runtime(component.Msg),
+  _id: String,
+) -> Response(ResponseData) {
   mist.websocket(
     request:,
-    on_init: init_counter_socket,
-    handler: loop_counter_socket,
-    on_close: close_counter_socket,
+    on_init: init_poll_socket(_, component),
+    handler: loop_poll_socket,
+    on_close: close_poll_socket,
   )
 }
 
-type CounterSocket {
-  CounterSocket(
-    component: lustre.Runtime(counter.Msg),
-    self: Subject(server_component.ClientMessage(counter.Msg)),
+type PollSocket {
+  PollSocket(
+    component: lustre.Runtime(component.Msg),
+    self: Subject(server_component.ClientMessage(component.Msg)),
   )
 }
 
-type CounterSocketMessage =
-  server_component.ClientMessage(counter.Msg)
+type PollSocketMessage =
+  server_component.ClientMessage(component.Msg)
 
-type CounterSocketInit =
-  #(CounterSocket, Option(Selector(CounterSocketMessage)))
+type PollSocketInit =
+  #(PollSocket, Option(Selector(PollSocketMessage)))
 
-fn init_counter_socket(_) -> CounterSocketInit {
-  let counter = counter.component()
-  // Rather than calling `lustre.start` as we do in the client, we construct the
-  // Lustre runtime by calling `lustre.start_server_component`. This is the same
-  // `Runtime` type we get from `lustre.start` but this function doesn't need a
-  // CSS selector for the element to attach to: there's no DOM here!
-  let assert Ok(component) = lustre.start_server_component(counter, Nil)
-
+fn init_poll_socket(
+  _,
+  component: lustre.Runtime(component.Msg),
+) -> PollSocketInit {
   // The server component runtime communicates to the websocket process using
   // Gleam's standard process messaging. We construct a new subject that the
   // runtime can send messages to, and then we initialise a selector so that we
-  // can handle those messages in `loop_counter_socket`.
+  // can handle those messages in `loop_poll_socket`.
   let self = process.new_subject()
   let selector =
     process.new_selector()
@@ -55,14 +55,14 @@ fn init_counter_socket(_) -> CounterSocketInit {
   server_component.register_subject(self)
   |> lustre.send(to: component)
 
-  #(CounterSocket(component:, self:), Some(selector))
+  #(PollSocket(component:, self:), Some(selector))
 }
 
-fn loop_counter_socket(
-  state: CounterSocket,
-  message: mist.WebsocketMessage(CounterSocketMessage),
+fn loop_poll_socket(
+  state: PollSocket,
+  message: mist.WebsocketMessage(PollSocketMessage),
   connection: mist.WebsocketConnection,
-) -> mist.Next(CounterSocket, CounterSocketMessage) {
+) -> mist.Next(PollSocket, PollSocketMessage) {
   case message {
     // The client runtime will send us JSON-encoded text frames that we need to
     // decode and pass to the server component runtime.
@@ -104,7 +104,7 @@ fn loop_counter_socket(
   }
 }
 
-fn close_counter_socket(state: CounterSocket) -> Nil {
+fn close_poll_socket(state: PollSocket) -> Nil {
   server_component.deregister_subject(state.self)
   |> lustre.send(to: state.component)
 }

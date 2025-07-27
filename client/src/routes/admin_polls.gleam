@@ -10,7 +10,7 @@ pub type Model {
   Model(polls: List(Poll))
 }
 
-pub fn init() -> #(Model, effect.Effect(Msg)) {
+pub fn init() -> #(Model, Effect(Msg)) {
   let model = Model(polls: [])
   #(model, fetch_polls(ApiReturnedPolls))
 }

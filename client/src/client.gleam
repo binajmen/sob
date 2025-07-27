@@ -6,6 +6,7 @@ import modem
 import router.{type Route}
 import routes/admin_polls
 import routes/index
+import routes/poll
 import routes/sign_in
 
 pub fn main() {
@@ -22,12 +23,14 @@ pub type Model {
 pub type Page {
   Index
   SignIn(sign_in.Model)
+  Poll(poll.Model)
   AdminPolls(admin_polls.Model)
 }
 
 pub type Msg {
   UserNavigatedTo(route: Route)
   SignInMsg(sign_in.Msg)
+  PollMsg(poll.Msg)
   AdminPollsMsg(admin_polls.Msg)
 }
 
@@ -54,6 +57,13 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
         effect.map(effect, fn(msg) { SignInMsg(msg) }),
       )
     }
+    router.Poll(id) -> {
+      let #(page_model, effect) = poll.init(id)
+      #(
+        Model(..model, route:, page: Poll(page_model)),
+        effect.map(effect, fn(msg) { PollMsg(msg) }),
+      )
+    }
     router.AdminPolls -> {
       let #(page_model, effect) = admin_polls.init()
       #(
@@ -76,6 +86,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.map(effect, fn(msg) { SignInMsg(msg) }),
       )
     }
+    PollMsg(msg) -> {
+      let assert Poll(page_model) = model.page
+      let #(page_model, effect) = poll.update(page_model, msg)
+      #(
+        Model(..model, page: Poll(page_model)),
+        effect.map(effect, fn(msg) { PollMsg(msg) }),
+      )
+    }
     AdminPollsMsg(msg) -> {
       let assert AdminPolls(page_model) = model.page
       let #(page_model, effect) = admin_polls.update(page_model, msg)
@@ -93,6 +111,9 @@ fn view(model: Model) -> Element(Msg) {
     router.SignIn, SignIn(sign_in_model) ->
       sign_in.view(sign_in_model.form)
       |> element.map(fn(msg) { SignInMsg(msg) })
+    router.Poll(id), Poll(poll_model) ->
+      poll.view(poll_model.id)
+      |> element.map(fn(msg) { PollMsg(msg) })
     router.AdminPolls, AdminPolls(admin_polls_model) ->
       admin_polls.view(admin_polls_model.polls)
       |> element.map(fn(msg) { AdminPollsMsg(msg) })

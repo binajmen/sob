@@ -72,14 +72,21 @@ pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
 
   html.div([], [
     html.h1([], [html.text("Sign in")]),
-    html.form([event.on_submit(submit), attribute.class("space-y-2")], [
-      input.view(form, is: "text", name: "email", label: "Email"),
-      input.view(form, is: "password", name: "password", label: "Password"),
-      html.button(
-        [attribute.type_("submit"), attribute.class("btn btn-primary")],
-        [html.text("Sign in")],
-      ),
-    ]),
+    html.form(
+      [
+        event.on_submit(submit),
+        attribute.class("space-y-2"),
+        attribute.autocomplete("off"),
+      ],
+      [
+        input.view(form, is: "text", name: "email", label: "Email"),
+        input.view(form, is: "password", name: "password", label: "Password"),
+        html.button(
+          [attribute.type_("submit"), attribute.class("btn btn-primary")],
+          [html.text("Sign in")],
+        ),
+      ],
+    ),
   ])
 }
 

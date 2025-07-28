@@ -19,7 +19,7 @@ pub fn view(
       attribute.name(name),
       attribute.class("input"),
       case errors {
-        [] -> attribute.class("input-neutral")
+        [] -> attribute.none()
         _ -> attribute.class("input-error")
       },
     ]),

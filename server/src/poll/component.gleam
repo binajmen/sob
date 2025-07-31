@@ -1,5 +1,3 @@
-// IMPORTS ---------------------------------------------------------------------
-
 import gleam/int
 import lustre.{type App}
 import lustre/attribute
@@ -7,23 +5,9 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
-// MAIN ------------------------------------------------------------------------
-
-/// The only difference between this module and the counter defined in
-/// 05-components/01-basic-setup is this function. The client component example
-/// exposes a `register` function to register the custom element, but here we
-/// expose a `component` function that constructs a Lustre application but does
-/// not start it.
-///
-/// It's common practice to provide both functions so that your users can choose
-/// where to run the component. This is known as a **universal component** because
-/// it can run in both the browser and the server.
-///
 pub fn component() -> App(_, Model, Msg) {
   lustre.simple(init, update, view)
 }
-
-// MODEL -----------------------------------------------------------------------
 
 pub type Model =
   Int
@@ -31,8 +15,6 @@ pub type Model =
 fn init(_) -> Model {
   0
 }
-
-// UPDATE ----------------------------------------------------------------------
 
 pub opaque type Msg {
   UserClickedIncrement
@@ -45,8 +27,6 @@ fn update(model: Model, msg: Msg) -> Model {
     UserClickedDecrement -> model - 1
   }
 }
-
-// VIEW ------------------------------------------------------------------------
 
 fn view(model: Model) -> Element(Msg) {
   let count = int.to_string(model)

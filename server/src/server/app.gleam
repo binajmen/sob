@@ -6,10 +6,12 @@ import gleam/io
 import gleam/option.{Some}
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
+import gleam/otp/supervision
 import lustre
 import mist.{type Connection, type ResponseData}
 import pog
 import poll/component as poll_component
+import poll/registry as poll_registry
 import poll/websocket as poll_ws
 import server/context.{Context}
 import server/router
@@ -40,14 +42,16 @@ pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
 
   let context = Context(db:, static_directory:)
 
-  let poll = poll_component.component()
-  let assert Ok(component) = lustre.start_server_component(poll, Nil)
+  let poll_registry = supervision.supervisor(fn() { poll_registry.start() })
 
   let secret_key_base = wisp.random_string(64)
   let http_server =
     fn(request: Request(Connection)) -> Response(ResponseData) {
       case request.path_segments(request) {
-        ["ws", "poll", id] -> poll_ws.serve(request, component, id)
+        ["ws", "poll", id] -> {
+          let assert Ok(component) = poll_registry.get_poll(registry, id)
+          poll_ws.serve(request, component, id)
+        }
         _ ->
           {
             router.handle_request(_, context)
@@ -62,6 +66,7 @@ pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
   let supervisor =
     supervisor.new(supervisor.OneForOne)
     |> supervisor.add(database_pool)
+    |> supervisor.add(poll_registry)
     |> supervisor.add(http_server)
     |> supervisor.start
 

@@ -25,7 +25,12 @@ pub fn create_session(db, arg_1) {
     decode.success(CreateSessionRow(id:))
   }
 
-  "insert into sessions (user_id) values ($1) returning id;
+  "insert into
+  sessions (user_id)
+values
+  ($1)
+returning
+  id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -74,10 +79,13 @@ pub fn find_user_by_session(db, arg_1) {
     ))
   }
 
-  "select u.*
-from users u
-inner join sessions s on u.id = s.user_id
-where s.id = $1;
+  "select
+  u.*
+from
+  users u
+  inner join sessions s on u.id = s.user_id
+where
+  s.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -107,7 +115,12 @@ pub fn create_user(db, arg_1, arg_2) {
     decode.success(CreateUserRow(id:))
   }
 
-  "insert into users (email, password_hash) values ($1, $2) returning id;
+  "insert into
+  users (email, password_hash)
+values
+  ($1, $2)
+returning
+  id;
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
@@ -157,7 +170,12 @@ pub fn find_user_by_email(db, arg_1) {
     ))
   }
 
-  "select * from users where email = $1;
+  "select
+  *
+from
+  users
+where
+  email = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))

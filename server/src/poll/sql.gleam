@@ -33,9 +33,47 @@ pub fn list_polls(db) {
     decode.success(ListPollsRow(id:, name:, created_at:, updated_at:))
   }
 
-  "select * from polls;
+  "select
+  *
+from
+  polls;
 "
   |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `create_poll` query
+/// defined in `./src/poll/sql/create_poll.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.0.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type CreatePollRow {
+  CreatePollRow(id: Uuid)
+}
+
+/// Runs the `create_poll` query
+/// defined in `./src/poll/sql/create_poll.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.0.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn create_poll(db, arg_1) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    decode.success(CreatePollRow(id:))
+  }
+
+  "insert into
+  polls (name)
+values
+  ($1)
+returning
+  id;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(arg_1))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

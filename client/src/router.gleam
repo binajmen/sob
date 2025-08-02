@@ -7,6 +7,7 @@ pub type Route {
   SignIn
   Poll(id: String)
   AdminPolls
+  AdminPollsCreate
   NotFound(uri: Uri)
 }
 
@@ -23,6 +24,7 @@ pub fn parse_route(uri: Uri) -> Route {
     ["sign-in"] -> SignIn
     ["poll", id] -> Poll(id)
     ["admin", "polls"] -> AdminPolls
+    ["admin", "polls", "create"] -> AdminPollsCreate
     _ -> NotFound(uri:)
   }
 }
@@ -33,6 +35,7 @@ pub fn to_path(route: Route) -> String {
     SignIn -> "/sign-in"
     Poll(id) -> "/poll/" <> id
     AdminPolls -> "/admin/polls"
+    AdminPollsCreate -> "/admin/polls/create"
     NotFound(_) -> "/not-found"
   }
 }

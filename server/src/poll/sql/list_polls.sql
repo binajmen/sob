@@ -1,1 +1,4 @@
-select * from polls;
+select
+  *
+from
+  polls;

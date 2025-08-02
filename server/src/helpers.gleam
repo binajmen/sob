@@ -1,7 +1,14 @@
+import gleam/bit_array
+import gleam/crypto
+import gleam/dynamic
 import gleam/dynamic/decode
+import gleam/http
+import gleam/http/cookie
 import gleam/http/response
 import gleam/json
 import gleam/list
+import gleam/option
+import gleam/result
 import gleam/string
 import gleam/string_tree
 import pog
@@ -21,6 +28,14 @@ pub type ApiError {
   DatabaseError(error: pog.QueryError)
   UnknownError
   WrongFormat(errors: List(decode.DecodeError))
+}
+
+pub fn decode_json(
+  json: dynamic.Dynamic,
+  decoder: decode.Decoder(a),
+) -> Result(a, ApiError) {
+  decode.run(json, decoder)
+  |> result.map_error(WrongFormat)
 }
 
 pub fn to_wisp_response(error: ApiError) {
@@ -92,4 +107,28 @@ pub fn pog_error_to_json(error: pog.QueryError) {
 
 pub fn unauthorised() -> wisp.Response {
   response.Response(401, [], wisp.Empty)
+}
+
+pub fn set_cookie(
+  response response: wisp.Response,
+  request request: wisp.Request,
+  name name: String,
+  value value: String,
+  security security: wisp.Security,
+  max_age max_age: Int,
+) -> wisp.Response {
+  let attributes =
+    cookie.Attributes(
+      ..cookie.defaults(http.Https),
+      domain: option.None,
+      same_site: option.Some(cookie.Lax),
+      max_age: option.Some(max_age),
+      secure: False,
+    )
+  let value = case security {
+    wisp.PlainText -> bit_array.base64_encode(<<value:utf8>>, False)
+    wisp.Signed -> wisp.sign_message(request, <<value:utf8>>, crypto.Sha512)
+  }
+  response
+  |> response.set_cookie(name, value, attributes)
 }

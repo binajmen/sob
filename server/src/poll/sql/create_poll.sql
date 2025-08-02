@@ -1,5 +1,5 @@
 insert into
-  sessions (user_id)
+  polls (name)
 values
   ($1)
 returning

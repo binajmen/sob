@@ -82,12 +82,12 @@ pub fn sign_in(req: Request, ctx: Context) {
   case result {
     Ok(session_id) ->
       wisp.ok()
-      |> wisp.set_cookie(
+      |> helpers.set_cookie(
         req,
         "session_id",
         uuid.to_string(session_id),
         wisp.Signed,
-        60 * 60,
+        60 * 60 * 24,
       )
     Error(error) -> error |> helpers.to_wisp_response
   }
@@ -134,7 +134,7 @@ fn authenticate_user(
     Error(error) -> Error(helpers.DatabaseError(error))
   })
 
-  // TOFIX
+  // FIXME:
   let assert Ok(password_hash) = bit_array.base64_decode(user.password_hash)
   let challenge =
     crypto.hash(crypto.Sha256, bit_array.from_string(payload.password))

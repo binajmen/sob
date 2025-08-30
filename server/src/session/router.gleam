@@ -58,13 +58,11 @@ pub fn find_session(_req: Request, ctx: Context, id: String) -> Response {
 //       case result {
 //         Ok(_) -> wisp.ok()
 //         Error(error) -> {
-//           echo error
 //           helpers.pog_error_to_json(error) |> wisp.json_response(404)
 //         }
 //       }
 //     }
 //     Error(errors) -> {
-//       echo errors
 //       helpers.decode_errors_to_json(errors)
 //       |> wisp.json_response(404)
 //     }

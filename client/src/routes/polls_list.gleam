@@ -21,12 +21,8 @@ pub type Msg {
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    ApiReturnedPolls(Ok(polls)) ->
-      #(Model(polls: polls), effect.none())
-      |> echo
-    ApiReturnedPolls(Error(_)) ->
-      #(model, effect.none())
-      |> echo
+    ApiReturnedPolls(Ok(polls)) -> #(Model(polls: polls), effect.none())
+    ApiReturnedPolls(Error(_)) -> #(model, effect.none())
   }
 }
 

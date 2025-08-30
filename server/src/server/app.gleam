@@ -43,7 +43,9 @@ pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
   let poll_subject = process.named_subject(poll_name)
   let poll_registry = poll_name |> poll_registry.supervised
 
-  let secret_key_base = wisp.random_string(64)
+  // FIXME: use a real secret key in production
+  let secret_key_base = "secret"
+  // let secret_key_base = wisp.random_string(64)
   let http_server =
     fn(request: Request(Connection)) -> Response(ResponseData) {
       case request.path_segments(request) {

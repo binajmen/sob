@@ -5,7 +5,9 @@ import modem
 pub type Route {
   Index
   SignIn
+  SignUp
   Guest
+  Polls
   Poll(id: String)
   AdminPolls
   AdminPollsCreate
@@ -23,8 +25,10 @@ pub fn parse_route(uri: Uri) -> Route {
   case uri.path_segments(uri.path) {
     [] -> Index
     ["sign-in"] -> SignIn
+    ["sign-up"] -> SignUp
     ["guest"] -> Guest
-    ["poll", id] -> Poll(id)
+    ["polls"] -> Polls
+    ["polls", id] -> Poll(id)
     ["admin", "polls"] -> AdminPolls
     ["admin", "polls", "create"] -> AdminPollsCreate
     _ -> NotFound(uri:)
@@ -35,8 +39,10 @@ pub fn to_path(route: Route) -> String {
   case route {
     Index -> "/"
     SignIn -> "/sign-in"
+    SignUp -> "/sign-up"
     Guest -> "/guest"
-    Poll(id) -> "/poll/" <> id
+    Polls -> "/polls"
+    Poll(id) -> "/polls/" <> id
     AdminPolls -> "/admin/polls"
     AdminPollsCreate -> "/admin/polls/create"
     NotFound(_) -> "/not-found"

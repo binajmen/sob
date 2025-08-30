@@ -109,6 +109,7 @@ pub fn unauthorised() -> wisp.Response {
 
 pub fn require_session(req: Request, next: fn(String) -> Response) -> Response {
   let session_id = wisp.get_cookie(req, "session_id", wisp.Signed)
+  echo session_id
   case session_id {
     Ok(session_id) -> next(session_id)
     Error(_) -> unauthorised()
@@ -123,8 +124,10 @@ pub fn require_user(
   // TOFIX
   let assert Ok(session_id) = uuid.from_string(session_id)
   case sql.find_user_by_session(ctx.db, session_id) {
-    Ok(pog.Returned(1, [user])) ->
+    Ok(pog.Returned(1, [user])) -> {
+      echo user
       next(user.User(id: uuid.to_string(user.id), is_admin: user.is_admin))
+    }
     Ok(_) -> unauthorised()
     Error(error) ->
       DatabaseError(error)

@@ -12,13 +12,9 @@ pub type Poll {
   Poll(id: String, name: String)
 }
 
-pub fn poll_decoder() -> decode.Decoder(Poll) {
-  use id <- decode.field("id", decode.string)
-  use name <- decode.field("name", decode.string)
-  decode.success(Poll(id:, name:))
-}
+pub fn list_polls(req: Request, ctx: Context) -> Response {
+  use _ <- helpers.require_session(req)
 
-pub fn list_polls(_req: Request, ctx: Context) -> Response {
   let result = {
     use pog.Returned(_count, rows) <- try(sql.list_polls(ctx.db))
     Ok(
@@ -37,13 +33,14 @@ pub fn list_polls(_req: Request, ctx: Context) -> Response {
   }
 }
 
-type CreatePollPayload {
-  CreatePollPayload(name: String)
+pub fn poll_decoder() -> decode.Decoder(Poll) {
+  use id <- decode.field("id", decode.string)
+  use name <- decode.field("name", decode.string)
+  decode.success(Poll(id:, name:))
 }
 
-fn create_poll_payload_decoder() -> decode.Decoder(CreatePollPayload) {
-  use name <- decode.field("name", decode.string)
-  decode.success(CreatePollPayload(name:))
+type CreatePollPayload {
+  CreatePollPayload(name: String)
 }
 
 pub fn create_poll(req: Request, ctx: Context) {
@@ -60,6 +57,11 @@ pub fn create_poll(req: Request, ctx: Context) {
     Ok(_poll_id) -> wisp.ok()
     Error(error) -> error |> helpers.to_wisp_response
   }
+}
+
+fn create_poll_payload_decoder() -> decode.Decoder(CreatePollPayload) {
+  use name <- decode.field("name", decode.string)
+  decode.success(CreatePollPayload(name:))
 }
 
 fn do_create_poll(

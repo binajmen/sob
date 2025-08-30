@@ -8,10 +8,6 @@ import server/context.{type Context}
 import wisp.{type Request, type Response}
 import youid/uuid
 
-pub type Poll {
-  Poll(id: String, name: String)
-}
-
 pub fn list_polls(req: Request, ctx: Context) -> Response {
   use _ <- helpers.require_session(req)
 
@@ -33,10 +29,27 @@ pub fn list_polls(req: Request, ctx: Context) -> Response {
   }
 }
 
-pub fn poll_decoder() -> decode.Decoder(Poll) {
-  use id <- decode.field("id", decode.string)
-  use name <- decode.field("name", decode.string)
-  decode.success(Poll(id:, name:))
+pub fn find_poll(req: Request, ctx: Context, id: String) -> Response {
+  use _ <- helpers.require_session(req)
+
+  let result = {
+    use uuid <- try(uuid.from_string(id))
+    case sql.find_poll(ctx.db, uuid) {
+      Ok(pog.Returned(1, [poll])) ->
+        Ok(
+          json.object([
+            #("id", json.string(uuid.to_string(poll.id))),
+            #("name", json.string(poll.name)),
+          ]),
+        )
+      _ -> Error(Nil)
+    }
+  }
+
+  case result {
+    Error(_) -> wisp.internal_server_error()
+    Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
+  }
 }
 
 type CreatePollPayload {

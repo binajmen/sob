@@ -47,6 +47,52 @@ returning
   |> pog.execute(db)
 }
 
+/// A row you get from running the `find_poll` query
+/// defined in `./src/poll/sql/find_poll.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type FindPollRow {
+  FindPollRow(
+    id: Uuid,
+    name: String,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `find_poll` query
+/// defined in `./src/poll/sql/find_poll.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn find_poll(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(FindPollRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use name <- decode.field(1, decode.string)
+    use created_at <- decode.field(2, pog.timestamp_decoder())
+    use updated_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(FindPollRow(id:, name:, created_at:, updated_at:))
+  }
+
+  "select
+  *
+from
+  polls
+where
+  id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `list_polls` query
 /// defined in `./src/poll/sql/list_polls.sql`.
 ///

@@ -8,9 +8,12 @@ pub type Route {
   SignUp
   Guest
   Polls
-  Poll(id: String)
+  PollsView(id: String)
   AdminPolls
   AdminPollsCreate
+  AdminPollsView(id: String)
+  AdminPollsQuestions(id: String)
+  AdminPollsQuestionsCreate(id: String)
   NotFound(uri: Uri)
 }
 
@@ -28,9 +31,13 @@ pub fn parse_route(uri: Uri) -> Route {
     ["sign-up"] -> SignUp
     ["guest"] -> Guest
     ["polls"] -> Polls
-    ["polls", id] -> Poll(id)
+    ["polls", id] -> PollsView(id)
     ["admin", "polls"] -> AdminPolls
     ["admin", "polls", "create"] -> AdminPollsCreate
+    ["admin", "polls", id] -> AdminPollsView(id)
+    ["admin", "polls", id, "questions"] -> AdminPollsQuestions(id)
+    ["admin", "polls", id, "questions", "create"] ->
+      AdminPollsQuestionsCreate(id)
     _ -> NotFound(uri:)
   }
 }
@@ -42,9 +49,13 @@ pub fn to_path(route: Route) -> String {
     SignUp -> "/sign-up"
     Guest -> "/guest"
     Polls -> "/polls"
-    Poll(id) -> "/polls/" <> id
+    PollsView(id) -> "/polls/" <> id
     AdminPolls -> "/admin/polls"
     AdminPollsCreate -> "/admin/polls/create"
+    AdminPollsView(id) -> "/admin/polls/" <> id
+    AdminPollsQuestions(id) -> "/admin/polls/" <> id <> "/questions"
+    AdminPollsQuestionsCreate(id) ->
+      "/admin/polls/" <> id <> "/questions/create"
     NotFound(_) -> "/not-found"
   }
 }

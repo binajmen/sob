@@ -22,3 +22,13 @@ Further documentation can be found at <https://hexdocs.pm/server>.
 gleam run   # Run the project
 gleam test  # Run the tests
 ```
+
+
+## API
+
+```
+/me
+
+/poll/:id/register
+/poll/:id
+```

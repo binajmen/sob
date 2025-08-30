@@ -6,8 +6,9 @@ import modem
 import router.{type Route}
 import routes/admin/create_poll
 import routes/admin/list_polls
+import routes/guest
 import routes/index
-import routes/poll
+import routes/poll/poll
 import routes/sign_in
 
 pub fn main() {
@@ -24,6 +25,7 @@ pub type Model {
 pub type Page {
   Index
   SignIn(sign_in.Model)
+  Guest(guest.Model)
   Poll(poll.Model)
   AdminPolls(list_polls.Model)
   AdminPollsCreate(create_poll.Model)
@@ -32,6 +34,7 @@ pub type Page {
 pub type Msg {
   UserNavigatedTo(route: Route)
   SignInMsg(sign_in.Msg)
+  GuestMsg(guest.Msg)
   PollMsg(poll.Msg)
   AdminPollsMsg(list_polls.Msg)
   AdminPollsCreateMsg(create_poll.Msg)
@@ -58,6 +61,13 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
       #(
         Model(..model, route:, page: SignIn(page_model)),
         effect.map(effect, fn(msg) { SignInMsg(msg) }),
+      )
+    }
+    router.Guest -> {
+      let #(page_model, effect) = guest.init()
+      #(
+        Model(..model, route:, page: Guest(page_model)),
+        effect.map(effect, fn(msg) { GuestMsg(msg) }),
       )
     }
     router.Poll(id) -> {
@@ -96,6 +106,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.map(effect, fn(msg) { SignInMsg(msg) }),
       )
     }
+    GuestMsg(msg) -> {
+      let assert Guest(page_model) = model.page
+      let #(page_model, effect) = guest.update(page_model, msg)
+      #(
+        Model(..model, page: Guest(page_model)),
+        effect.map(effect, fn(msg) { GuestMsg(msg) }),
+      )
+    }
     PollMsg(msg) -> {
       let assert Poll(page_model) = model.page
       let #(page_model, effect) = poll.update(page_model, msg)
@@ -129,6 +147,9 @@ fn view(model: Model) -> Element(Msg) {
     router.SignIn, SignIn(sign_in_model) ->
       sign_in.view(sign_in_model.form)
       |> element.map(fn(msg) { SignInMsg(msg) })
+    router.Guest, Guest(guest_model) ->
+      guest.view(guest_model.form)
+      |> element.map(fn(msg) { GuestMsg(msg) })
     router.Poll(id), Poll(poll_model) ->
       poll.view(poll_model.id)
       |> element.map(fn(msg) { PollMsg(msg) })

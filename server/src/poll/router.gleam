@@ -1,4 +1,3 @@
-import auth/router
 import gleam/dynamic/decode
 import gleam/json
 import gleam/result.{try}
@@ -48,7 +47,7 @@ fn create_poll_payload_decoder() -> decode.Decoder(CreatePollPayload) {
 }
 
 pub fn create_poll(req: Request, ctx: Context) {
-  use _ <- router.require_admin(req, ctx)
+  use _ <- helpers.require_admin(req, ctx)
   use json <- wisp.require_json(req)
 
   let result = {

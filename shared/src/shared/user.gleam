@@ -1,3 +1,3 @@
 pub type User {
-  User(id: String, email: String, is_admin: Bool)
+  User(id: String, is_admin: Bool)
 }

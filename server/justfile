@@ -6,12 +6,18 @@ env:
 
 squirrel: env
 	gleam run -m squirrel
+
 run: env squirrel
 	gleam run
 
+watch: env squirrel
+	watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam --debounce 500ms --watch src/ -- "gleam run"
+
 migrate: env
     dbmate migrate
+
 up: env
     dbmate up
+
 down: env
     dbmate down

@@ -13,39 +13,42 @@ import router
 import rsvp
 
 pub type Model {
-  Model(form: Form(SignInFormData))
+  Model(form: Form(GuestFormData))
 }
 
-pub type SignInFormData {
-  SignInFormData(email: String, password: String)
+pub type GuestFormData {
+  GuestFormData(first_name: String, last_name: String)
 }
 
-pub fn sign_in_form() -> Form(SignInFormData) {
+pub fn register_form() -> Form(GuestFormData) {
   form.new({
-    use email <- form.field("email", form.parse_email)
-    use password <- form.field(
-      "password",
+    use first_name <- form.field(
+      "first_name",
       form.parse_string |> form.check_not_empty,
     )
-    form.success(SignInFormData(email:, password:))
+    use last_name <- form.field(
+      "last_name",
+      form.parse_string |> form.check_not_empty,
+    )
+    form.success(GuestFormData(first_name:, last_name:))
   })
 }
 
 pub fn init() -> #(Model, Effect(Msg)) {
-  let model = Model(form: sign_in_form())
+  let model = Model(form: register_form())
   #(model, effect.none())
 }
 
 pub type Msg {
-  UserSubmittedSignInForm(Result(SignInFormData, Form(SignInFormData)))
+  UserSubmittedGuestForm(Result(GuestFormData, Form(GuestFormData)))
   ApiAuthenticatedUser(Result(response.Response(String), rsvp.Error))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    UserSubmittedSignInForm(result) ->
+    UserSubmittedGuestForm(result) ->
       case result {
-        Ok(values) -> #(model, sign_in(values, ApiAuthenticatedUser))
+        Ok(values) -> #(model, register(values, ApiAuthenticatedUser))
         Error(form) -> #(Model(form:), effect.none())
       }
     ApiAuthenticatedUser(Ok(_)) -> #(
@@ -53,28 +56,22 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       modem.push(router.to_path(router.AdminPolls), None, None),
     )
     ApiAuthenticatedUser(Error(_)) -> #(
-      Model(
-        form: sign_in_form()
-        |> form.add_error(
-          "password",
-          form.CustomError("Email or password is incorrect"),
-        ),
-      ),
+      Model(form: register_form()),
       effect.none(),
     )
   }
 }
 
-pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
+pub fn view(form: Form(GuestFormData)) -> Element(Msg) {
   let submit = fn(fields) {
     form
     |> form.add_values(fields)
     |> form.run
-    |> UserSubmittedSignInForm
+    |> UserSubmittedGuestForm
   }
 
   html.div([], [
-    html.h1([], [html.text("Sign in")]),
+    html.h1([], [html.text("Guest registration")]),
     html.form(
       [
         event.on_submit(submit),
@@ -82,27 +79,27 @@ pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
         attribute.autocomplete("off"),
       ],
       [
-        input.view(form, is: "text", name: "email", label: "Email"),
-        input.view(form, is: "password", name: "password", label: "Password"),
+        input.view(form, is: "text", name: "first_name", label: "First name"),
+        input.view(form, is: "text", name: "last_name", label: "Last name"),
         html.button(
           [attribute.type_("submit"), attribute.class("btn btn-primary")],
-          [html.text("Sign in")],
+          [html.text("Sign up as guest")],
         ),
       ],
     ),
   ])
 }
 
-fn sign_in(
-  values: SignInFormData,
+fn register(
+  values: GuestFormData,
   on_response handle_response: fn(Result(response.Response(String), rsvp.Error)) ->
     msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/auth/sign-in"
+  let url = "http://localhost:3000/api/auth/guest"
   let body =
     json.object([
-      #("email", json.string(values.email)),
-      #("password", json.string(values.password)),
+      #("first_name", json.string(values.first_name)),
+      #("last_name", json.string(values.last_name)),
     ])
   let handler = rsvp.expect_ok_response(handle_response)
 

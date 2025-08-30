@@ -1,52 +1,18 @@
+//// This module contains the code to run the sql queries defined in
+//// `./src/poll/sql`.
+//// > 🐿️ This module was generated automatically using v4.4.1 of
+//// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+////
+
 import gleam/dynamic/decode
 import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
-/// A row you get from running the `list_polls` query
-/// defined in `./src/poll/sql/list_polls.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.0.1 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type ListPollsRow {
-  ListPollsRow(
-    id: Uuid,
-    name: String,
-    created_at: Timestamp,
-    updated_at: Timestamp,
-  )
-}
-
-/// Runs the `list_polls` query
-/// defined in `./src/poll/sql/list_polls.sql`.
-///
-/// > 🐿️ This function was generated automatically using v4.0.1 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn list_polls(db) {
-  let decoder = {
-    use id <- decode.field(0, uuid_decoder())
-    use name <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(ListPollsRow(id:, name:, created_at:, updated_at:))
-  }
-
-  "select
-  *
-from
-  polls;
-"
-  |> pog.query
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
 /// A row you get from running the `create_poll` query
 /// defined in `./src/poll/sql/create_poll.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.0.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type CreatePollRow {
@@ -56,10 +22,13 @@ pub type CreatePollRow {
 /// Runs the `create_poll` query
 /// defined in `./src/poll/sql/create_poll.sql`.
 ///
-/// > 🐿️ This function was generated automatically using v4.0.1 of
+/// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn create_poll(db, arg_1) {
+pub fn create_poll(
+  db: pog.Connection,
+  arg_1: String,
+) -> Result(pog.Returned(CreatePollRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     decode.success(CreatePollRow(id:))
@@ -74,6 +43,48 @@ returning
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `list_polls` query
+/// defined in `./src/poll/sql/list_polls.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type ListPollsRow {
+  ListPollsRow(
+    id: Uuid,
+    name: String,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `list_polls` query
+/// defined in `./src/poll/sql/list_polls.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn list_polls(
+  db: pog.Connection,
+) -> Result(pog.Returned(ListPollsRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use name <- decode.field(1, decode.string)
+    use created_at <- decode.field(2, pog.timestamp_decoder())
+    use updated_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(ListPollsRow(id:, name:, created_at:, updated_at:))
+  }
+
+  "select
+  *
+from
+  polls;
+"
+  |> pog.query
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

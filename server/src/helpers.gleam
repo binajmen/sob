@@ -1,18 +1,16 @@
-import gleam/bit_array
-import gleam/crypto
+import auth/sql
 import gleam/dynamic
 import gleam/dynamic/decode
-import gleam/http
-import gleam/http/cookie
 import gleam/http/response
 import gleam/json
 import gleam/list
-import gleam/option
 import gleam/result
 import gleam/string
 import gleam/string_tree
 import pog
-import wisp
+import server/context.{type Context}
+import shared/user
+import wisp.{type Request, type Response}
 import youid/uuid
 
 pub fn uuid_decoder() {
@@ -109,26 +107,40 @@ pub fn unauthorised() -> wisp.Response {
   response.Response(401, [], wisp.Empty)
 }
 
-pub fn set_cookie(
-  response response: wisp.Response,
-  request request: wisp.Request,
-  name name: String,
-  value value: String,
-  security security: wisp.Security,
-  max_age max_age: Int,
-) -> wisp.Response {
-  let attributes =
-    cookie.Attributes(
-      ..cookie.defaults(http.Https),
-      domain: option.None,
-      same_site: option.Some(cookie.Lax),
-      max_age: option.Some(max_age),
-      secure: False,
-    )
-  let value = case security {
-    wisp.PlainText -> bit_array.base64_encode(<<value:utf8>>, False)
-    wisp.Signed -> wisp.sign_message(request, <<value:utf8>>, crypto.Sha512)
+pub fn require_session(req: Request, next: fn(String) -> Response) -> Response {
+  let session_id = wisp.get_cookie(req, "session_id", wisp.Signed)
+  case session_id {
+    Ok(session_id) -> next(session_id)
+    Error(_) -> unauthorised()
   }
-  response
-  |> response.set_cookie(name, value, attributes)
+}
+
+pub fn require_user(
+  session_id: String,
+  ctx: Context,
+  next: fn(user.User) -> Response,
+) -> Response {
+  // TOFIX
+  let assert Ok(session_id) = uuid.from_string(session_id)
+  case sql.find_user_by_session(ctx.db, session_id) {
+    Ok(pog.Returned(1, [user])) ->
+      next(user.User(id: uuid.to_string(user.id), is_admin: user.is_admin))
+    Ok(_) -> unauthorised()
+    Error(error) ->
+      DatabaseError(error)
+      |> to_wisp_response
+  }
+}
+
+pub fn require_admin(
+  req: Request,
+  ctx: Context,
+  next: fn(user.User) -> Response,
+) -> Response {
+  use session_id <- require_session(req)
+  use user <- require_user(session_id, ctx)
+  case user.is_admin {
+    True -> next(user)
+    False -> unauthorised()
+  }
 }

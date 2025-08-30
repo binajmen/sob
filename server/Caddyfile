@@ -1,0 +1,15 @@
+:3000 {
+    # API and WebSocket routes go to your Gleam backend
+    reverse_proxy /api/* host.docker.internal:8000
+    reverse_proxy /ws/* host.docker.internal:8000
+    
+    # Everything else goes to your SolidJS frontend
+    reverse_proxy /* host.docker.internal:1234
+    
+    # Enable CORS headers for development
+    header {
+        Access-Control-Allow-Origin *
+        Access-Control-Allow-Methods *
+        Access-Control-Allow-Headers *
+    }
+}

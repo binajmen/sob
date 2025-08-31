@@ -8,7 +8,7 @@ target = "javascript"
 # description = ""
 # licences = ["Apache-2.0"]
 # repository = { type = "github", user = "", repo = "" }
-# links = [{ title = "Website", href = "" }]
+# links = [{ title = "Website", href = " }]
 #
 # For a full reference of all the available options, you can have a look at
 # https://gleam.run/writing-gleam/gleam-toml/.
@@ -17,7 +17,7 @@ target = "javascript"
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 lustre = ">= 5.2.1 and < 6.0.0"
 # rsvp = ">= 1.1.2 and < 2.0.0"
-rsvp = { git = "https://github.com/binajmen/rsvp.git", ref = "5534be1" }
+rsvp = { git = "https://github.com/binajmen/rsvp.git", ref = "04fbb07" }
 gleam_json = ">= 3.0.2 and < 4.0.0"
 gleam_http = ">= 4.1.0 and < 5.0.0"
 # plinth = ">= 0.7.1 and < 1.0.0"

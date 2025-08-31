@@ -88,6 +88,33 @@ fn do_create_poll(
   }
 }
 
+pub fn update_poll(req: Request, ctx: Context, id: String) {
+  use _ <- helpers.require_admin(req, ctx)
+  use json <- wisp.require_json(req)
+  let assert Ok(uuid) = uuid.from_string(id)
+
+  let result = {
+    use payload <- try(helpers.decode_json(json, create_poll_payload_decoder()))
+    let result = sql.update_poll(ctx.db, uuid, payload.name)
+    case result {
+      Ok(pog.Returned(1, [poll])) ->
+        Ok(
+          json.object([
+            #("id", json.string(uuid.to_string(poll.id))),
+            #("name", json.string(poll.name)),
+          ]),
+        )
+      Ok(_) -> Error(helpers.UnknownError)
+      Error(error) -> Error(helpers.DatabaseError(error))
+    }
+  }
+
+  case result {
+    Error(error) -> error |> helpers.to_wisp_response
+    Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
+  }
+}
+
 pub fn delete_poll(req: Request, ctx: Context, id: String) -> Response {
   use _ <- helpers.require_admin(req, ctx)
   let assert Ok(uuid) = uuid.from_string(id)

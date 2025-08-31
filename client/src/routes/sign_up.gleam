@@ -95,10 +95,10 @@ pub fn view(form: Form(SignUpFormData)) -> Element(Msg) {
         attribute.autocomplete("off"),
       ],
       [
-        input.view(form, is: "text", name: "email", label: "Email"),
-        input.view(form, is: "password", name: "password", label: "Password"),
-        input.view(form, is: "text", name: "first_name", label: "First name"),
-        input.view(form, is: "text", name: "last_name", label: "Last name"),
+        input.view(form, "text", "email", "Email", None),
+        input.view(form, "password", "password", "Password", None),
+        input.view(form, "text", "first_name", "First name", None),
+        input.view(form, "text", "last_name", "Last name", None),
         html.button(
           [attribute.type_("submit"), attribute.class("btn btn-primary")],
           [html.text("Sign up")],

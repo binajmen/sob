@@ -24,6 +24,7 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         Post, ["polls"] -> poll.create_poll(req, ctx)
         Get, ["polls"] -> poll.list_polls(req, ctx)
         Get, ["polls", id] -> poll.find_poll(req, ctx, id)
+        Patch, ["polls", id] -> poll.update_poll(req, ctx, id)
         Delete, ["polls", id] -> poll.delete_poll(req, ctx, id)
         Get, ["polls", id, "questions"] ->
           question.list_questions_by_poll(req, ctx, id)

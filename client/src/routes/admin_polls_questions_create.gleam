@@ -79,7 +79,7 @@ pub fn view(poll: Option(Poll), form: Form(CreateQuestionData)) -> Element(Msg) 
             attribute.name("poll_id"),
             attribute.value(poll.id),
           ]),
-          input.view(form, is: "text", name: "prompt", label: "Question"),
+          input.view(form, "text", "prompt", "Question", None),
           html.button(
             [attribute.type_("submit"), attribute.class("btn btn-primary")],
             [html.text("Create question")],

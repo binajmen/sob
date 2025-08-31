@@ -82,8 +82,8 @@ pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
         attribute.autocomplete("off"),
       ],
       [
-        input.view(form, is: "text", name: "email", label: "Email"),
-        input.view(form, is: "password", name: "password", label: "Password"),
+        input.view(form, "text", "email", "Email", None),
+        input.view(form, "password", "password", "Password", None),
         html.button(
           [attribute.type_("submit"), attribute.class("btn btn-primary")],
           [html.text("Sign in")],

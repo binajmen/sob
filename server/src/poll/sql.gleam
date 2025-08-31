@@ -180,6 +180,56 @@ from
   |> pog.execute(db)
 }
 
+/// A row you get from running the `update_poll` query
+/// defined in `./src/poll/sql/update_poll.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UpdatePollRow {
+  UpdatePollRow(
+    id: Uuid,
+    name: String,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `update_poll` query
+/// defined in `./src/poll/sql/update_poll.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn update_poll(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: String,
+) -> Result(pog.Returned(UpdatePollRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use name <- decode.field(1, decode.string)
+    use created_at <- decode.field(2, pog.timestamp_decoder())
+    use updated_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(UpdatePollRow(id:, name:, created_at:, updated_at:))
+  }
+
+  "update polls
+set
+  name = $2,
+  updated_at = now()
+where
+  id = $1
+returning
+  *;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(arg_2))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 // --- Encoding/decoding utils -------------------------------------------------
 
 /// A decoder to decode `Uuid`s coming from a Postgres query.

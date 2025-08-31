@@ -63,7 +63,7 @@ pub fn view(form: Form(CreatePollData)) -> Element(Msg) {
   html.div([], [
     html.h1([], [html.text("Create poll")]),
     html.form([event.on_submit(submit), attribute.class("space-y-2")], [
-      input.view(form, is: "text", name: "name", label: "Name"),
+      input.view(form, "text", "name", "Name", None),
       html.button(
         [attribute.type_("submit"), attribute.class("btn btn-primary")],
         [html.text("Create poll")],

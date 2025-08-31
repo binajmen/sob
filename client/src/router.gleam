@@ -9,6 +9,7 @@ pub type Route {
   Guest
   Polls
   PollsView(id: String)
+  Admin
   AdminPolls
   AdminPollsCreate
   AdminPollsView(id: String)
@@ -32,6 +33,7 @@ pub fn parse_route(uri: Uri) -> Route {
     ["guest"] -> Guest
     ["polls"] -> Polls
     ["polls", id] -> PollsView(id)
+    ["admin"] -> Admin
     ["admin", "polls"] -> AdminPolls
     ["admin", "polls", "create"] -> AdminPollsCreate
     ["admin", "polls", id] -> AdminPollsView(id)
@@ -50,6 +52,7 @@ pub fn to_path(route: Route) -> String {
     Guest -> "/guest"
     Polls -> "/polls"
     PollsView(id) -> "/polls/" <> id
+    Admin -> "/admin"
     AdminPolls -> "/admin/polls"
     AdminPollsCreate -> "/admin/polls/create"
     AdminPollsView(id) -> "/admin/polls/" <> id

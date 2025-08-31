@@ -5,6 +5,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import modem
 import router.{type Route}
+import routes/admin
 import routes/admin_polls_create
 import routes/admin_polls_list
 import routes/admin_polls_questions
@@ -34,6 +35,7 @@ pub type Page {
   Guest(guest.Model)
   Polls(polls_list.Model)
   PollsView(polls_view.Model)
+  Admin
   AdminPolls(admin_polls_list.Model)
   AdminPollsCreate(admin_polls_create.Model)
   AdminPollsQuestions(admin_polls_questions.Model)
@@ -104,6 +106,7 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
         effect.map(effect, fn(msg) { PollsViewMsg(msg) }),
       )
     }
+    router.Admin -> #(Model(..model, route:, page: Admin), effect.none())
     router.AdminPolls -> {
       let #(page_model, effect) = admin_polls_list.init()
       #(
@@ -233,14 +236,15 @@ fn view(model: Model) -> Element(Msg) {
     router.PollsView(id), PollsView(_model) ->
       polls_view.view(id)
       |> element.map(fn(msg) { PollsViewMsg(msg) })
+    router.Admin, Admin -> admin.view()
     router.AdminPolls, AdminPolls(model) ->
       admin_polls_list.view(model.polls)
       |> element.map(fn(msg) { AdminPollsMsg(msg) })
     router.AdminPollsCreate, AdminPollsCreate(model) ->
       admin_polls_create.view(model.form)
       |> element.map(fn(msg) { AdminPollsCreateMsg(msg) })
-    router.AdminPollsQuestions(_id), AdminPollsQuestions(model) ->
-      admin_polls_questions.view(model.questions)
+    router.AdminPollsQuestions(poll_id), AdminPollsQuestions(model) ->
+      admin_polls_questions.view(poll_id, model.questions)
       |> element.map(fn(msg) { AdminPollsQuestionsMsg(msg) })
     router.AdminPollsQuestionsCreate(_id), AdminPollsQuestionsCreate(model) ->
       admin_polls_questions_create.view(model.poll, model.form)

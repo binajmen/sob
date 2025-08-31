@@ -1,6 +1,6 @@
 import auth/router as auth
 import cors_builder
-import gleam/http.{Get, Patch, Post, Put}
+import gleam/http.{Delete, Get, Patch, Post, Put}
 import lustre/attribute
 import lustre/element
 import lustre/element/html
@@ -24,6 +24,7 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         Post, ["polls"] -> poll.create_poll(req, ctx)
         Get, ["polls"] -> poll.list_polls(req, ctx)
         Get, ["polls", id] -> poll.find_poll(req, ctx, id)
+        Delete, ["polls", id] -> poll.delete_poll(req, ctx, id)
         Get, ["polls", id, "questions"] ->
           question.list_questions_by_poll(req, ctx, id)
         Post, ["questions"] -> question.create_question(req, ctx)

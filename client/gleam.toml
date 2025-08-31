@@ -16,10 +16,12 @@ target = "javascript"
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 lustre = ">= 5.2.1 and < 6.0.0"
-rsvp = ">= 1.1.2 and < 2.0.0"
+# rsvp = ">= 1.1.2 and < 2.0.0"
+rsvp = { git = "https://github.com/binajmen/rsvp.git", ref = "5534be1" }
 gleam_json = ">= 3.0.2 and < 4.0.0"
 gleam_http = ">= 4.1.0 and < 5.0.0"
-plinth = ">= 0.7.1 and < 1.0.0"
+# plinth = ">= 0.7.1 and < 1.0.0"
+plinth = { git = "https://github.com/binajmen/plinth.git", ref = "ddaaf71" }
 shared = { path = "../shared" }
 modem = ">= 2.1.0 and < 3.0.0"
 formal = ">= 3.0.0 and < 4.0.0"

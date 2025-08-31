@@ -47,7 +47,7 @@ pub fn find_poll(req: Request, ctx: Context, id: String) -> Response {
   }
 
   case result {
-    Error(_) -> wisp.internal_server_error()
+    Error(_) -> wisp.not_found()
     Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
   }
 }
@@ -67,7 +67,7 @@ pub fn create_poll(req: Request, ctx: Context) {
   }
 
   case result {
-    Ok(_poll_id) -> wisp.ok()
+    Ok(_id) -> wisp.ok()
     Error(error) -> error |> helpers.to_wisp_response
   }
 }
@@ -85,5 +85,16 @@ fn do_create_poll(
     Ok(pog.Returned(1, [session])) -> Ok(session.id)
     Ok(_) -> Error(helpers.UnknownError)
     Error(error) -> Error(helpers.DatabaseError(error))
+  }
+}
+
+pub fn delete_poll(req: Request, ctx: Context, id: String) -> Response {
+  use _ <- helpers.require_admin(req, ctx)
+  let assert Ok(uuid) = uuid.from_string(id)
+
+  case sql.delete_poll(ctx.db, uuid) {
+    Ok(pog.Returned(1, _)) -> wisp.ok()
+    Ok(_) -> wisp.not_found()
+    Error(error) -> helpers.DatabaseError(error) |> helpers.to_wisp_response
   }
 }

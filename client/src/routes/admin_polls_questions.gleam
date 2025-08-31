@@ -1,8 +1,10 @@
 import gleam/dynamic/decode
 import gleam/list
+import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
+import router
 import rsvp
 import shared/question.{type Question}
 
@@ -31,15 +33,39 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-pub fn view(questions: List(Question)) -> Element(Msg) {
+pub fn view(poll_id: String, questions: List(Question)) -> Element(Msg) {
   html.div([], [
-    html.h1([], [html.text("Admin Questions")]),
-    html.ul(
-      [],
-      list.map(questions, fn(question) {
-        html.li([], [html.text(question.poll_id <> " - " <> question.prompt)])
-      }),
-    ),
+    html.div([attribute.class("prose flex justify-between items-start")], [
+      html.h1([], [html.text("Questions")]),
+      html.a([router.href(router.AdminPollsQuestionsCreate(poll_id))], [
+        html.button([attribute.class("btn btn-primary")], [
+          html.text("Create question"),
+        ]),
+      ]),
+    ]),
+    html.table([attribute.class("table table-zebra w-auto")], [
+      html.thead([], [
+        html.tr([], [
+          html.th([], []),
+          html.th([], [html.text("Name")]),
+          html.th([], []),
+        ]),
+      ]),
+      html.tbody(
+        [],
+        list.map(questions, fn(question) {
+          html.tr([], [
+            html.th([], [html.text(question.id)]),
+            html.td([], [html.text(question.prompt)]),
+            html.td([], [
+              html.a([router.href(router.AdminPollsView(question.id))], [
+                html.text("View"),
+              ]),
+            ]),
+          ])
+        }),
+      ),
+    ]),
   ])
 }
 

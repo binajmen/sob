@@ -47,6 +47,51 @@ returning
   |> pog.execute(db)
 }
 
+/// A row you get from running the `delete_poll` query
+/// defined in `./src/poll/sql/delete_poll.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type DeletePollRow {
+  DeletePollRow(
+    id: Uuid,
+    name: String,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `delete_poll` query
+/// defined in `./src/poll/sql/delete_poll.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn delete_poll(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(DeletePollRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use name <- decode.field(1, decode.string)
+    use created_at <- decode.field(2, pog.timestamp_decoder())
+    use updated_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(DeletePollRow(id:, name:, created_at:, updated_at:))
+  }
+
+  "delete from polls
+where
+  id = $1
+returning
+  *;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `find_poll` query
 /// defined in `./src/poll/sql/find_poll.sql`.
 ///

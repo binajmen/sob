@@ -7,7 +7,6 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import modem
 import router
 import rsvp
 import shared/poll.{type Poll}
@@ -71,7 +70,14 @@ pub fn view(poll: Option(Poll), form: Form(UpdatePollData)) -> Element(Msg) {
     None -> html.text("loading..")
     Some(poll) ->
       html.div([], [
-        html.h1([], [html.text("Update poll")]),
+        html.div([attribute.class("prose flex justify-between items-start")], [
+          html.h1([], [html.text("Update poll")]),
+          html.a([router.href(router.AdminPollsQuestions(poll.id))], [
+            html.button([attribute.class("btn btn-primary")], [
+              html.text("View questions"),
+            ]),
+          ]),
+        ]),
         html.form([event.on_submit(submit), attribute.class("space-y-2")], [
           html.input([
             attribute.type_("hidden"),

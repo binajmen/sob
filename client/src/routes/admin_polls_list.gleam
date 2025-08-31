@@ -1,5 +1,6 @@
 import gleam/dynamic/decode
 import gleam/http/response.{type Response}
+import gleam/json
 import gleam/list
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -105,39 +106,12 @@ fn fetch_polls(
   rsvp.get(url, handler)
 }
 
-// /// implementation of delete with proper error handling
-// fn to_uri(uri_string: String) -> Result(uri.Uri, rsvp.Error) {
-//   case uri_string {
-//     "./" <> _ | "/" <> _ -> rsvp.parse_relative_uri(uri_string)
-//     _ -> uri.parse(uri_string)
-//   }
-//   |> result.replace_error(rsvp.BadUrl(uri_string))
-// }
-//
-// pub fn delete(url: String, handler: rsvp.Handler(Msg)) -> Effect(Msg) {
-//   case to_uri(url) {
-//     Ok(uri) ->
-//       request.from_uri(uri)
-//       |> result.map(fn(request) {
-//         request
-//         |> request.set_method(http.Delete)
-//         |> rsvp.send(handler)
-//       })
-//       |> result.map_error(fn(_) {
-//         use dispatch <- effect.from
-//         dispatch(rsvp.BadUrl)
-//       })
-//       |> result.unwrap_both
-//
-//     Error(err) -> reject(err, handler)
-//   }
-// }
-
 fn delete_poll(
   poll_id: String,
   on_response handle_response: fn(Result(Response(String), rsvp.Error)) -> Msg,
 ) -> Effect(Msg) {
   let url = "http://localhost:3000/api/polls/" <> poll_id
+  let body = json.null()
   let handler = rsvp.expect_ok_response(handle_response)
-  rsvp.delete(url, handler)
+  rsvp.delete(url, body, handler)
 }

@@ -239,34 +239,45 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 fn view(model: Model) -> Element(Msg) {
   case model.route, model.page {
     router.Index, Index -> index.view()
+
     router.SignIn, SignIn(model) ->
       sign_in.view(model.form)
       |> element.map(fn(msg) { SignInMsg(msg) })
+
     router.SignUp, SignUp(model) ->
       sign_up.view(model.form)
       |> element.map(fn(msg) { SignUpMsg(msg) })
+
     router.Guest, Guest(model) ->
       guest.view(model.form)
       |> element.map(fn(msg) { GuestMsg(msg) })
+
     router.Polls, Polls(model) ->
       polls_list.view(model.polls)
       |> element.map(fn(msg) { PollsMsg(msg) })
+
     router.PollsView(id), PollsView(_model) ->
       polls_view.view(id)
       |> element.map(fn(msg) { PollsViewMsg(msg) })
+
     router.Admin, Admin -> admin.view()
+
     router.AdminPolls, AdminPolls(model) ->
       admin_polls_list.view(model.polls)
       |> element.map(fn(msg) { AdminPollsMsg(msg) })
+
     router.AdminPollsCreate, AdminPollsCreate(model) ->
       admin_polls_create.view(model.form)
       |> element.map(fn(msg) { AdminPollsCreateMsg(msg) })
+
     router.AdminPollsView(_id), AdminPollsView(model) ->
       admin_polls_view.view(model.poll, model.form)
       |> element.map(fn(msg) { AdminPollsViewMsg(msg) })
+
     router.AdminPollsQuestions(poll_id), AdminPollsQuestions(model) ->
       admin_polls_questions.view(poll_id, model.questions)
       |> element.map(fn(msg) { AdminPollsQuestionsMsg(msg) })
+
     router.AdminPollsQuestionsCreate(_id), AdminPollsQuestionsCreate(model) ->
       admin_polls_questions_create.view(model.poll, model.form)
       |> element.map(fn(msg) { AdminPollsQuestionsCreateMsg(msg) })

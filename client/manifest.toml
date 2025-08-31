@@ -40,7 +40,7 @@ packages = [
   { name = "platform", version = "1.0.0", build_tools = ["gleam"], requirements = [], otp_app = "platform", source = "hex", outer_checksum = "8339420A95AD89AAC0F82F4C3DB8DD401041742D6C3F46132A8739F6AEB75391" },
   { name = "plinth", version = "0.7.2", build_tools = ["gleam"], requirements = ["gleam_javascript", "gleam_json", "gleam_stdlib"], source = "git", repo = "https://github.com/binajmen/plinth.git", commit = "ddaaf7195713d73fdd8c180d176b4d33be95e8b0" },
   { name = "repeatedly", version = "2.1.2", build_tools = ["gleam"], requirements = [], otp_app = "repeatedly", source = "hex", outer_checksum = "93AE1938DDE0DC0F7034F32C1BF0D4E89ACEBA82198A1FE21F604E849DA5F589" },
-  { name = "rsvp", version = "1.1.3", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_fetch", "gleam_http", "gleam_httpc", "gleam_javascript", "gleam_json", "gleam_stdlib", "lustre"], source = "git", repo = "https://github.com/binajmen/rsvp.git", commit = "04fbb07c6758cb57a45d2f36f01d3a0e7ceb02c3" },
+  { name = "rsvp", version = "1.1.3", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_fetch", "gleam_http", "gleam_httpc", "gleam_javascript", "gleam_json", "gleam_stdlib", "lustre"], source = "git", repo = "https://github.com/binajmen/rsvp.git", commit = "4befe669b2a41850aa9d52c33c8305985e321e58" },
   { name = "shared", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], source = "local", path = "../shared" },
   { name = "simplifile", version = "2.3.0", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "0A868DAC6063D9E983477981839810DC2E553285AB4588B87E3E9C96A7FB4CB4" },
   { name = "snag", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "snag", source = "hex", outer_checksum = "7E9F06390040EB5FAB392CE642771484136F2EC103A92AE11BA898C8167E6E17" },
@@ -60,5 +60,5 @@ lustre = { version = ">= 5.2.1 and < 6.0.0" }
 lustre_dev_tools = { version = ">= 1.9.0 and < 2.0.0" }
 modem = { version = ">= 2.1.0 and < 3.0.0" }
 plinth = { git = "https://github.com/binajmen/plinth.git", ref = "ddaaf71" }
-rsvp = { git = "https://github.com/binajmen/rsvp.git", ref = "04fbb07" }
+rsvp = { git = "https://github.com/binajmen/rsvp.git", ref = "4befe66" }
 shared = { path = "../shared" }

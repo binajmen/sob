@@ -70,18 +70,15 @@ pub fn view(poll: Option(Poll), form: Form(UpdatePollData)) -> Element(Msg) {
   case poll {
     None -> html.text("loading..")
     Some(poll) ->
-      html.div([], [
+      html.div([attribute.class("space-y-4")], [
         breadcrumbs.view([
           breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
           breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
-          breadcrumbs.Crumb(
-            poll.name,
-            Some(router.to_path(router.AdminPollsView(poll.id))),
-          ),
+          breadcrumbs.Crumb(poll.name, None),
         ]),
         html.div([attribute.class("prose flex justify-between items-start")], [
           html.h1([], [html.text("Update poll")]),
-          html.a([router.href(router.AdminPollsQuestions(poll.id))], [
+          html.a([router.href(router.AdminQuestions(poll.id))], [
             html.button([attribute.class("btn btn-primary")], [
               html.text("View questions"),
             ]),

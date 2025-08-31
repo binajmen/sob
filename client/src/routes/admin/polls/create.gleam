@@ -61,13 +61,15 @@ pub fn view(form: Form(CreatePollData)) -> Element(Msg) {
     |> UserSubmittedForm
   }
 
-  html.div([], [
+  html.div([attribute.class("space-y-4")], [
     breadcrumbs.view([
       breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
       breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
       breadcrumbs.Crumb("Create", None),
     ]),
-    html.h1([], [html.text("Create poll")]),
+    html.div([attribute.class("prose flex justify-between items-start")], [
+      html.h1([], [html.text("Create poll")]),
+    ]),
     html.form([event.on_submit(submit), attribute.class("space-y-2")], [
       input.view(form, "text", "name", "Name", None),
       html.button(

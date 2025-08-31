@@ -56,7 +56,7 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
   case poll {
     None -> html.div([], [html.text("Loading..")])
     Some(poll) ->
-      html.div([], [
+      html.div([attribute.class("space-y-4")], [
         breadcrumbs.view([
           breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
           breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
@@ -64,14 +64,11 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
             poll.name,
             Some(router.to_path(router.AdminPollsView(poll.id))),
           ),
-          breadcrumbs.Crumb(
-            "Questions",
-            Some(router.to_path(router.AdminPollsQuestions(poll.id))),
-          ),
+          breadcrumbs.Crumb("Questions", None),
         ]),
         html.div([attribute.class("prose flex justify-between items-start")], [
           html.h1([], [html.text("Questions")]),
-          html.a([router.href(router.AdminPollsQuestionsCreate(poll.id))], [
+          html.a([router.href(router.AdminQuestionsCreate(poll.id))], [
             html.button([attribute.class("btn btn-primary")], [
               html.text("Create question"),
             ]),
@@ -81,7 +78,7 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
           html.thead([], [
             html.tr([], [
               html.th([], []),
-              html.th([], [html.text("Name")]),
+              html.th([], [html.text("Prompt")]),
               html.th([], []),
             ]),
           ]),
@@ -92,9 +89,19 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
                 html.th([], [html.text(question.id)]),
                 html.td([], [html.text(question.prompt)]),
                 html.td([], [
-                  html.a([router.href(router.AdminPollsView(question.id))], [
-                    html.text("View"),
-                  ]),
+                  html.a(
+                    [
+                      router.href(router.AdminQuestionsView(
+                        poll.id,
+                        question.id,
+                      )),
+                    ],
+                    [
+                      html.button([attribute.class("btn btn-primary btn-sm")], [
+                        html.text("View"),
+                      ]),
+                    ],
+                  ),
                 ]),
               ])
             }),

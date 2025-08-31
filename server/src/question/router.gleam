@@ -48,6 +48,7 @@ pub fn find_question(req: Request, ctx: Context, id: String) -> Response {
         Ok(
           json.object([
             #("id", json.string(uuid.to_string(question.id))),
+            #("poll_id", json.string(uuid.to_string(question.poll_id))),
             #("prompt", json.string(question.prompt)),
           ]),
         )

@@ -13,8 +13,9 @@ pub type Route {
   AdminPolls
   AdminPollsCreate
   AdminPollsView(id: String)
-  AdminPollsQuestions(id: String)
-  AdminPollsQuestionsCreate(id: String)
+  AdminQuestions(poll_id: String)
+  AdminQuestionsCreate(poll_id: String)
+  AdminQuestionsView(poll_id: String, id: String)
   NotFound(uri: Uri)
 }
 
@@ -26,7 +27,7 @@ pub fn initial_route() -> Route {
 }
 
 pub fn parse_route(uri: Uri) -> Route {
-  case uri.path_segments(uri.path) {
+  case uri.path_segments(uri.path) |> echo {
     [] -> Index
     ["sign-in"] -> SignIn
     ["sign-up"] -> SignUp
@@ -37,9 +38,11 @@ pub fn parse_route(uri: Uri) -> Route {
     ["admin", "polls"] -> AdminPolls
     ["admin", "polls", "create"] -> AdminPollsCreate
     ["admin", "polls", id] -> AdminPollsView(id)
-    ["admin", "polls", id, "questions"] -> AdminPollsQuestions(id)
-    ["admin", "polls", id, "questions", "create"] ->
-      AdminPollsQuestionsCreate(id)
+    ["admin", "polls", poll_id, "questions"] -> AdminQuestions(poll_id)
+    ["admin", "polls", poll_id, "questions", "create"] ->
+      AdminQuestionsCreate(poll_id)
+    ["admin", "polls", poll_id, "questions", id] ->
+      AdminQuestionsView(poll_id, id)
     _ -> NotFound(uri:)
   }
 }
@@ -56,9 +59,10 @@ pub fn to_path(route: Route) -> String {
     AdminPolls -> "/admin/polls"
     AdminPollsCreate -> "/admin/polls/create"
     AdminPollsView(id) -> "/admin/polls/" <> id
-    AdminPollsQuestions(id) -> "/admin/polls/" <> id <> "/questions"
-    AdminPollsQuestionsCreate(id) ->
-      "/admin/polls/" <> id <> "/questions/create"
+    AdminQuestions(id) -> "/admin/polls/" <> id <> "/questions"
+    AdminQuestionsCreate(id) -> "/admin/polls/" <> id <> "/questions/create"
+    AdminQuestionsView(poll_id, id) ->
+      "/admin/polls/" <> poll_id <> "/questions/" <> id
     NotFound(_) -> "/not-found"
   }
 }

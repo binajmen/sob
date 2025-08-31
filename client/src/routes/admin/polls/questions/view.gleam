@@ -13,55 +13,77 @@ import modem
 import router
 import rsvp
 import shared/poll.{type Poll}
+import shared/question.{type Question}
 
 pub type Model {
-  Model(poll: Option(Poll), form: Form(CreateQuestionData))
+  Model(
+    poll: Option(Poll),
+    question: Option(Question),
+    form: Form(CreateQuestionData),
+  )
 }
 
 pub type CreateQuestionData {
-  CreateQuestionData(poll_id: String, prompt: String)
+  CreateQuestionData(id: String, poll_id: String, prompt: String)
 }
 
-pub fn create_question_form() -> Form(CreateQuestionData) {
+fn form() -> Form(CreateQuestionData) {
   form.new({
+    use id <- form.field("id", form.parse_string)
     use poll_id <- form.field("poll_id", form.parse_string)
     use prompt <- form.field("prompt", form.parse_string)
-    form.success(CreateQuestionData(poll_id:, prompt:))
+    form.success(CreateQuestionData(id:, poll_id:, prompt:))
   })
 }
 
-pub fn init(id: String) -> #(Model, Effect(Msg)) {
-  let model = Model(poll: None, form: create_question_form())
-  #(model, fetch_poll(id, ApiReturnedPoll))
+pub fn init(poll_id: String, id: String) -> #(Model, Effect(Msg)) {
+  let model = Model(poll: None, question: None, form: form())
+  #(
+    model,
+    effect.batch([
+      fetch_poll(poll_id, ApiReturnedPoll),
+      fetch_question(id, ApiReturnedQuestion),
+    ]),
+  )
 }
 
 pub type Msg {
   UserSubmittedForm(Result(CreateQuestionData, Form(CreateQuestionData)))
-  ApiQuestionCreated(Result(Response(String), rsvp.Error))
+  ApiQuestionUpdated(Result(Response(String), rsvp.Error))
   ApiReturnedPoll(Result(Poll, rsvp.Error))
+  ApiReturnedQuestion(Result(Question, rsvp.Error))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     UserSubmittedForm(result) ->
       case result {
-        Ok(values) -> #(model, create_question(values, ApiQuestionCreated))
+        Ok(values) -> #(model, create_question(values, ApiQuestionUpdated))
         Error(form) -> #(Model(..model, form:), effect.none())
       }
-    ApiQuestionCreated(Ok(_)) -> #(
+    ApiQuestionUpdated(Ok(_)) -> #(
       model,
       modem.push(router.to_path(router.AdminPolls), None, None),
     )
-    ApiQuestionCreated(Error(_)) -> #(model, effect.none())
+    ApiQuestionUpdated(Error(_)) -> #(model, effect.none())
     ApiReturnedPoll(Ok(poll)) -> #(
       Model(..model, poll: Some(poll)),
       effect.none(),
     )
     ApiReturnedPoll(Error(_)) -> #(model, effect.none())
+    ApiReturnedQuestion(Ok(question)) -> #(
+      Model(..model, question: Some(question)),
+      effect.none(),
+    )
+    ApiReturnedQuestion(Error(_)) -> #(model, effect.none())
   }
 }
 
-pub fn view(poll: Option(Poll), form: Form(CreateQuestionData)) -> Element(Msg) {
+pub fn view(
+  poll: Option(Poll),
+  question: Option(Question),
+  form: Form(CreateQuestionData),
+) -> Element(Msg) {
   let submit = fn(fields) {
     form
     |> form.add_values(fields)
@@ -69,10 +91,9 @@ pub fn view(poll: Option(Poll), form: Form(CreateQuestionData)) -> Element(Msg) 
     |> UserSubmittedForm
   }
 
-  case poll {
-    None -> html.text("loading..")
-    Some(poll) ->
-      html.div([], [
+  case poll, question {
+    Some(poll), Some(question) ->
+      html.div([attribute.class("space-y-4")], [
         breadcrumbs.view([
           breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
           breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
@@ -82,12 +103,17 @@ pub fn view(poll: Option(Poll), form: Form(CreateQuestionData)) -> Element(Msg) 
           ),
           breadcrumbs.Crumb(
             "Questions",
-            Some(router.to_path(router.AdminPollsQuestions(poll.id))),
+            Some(router.to_path(router.AdminQuestions(poll.id))),
           ),
-          breadcrumbs.Crumb("Create", None),
+          breadcrumbs.Crumb(question.prompt, None),
         ]),
-        html.h1([], [html.text("Create a question for the poll: " <> poll.name)]),
+        html.h1([], [html.text("Update question")]),
         html.form([event.on_submit(submit), attribute.class("space-y-2")], [
+          html.input([
+            attribute.type_("hidden"),
+            attribute.name("id"),
+            attribute.value(question.id),
+          ]),
           html.input([
             attribute.type_("hidden"),
             attribute.name("poll_id"),
@@ -96,11 +122,32 @@ pub fn view(poll: Option(Poll), form: Form(CreateQuestionData)) -> Element(Msg) 
           input.view(form, "text", "prompt", "Question", None),
           html.button(
             [attribute.type_("submit"), attribute.class("btn btn-primary")],
-            [html.text("Create question")],
+            [html.text("Update question")],
           ),
         ]),
       ])
+    _, _ -> html.text("loading..")
   }
+}
+
+fn fetch_poll(
+  id: String,
+  on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "http://localhost:3000/api/polls/" <> id
+  let decoder = poll.poll_decoder()
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.get(url, handler)
+}
+
+fn fetch_question(
+  id: String,
+  on_response handle_response: fn(Result(Question, rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "http://localhost:3000/api/questions/" <> id
+  let decoder = question.question_decoder()
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.get(url, handler)
 }
 
 fn create_question(
@@ -118,14 +165,4 @@ fn create_question(
   let handler = rsvp.expect_ok_response(handle_response)
 
   rsvp.post(url, body, handler)
-}
-
-fn fetch_poll(
-  id: String,
-  on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
-) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls/" <> id
-  let decoder = poll.poll_decoder()
-  let handler = rsvp.expect_json(decoder, handle_response)
-  rsvp.get(url, handler)
 }

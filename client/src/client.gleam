@@ -5,11 +5,12 @@ import lustre/element/html
 import modem
 import router.{type Route}
 import routes/admin
-import routes/admin_polls_create
-import routes/admin_polls_list
-import routes/admin_polls_questions
-import routes/admin_polls_questions_create
-import routes/admin_polls_view
+import routes/admin/polls as admin_polls
+import routes/admin/polls/create as admin_polls_create
+import routes/admin/polls/questions as admin_polls_questions
+import routes/admin/polls/questions/create as admin_polls_questions_create
+import routes/admin/polls/questions/view as admin_polls_questions_view
+import routes/admin/polls/view as admin_polls_view
 import routes/guest
 import routes/index
 import routes/polls_list
@@ -36,11 +37,12 @@ pub type Page {
   Polls(polls_list.Model)
   PollsView(polls_view.Model)
   Admin
-  AdminPolls(admin_polls_list.Model)
+  AdminPolls(admin_polls.Model)
   AdminPollsCreate(admin_polls_create.Model)
   AdminPollsView(admin_polls_view.Model)
-  AdminPollsQuestions(admin_polls_questions.Model)
-  AdminPollsQuestionsCreate(admin_polls_questions_create.Model)
+  AdminQuestions(admin_polls_questions.Model)
+  AdminQuestionsCreate(admin_polls_questions_create.Model)
+  AdminQuestionsView(admin_polls_questions_view.Model)
 }
 
 pub type Msg {
@@ -50,11 +52,12 @@ pub type Msg {
   GuestMsg(guest.Msg)
   PollsMsg(polls_list.Msg)
   PollsViewMsg(polls_view.Msg)
-  AdminPollsMsg(admin_polls_list.Msg)
+  AdminPollsMsg(admin_polls.Msg)
   AdminPollsCreateMsg(admin_polls_create.Msg)
   AdminPollsViewMsg(admin_polls_view.Msg)
-  AdminPollsQuestionsMsg(admin_polls_questions.Msg)
-  AdminPollsQuestionsCreateMsg(admin_polls_questions_create.Msg)
+  AdminQuestionsMsg(admin_polls_questions.Msg)
+  AdminQuestionsCreateMsg(admin_polls_questions_create.Msg)
+  AdminQuestionsViewMsg(admin_polls_questions_view.Msg)
 }
 
 fn init(_options) -> #(Model, Effect(Msg)) {
@@ -110,7 +113,7 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
     }
     router.Admin -> #(Model(..model, route:, page: Admin), effect.none())
     router.AdminPolls -> {
-      let #(page_model, effect) = admin_polls_list.init()
+      let #(page_model, effect) = admin_polls.init()
       #(
         Model(..model, route:, page: AdminPolls(page_model)),
         effect.map(effect, fn(msg) { AdminPollsMsg(msg) }),
@@ -130,18 +133,25 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
         effect.map(effect, fn(msg) { AdminPollsViewMsg(msg) }),
       )
     }
-    router.AdminPollsQuestions(id) -> {
+    router.AdminQuestions(id) -> {
       let #(page_model, effect) = admin_polls_questions.init(id)
       #(
-        Model(..model, route:, page: AdminPollsQuestions(page_model)),
-        effect.map(effect, fn(msg) { AdminPollsQuestionsMsg(msg) }),
+        Model(..model, route:, page: AdminQuestions(page_model)),
+        effect.map(effect, fn(msg) { AdminQuestionsMsg(msg) }),
       )
     }
-    router.AdminPollsQuestionsCreate(id) -> {
+    router.AdminQuestionsCreate(id) -> {
       let #(page_model, effect) = admin_polls_questions_create.init(id)
       #(
-        Model(..model, route:, page: AdminPollsQuestionsCreate(page_model)),
-        effect.map(effect, fn(msg) { AdminPollsQuestionsCreateMsg(msg) }),
+        Model(..model, route:, page: AdminQuestionsCreate(page_model)),
+        effect.map(effect, fn(msg) { AdminQuestionsCreateMsg(msg) }),
+      )
+    }
+    router.AdminQuestionsView(poll_id, id) -> {
+      let #(page_model, effect) = admin_polls_questions_view.init(poll_id, id)
+      #(
+        Model(..model, route:, page: AdminQuestionsView(page_model)),
+        effect.map(effect, fn(msg) { AdminQuestionsViewMsg(msg) }),
       )
     }
     _ -> #(model, effect.none())
@@ -193,7 +203,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     AdminPollsMsg(msg) -> {
       let assert AdminPolls(page_model) = model.page
-      let #(page_model, effect) = admin_polls_list.update(page_model, msg)
+      let #(page_model, effect) = admin_polls.update(page_model, msg)
       #(
         Model(..model, page: AdminPolls(page_model)),
         effect.map(effect, fn(msg) { AdminPollsMsg(msg) }),
@@ -215,21 +225,30 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.map(effect, fn(msg) { AdminPollsViewMsg(msg) }),
       )
     }
-    AdminPollsQuestionsMsg(msg) -> {
-      let assert AdminPollsQuestions(page_model) = model.page
+    AdminQuestionsMsg(msg) -> {
+      let assert AdminQuestions(page_model) = model.page
       let #(page_model, effect) = admin_polls_questions.update(page_model, msg)
       #(
-        Model(..model, page: AdminPollsQuestions(page_model)),
-        effect.map(effect, fn(msg) { AdminPollsQuestionsMsg(msg) }),
+        Model(..model, page: AdminQuestions(page_model)),
+        effect.map(effect, fn(msg) { AdminQuestionsMsg(msg) }),
       )
     }
-    AdminPollsQuestionsCreateMsg(msg) -> {
-      let assert AdminPollsQuestionsCreate(page_model) = model.page
+    AdminQuestionsCreateMsg(msg) -> {
+      let assert AdminQuestionsCreate(page_model) = model.page
       let #(page_model, effect) =
         admin_polls_questions_create.update(page_model, msg)
       #(
-        Model(..model, page: AdminPollsQuestionsCreate(page_model)),
-        effect.map(effect, fn(msg) { AdminPollsQuestionsCreateMsg(msg) }),
+        Model(..model, page: AdminQuestionsCreate(page_model)),
+        effect.map(effect, fn(msg) { AdminQuestionsCreateMsg(msg) }),
+      )
+    }
+    AdminQuestionsViewMsg(msg) -> {
+      let assert AdminQuestionsView(page_model) = model.page
+      let #(page_model, effect) =
+        admin_polls_questions_view.update(page_model, msg)
+      #(
+        Model(..model, page: AdminQuestionsView(page_model)),
+        effect.map(effect, fn(msg) { AdminQuestionsViewMsg(msg) }),
       )
     }
   }
@@ -262,7 +281,7 @@ fn view(model: Model) -> Element(Msg) {
     router.Admin, Admin -> admin.view()
 
     router.AdminPolls, AdminPolls(model) ->
-      admin_polls_list.view(model.polls)
+      admin_polls.view(model.polls)
       |> element.map(fn(msg) { AdminPollsMsg(msg) })
 
     router.AdminPollsCreate, AdminPollsCreate(model) ->
@@ -273,13 +292,18 @@ fn view(model: Model) -> Element(Msg) {
       admin_polls_view.view(model.poll, model.form)
       |> element.map(fn(msg) { AdminPollsViewMsg(msg) })
 
-    router.AdminPollsQuestions(_poll_id), AdminPollsQuestions(model) ->
+    router.AdminQuestions(_poll_id), AdminQuestions(model) ->
       admin_polls_questions.view(model.poll, model.questions)
-      |> element.map(fn(msg) { AdminPollsQuestionsMsg(msg) })
+      |> element.map(fn(msg) { AdminQuestionsMsg(msg) })
 
-    router.AdminPollsQuestionsCreate(_id), AdminPollsQuestionsCreate(model) ->
+    router.AdminQuestionsCreate(_id), AdminQuestionsCreate(model) ->
       admin_polls_questions_create.view(model.poll, model.form)
-      |> element.map(fn(msg) { AdminPollsQuestionsCreateMsg(msg) })
+      |> element.map(fn(msg) { AdminQuestionsCreateMsg(msg) })
+
+    router.AdminQuestionsView(_, _), AdminQuestionsView(model) ->
+      admin_polls_questions_view.view(model.poll, model.question, model.form)
+      |> element.map(fn(msg) { AdminQuestionsViewMsg(msg) })
+
     _, _ -> view_not_found()
   }
 }

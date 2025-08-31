@@ -3,7 +3,7 @@ import gleam/dynamic/decode
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/list
-import gleam/option.{Some}
+import gleam/option.{None, Some}
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -44,10 +44,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 pub fn view(polls: List(Poll)) -> Element(Msg) {
-  html.div([], [
+  html.div([attribute.class("space-y-4")], [
     breadcrumbs.view([
       breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
-      breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
+      breadcrumbs.Crumb("Polls", None),
     ]),
     html.div([attribute.class("prose flex justify-between items-start")], [
       html.h1([], [html.text("Admin Polls")]),

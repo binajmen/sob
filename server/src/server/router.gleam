@@ -5,6 +5,7 @@ import lustre/attribute
 import lustre/element
 import lustre/element/html
 import poll/router as poll
+import question/router as question
 import server/context.{type Context}
 import session/router as session
 import wisp.{type Request, type Response}
@@ -23,7 +24,10 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         Post, ["polls"] -> poll.create_poll(req, ctx)
         Get, ["polls"] -> poll.list_polls(req, ctx)
         Get, ["polls", id] -> poll.find_poll(req, ctx, id)
-        // Post, ["questions"] -> question.create(req, ctx)
+        Get, ["polls", id, "questions"] ->
+          question.list_questions_by_poll(req, ctx, id)
+        Post, ["questions"] -> question.create_question(req, ctx)
+        Get, ["questions", id] -> question.find_question(req, ctx, id)
         Get, ["sessions"] -> session.list_sessions(req, ctx)
         Get, ["sessions", id] -> session.find_session(req, ctx, id)
         // Post, ["sessions", id] -> session.update_session(req, ctx, id)

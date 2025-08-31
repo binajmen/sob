@@ -18,14 +18,14 @@ pub type Model {
 }
 
 pub type CreateQuestionData {
-  CreateQuestionData(poll_id: String, question: String)
+  CreateQuestionData(poll_id: String, prompt: String)
 }
 
 pub fn create_question_form() -> Form(CreateQuestionData) {
   form.new({
     use poll_id <- form.field("poll_id", form.parse_string)
-    use question <- form.field("question", form.parse_string)
-    form.success(CreateQuestionData(poll_id:, question:))
+    use prompt <- form.field("prompt", form.parse_string)
+    form.success(CreateQuestionData(poll_id:, prompt:))
   })
 }
 
@@ -79,7 +79,7 @@ pub fn view(poll: Option(Poll), form: Form(CreateQuestionData)) -> Element(Msg) 
             attribute.name("poll_id"),
             attribute.value(poll.id),
           ]),
-          input.view(form, is: "text", name: "question", label: "Question"),
+          input.view(form, is: "text", name: "prompt", label: "Question"),
           html.button(
             [attribute.type_("submit"), attribute.class("btn btn-primary")],
             [html.text("Create question")],
@@ -95,11 +95,11 @@ fn create_question(
     msg,
 ) -> Effect(msg) {
   // TODO: use the shared package to define the routes and the helpers for both the client and the server
-  let url = "http://localhost:3000/api/questions/create"
+  let url = "http://localhost:3000/api/questions"
   let body =
     json.object([
       #("poll_id", json.string(values.poll_id)),
-      #("question", json.string(values.question)),
+      #("prompt", json.string(values.prompt)),
     ])
   let handler = rsvp.expect_ok_response(handle_response)
 

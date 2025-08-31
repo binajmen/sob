@@ -78,7 +78,7 @@ fn create_poll(
     msg,
 ) -> Effect(msg) {
   // TODO: use the shared package to define the routes and the helpers for both the client and the server
-  let url = "http://localhost:3000/api/polls/create"
+  let url = "http://localhost:3000/api/polls"
   let body = json.object([#("name", json.string(values.name))])
   let handler = rsvp.expect_ok_response(handle_response)
 

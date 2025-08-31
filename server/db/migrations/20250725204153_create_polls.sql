@@ -9,7 +9,7 @@ create table polls (
 create table questions (
   id uuid primary key default uuid_generate_v4 (),
   poll_id uuid not null references polls (id) on delete cascade,
-  question text not null,
+  prompt text not null,
   created_at timestamp not null default now(),
   updated_at timestamp not null default now()
 );

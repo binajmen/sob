@@ -1,3 +1,4 @@
+import components/breadcrumbs
 import components/input
 import formal/form.{type Form}
 import gleam/http/response.{type Response}
@@ -72,6 +73,19 @@ pub fn view(poll: Option(Poll), form: Form(CreateQuestionData)) -> Element(Msg) 
     None -> html.text("loading..")
     Some(poll) ->
       html.div([], [
+        breadcrumbs.view([
+          breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
+          breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
+          breadcrumbs.Crumb(
+            poll.name,
+            Some(router.to_path(router.AdminPollsView(poll.id))),
+          ),
+          breadcrumbs.Crumb(
+            "Questions",
+            Some(router.to_path(router.AdminPollsQuestions(poll.id))),
+          ),
+          breadcrumbs.Crumb("Create", None),
+        ]),
         html.h1([], [html.text("Create a question for the poll: " <> poll.name)]),
         html.form([event.on_submit(submit), attribute.class("space-y-2")], [
           html.input([

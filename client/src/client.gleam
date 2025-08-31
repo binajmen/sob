@@ -1,4 +1,3 @@
-import gleam/option.{None}
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -274,8 +273,8 @@ fn view(model: Model) -> Element(Msg) {
       admin_polls_view.view(model.poll, model.form)
       |> element.map(fn(msg) { AdminPollsViewMsg(msg) })
 
-    router.AdminPollsQuestions(poll_id), AdminPollsQuestions(model) ->
-      admin_polls_questions.view(poll_id, model.questions)
+    router.AdminPollsQuestions(_poll_id), AdminPollsQuestions(model) ->
+      admin_polls_questions.view(model.poll, model.questions)
       |> element.map(fn(msg) { AdminPollsQuestionsMsg(msg) })
 
     router.AdminPollsQuestionsCreate(_id), AdminPollsQuestionsCreate(model) ->

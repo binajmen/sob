@@ -1,7 +1,9 @@
+import components/breadcrumbs
 import gleam/dynamic/decode
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/list
+import gleam/option.{Some}
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -43,6 +45,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 pub fn view(polls: List(Poll)) -> Element(Msg) {
   html.div([], [
+    breadcrumbs.view([
+      breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
+      breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
+    ]),
     html.div([attribute.class("prose flex justify-between items-start")], [
       html.h1([], [html.text("Admin Polls")]),
       html.a([router.href(router.AdminPollsCreate)], [

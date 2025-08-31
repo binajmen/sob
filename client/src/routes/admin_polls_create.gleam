@@ -1,8 +1,9 @@
+import components/breadcrumbs
 import components/input
 import formal/form.{type Form}
 import gleam/http/response
 import gleam/json
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -61,6 +62,11 @@ pub fn view(form: Form(CreatePollData)) -> Element(Msg) {
   }
 
   html.div([], [
+    breadcrumbs.view([
+      breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
+      breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
+      breadcrumbs.Crumb("Create", None),
+    ]),
     html.h1([], [html.text("Create poll")]),
     html.form([event.on_submit(submit), attribute.class("space-y-2")], [
       input.view(form, "text", "name", "Name", None),

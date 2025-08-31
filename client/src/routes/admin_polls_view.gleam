@@ -1,3 +1,4 @@
+import components/breadcrumbs
 import components/input
 import formal/form.{type Form}
 import gleam/json
@@ -70,6 +71,14 @@ pub fn view(poll: Option(Poll), form: Form(UpdatePollData)) -> Element(Msg) {
     None -> html.text("loading..")
     Some(poll) ->
       html.div([], [
+        breadcrumbs.view([
+          breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
+          breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
+          breadcrumbs.Crumb(
+            poll.name,
+            Some(router.to_path(router.AdminPollsView(poll.id))),
+          ),
+        ]),
         html.div([attribute.class("prose flex justify-between items-start")], [
           html.h1([], [html.text("Update poll")]),
           html.a([router.href(router.AdminPollsQuestions(poll.id))], [
@@ -94,6 +103,16 @@ pub fn view(poll: Option(Poll), form: Form(UpdatePollData)) -> Element(Msg) {
   }
 }
 
+fn fetch_poll(
+  id: String,
+  on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "http://localhost:3000/api/polls/" <> id
+  let handler = rsvp.expect_json(poll.poll_decoder(), handle_response)
+
+  rsvp.get(url, handler)
+}
+
 fn update_poll(
   poll: UpdatePollData,
   on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
@@ -106,14 +125,4 @@ fn update_poll(
   let handler = rsvp.expect_json(poll.poll_decoder(), handle_response)
 
   rsvp.patch(url, body, handler)
-}
-
-fn fetch_poll(
-  id: String,
-  on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
-) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls/" <> id
-  let handler = rsvp.expect_json(poll.poll_decoder(), handle_response)
-
-  rsvp.get(url, handler)
 }

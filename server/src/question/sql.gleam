@@ -159,6 +159,64 @@ order by
   |> pog.execute(db)
 }
 
+/// A row you get from running the `update_question` query
+/// defined in `./src/question/sql/update_question.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UpdateQuestionRow {
+  UpdateQuestionRow(
+    id: Uuid,
+    poll_id: Uuid,
+    prompt: String,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `update_question` query
+/// defined in `./src/question/sql/update_question.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn update_question(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: String,
+) -> Result(pog.Returned(UpdateQuestionRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use poll_id <- decode.field(1, uuid_decoder())
+    use prompt <- decode.field(2, decode.string)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(UpdateQuestionRow(
+      id:,
+      poll_id:,
+      prompt:,
+      created_at:,
+      updated_at:,
+    ))
+  }
+
+  "update questions
+set
+  prompt = $2,
+  updated_at = now()
+where
+  id = $1
+returning
+  *;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(arg_2))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 // --- Encoding/decoding utils -------------------------------------------------
 
 /// A decoder to decode `Uuid`s coming from a Postgres query.

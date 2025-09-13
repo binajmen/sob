@@ -80,7 +80,7 @@ pub fn view(poll: Option(Poll), form: Form(UpdatePollData)) -> Element(Msg) {
           html.h1([], [html.text("Update poll")]),
           html.a([router.href(router.AdminQuestions(poll.id))], [
             html.button([attribute.class("btn btn-primary")], [
-              html.text("View questions"),
+              html.text("Manage questions"),
             ]),
           ]),
         ]),

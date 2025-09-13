@@ -12,13 +12,18 @@ pub fn view(crumbs: List(Crumb)) {
     html.ul(
       [],
       list.map(crumbs, fn(crumb) {
-        html.li([], [
-          case crumb.url {
-            option.None -> html.text(crumb.label)
-            option.Some(url) ->
-              html.a([attribute.href(url)], [html.text(crumb.label)])
-          },
-        ])
+        html.li(
+          [
+            attribute.class("max-w-xs overflow-hidden text-ellipsis"),
+          ],
+          [
+            case crumb.url {
+              option.None -> html.text(crumb.label)
+              option.Some(url) ->
+                html.a([attribute.href(url)], [html.text(crumb.label)])
+            },
+          ],
+        )
       }),
     ),
   ])

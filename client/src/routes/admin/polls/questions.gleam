@@ -98,7 +98,7 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
                     ],
                     [
                       html.button([attribute.class("btn btn-primary btn-sm")], [
-                        html.text("View"),
+                        html.text("Edit"),
                       ]),
                     ],
                   ),

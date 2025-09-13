@@ -74,7 +74,7 @@ pub fn view(polls: List(Poll)) -> Element(Msg) {
             html.td([attribute.class("space-x-2")], [
               html.a([router.href(router.AdminPollsView(poll.id))], [
                 html.button([attribute.class("btn btn-primary btn-sm")], [
-                  html.text("View"),
+                  html.text("Edit"),
                 ]),
               ]),
               html.button(

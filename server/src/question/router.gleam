@@ -103,3 +103,43 @@ fn do_create_question(
     Error(error) -> Error(helpers.DatabaseError(error))
   }
 }
+
+type UpdateQuestionPayload {
+  UpdateQuestionPayload(prompt: String)
+}
+
+pub fn update_question(req: Request, ctx: Context, id: String) {
+  use _ <- helpers.require_admin(req, ctx)
+  use json <- wisp.require_json(req)
+  let assert Ok(uuid) = uuid.from_string(id)
+
+  let result = {
+    use payload <- try(helpers.decode_json(
+      json,
+      update_question_payload_decoder(),
+    ))
+    let result = sql.update_question(ctx.db, uuid, payload.prompt)
+    case result {
+      Ok(pog.Returned(1, [question])) ->
+        Ok(
+          json.object([
+            #("id", json.string(uuid.to_string(question.id))),
+            #("poll_id", json.string(uuid.to_string(question.poll_id))),
+            #("prompt", json.string(question.prompt)),
+          ]),
+        )
+      Ok(_) -> Error(helpers.UnknownError)
+      Error(error) -> Error(helpers.DatabaseError(error))
+    }
+  }
+
+  case result {
+    Error(error) -> error |> helpers.to_wisp_response
+    Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
+  }
+}
+
+fn update_question_payload_decoder() -> decode.Decoder(UpdateQuestionPayload) {
+  use prompt <- decode.field("prompt", decode.string)
+  decode.success(UpdateQuestionPayload(prompt:))
+}

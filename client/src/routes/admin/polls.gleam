@@ -60,7 +60,6 @@ pub fn view(polls: List(Poll)) -> Element(Msg) {
     html.table([attribute.class("table table-zebra w-auto")], [
       html.thead([], [
         html.tr([], [
-          html.th([], []),
           html.th([], [html.text("Name")]),
           html.th([], []),
         ]),
@@ -69,7 +68,6 @@ pub fn view(polls: List(Poll)) -> Element(Msg) {
         [],
         list.map(polls, fn(poll) {
           html.tr([], [
-            html.th([], [html.text(poll.id)]),
             html.td([], [html.text(poll.name)]),
             html.td([attribute.class("space-x-2")], [
               html.a([router.href(router.AdminPollsView(poll.id))], [

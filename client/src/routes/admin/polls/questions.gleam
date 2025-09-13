@@ -95,7 +95,6 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
         html.table([attribute.class("table table-zebra w-auto")], [
           html.thead([], [
             html.tr([], [
-              html.th([], []),
               html.th([], [html.text("Prompt")]),
               html.th([], []),
             ]),
@@ -104,9 +103,8 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
             [],
             list.map(questions, fn(question) {
               html.tr([], [
-                html.th([], [html.text(question.id)]),
                 html.td([], [html.text(question.prompt)]),
-                html.td([attribute.class("space-x-2")], [
+                html.td([attribute.class("space-x-2 whitespace-nowrap")], [
                   html.a(
                     [
                       router.href(router.AdminQuestionsView(

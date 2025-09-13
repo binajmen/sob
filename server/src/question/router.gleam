@@ -77,7 +77,7 @@ pub fn create_question(req: Request, ctx: Context) {
     ))
     let assert Ok(poll_id) = uuid.from_string(payload.poll_id)
     use question_id <- try(do_create_question(ctx, poll_id, payload))
-    Ok(question_id)
+    Ok(question_id) |> echo
   }
 
   case result {
@@ -128,6 +128,7 @@ pub fn update_question(req: Request, ctx: Context, id: String) {
             #("prompt", json.string(question.prompt)),
           ]),
         )
+        |> echo
       Ok(_) -> Error(helpers.UnknownError)
       Error(error) -> Error(helpers.DatabaseError(error))
     }

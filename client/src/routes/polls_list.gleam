@@ -42,7 +42,7 @@ fn fetch_polls(
   on_response handle_response: fn(Result(List(Poll), rsvp.Error)) -> msg,
 ) -> Effect(msg) {
   let url = "http://localhost:3000/api/polls"
-  let decoder = decode.list(poll.poll_decoder()) |> decode.map(list.take(_, 10))
+  let decoder = decode.list(poll.poll_decoder())
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
 }

@@ -1,5 +1,5 @@
 import components/breadcrumbs
-import components/input
+import components/textarea
 import formal/form.{type Form}
 
 import gleam/json
@@ -121,7 +121,7 @@ pub fn view(
             attribute.name("poll_id"),
             attribute.value(poll.id),
           ]),
-          input.view(form, "text", "prompt", "Question", Some(question.prompt)),
+          textarea.view(form, "prompt", "Question", Some(question.prompt)),
           html.button(
             [attribute.type_("submit"), attribute.class("btn btn-primary")],
             [html.text("Update question")],

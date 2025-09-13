@@ -1,5 +1,5 @@
 import components/breadcrumbs
-import components/input
+import components/textarea
 import formal/form.{type Form}
 import gleam/http/response.{type Response}
 import gleam/json
@@ -48,10 +48,13 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Ok(values) -> #(model, create_question(values, ApiQuestionCreated))
         Error(form) -> #(Model(..model, form:), effect.none())
       }
-    ApiQuestionCreated(Ok(_)) -> #(
-      model,
-      modem.push(router.to_path(router.AdminPolls), None, None),
-    )
+    ApiQuestionCreated(Ok(_)) -> {
+      let assert Ok(poll) = option.to_result(model.poll, "missing poll")
+      #(
+        model,
+        modem.push(router.to_path(router.AdminQuestions(poll.id)), None, None),
+      )
+    }
     ApiQuestionCreated(Error(_)) -> #(model, effect.none())
     ApiReturnedPoll(Ok(poll)) -> #(
       Model(..model, poll: Some(poll)),
@@ -95,7 +98,7 @@ pub fn view(poll: Option(Poll), form: Form(CreateQuestionData)) -> Element(Msg) 
             attribute.name("poll_id"),
             attribute.value(poll.id),
           ]),
-          input.view(form, "text", "prompt", "Question", None),
+          textarea.view(form, "prompt", "Question", None),
           html.button(
             [attribute.type_("submit"), attribute.class("btn btn-primary")],
             [html.text("Create question")],

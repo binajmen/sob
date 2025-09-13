@@ -126,8 +126,7 @@ fn fetch_questions(
   on_response handle_response: fn(Result(List(Question), rsvp.Error)) -> msg,
 ) -> Effect(msg) {
   let url = "http://localhost:3000/api/polls/" <> poll_id <> "/questions"
-  let decoder =
-    decode.list(question.question_decoder()) |> decode.map(list.take(_, 10))
+  let decoder = decode.list(question.question_decoder())
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
 }

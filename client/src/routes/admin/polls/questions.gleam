@@ -1,11 +1,15 @@
 import components/breadcrumbs
 import gleam/dynamic/decode
+import gleam/http/response.{type Response}
+import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/event
+import plinth/browser/window
 import router
 import rsvp
 import shared/poll.{type Poll}
@@ -27,12 +31,20 @@ pub fn init(poll_id: String) -> #(Model, Effect(Msg)) {
 }
 
 pub type Msg {
+  UserClickedDelete(String)
+  UserConfirmedDelete(String)
   ApiReturnedPoll(Result(Poll, rsvp.Error))
   ApiReturnedQuestions(Result(List(Question), rsvp.Error))
+  ApiDeletedQuestion(Result(Response(String), rsvp.Error))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    UserClickedDelete(question_id) -> #(model, confirm_delete(question_id))
+    UserConfirmedDelete(question_id) -> #(
+      model,
+      delete_question(question_id, ApiDeletedQuestion),
+    )
     ApiReturnedPoll(Ok(poll)) -> #(
       Model(..model, poll: Some(poll)),
       effect.none(),
@@ -48,6 +60,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     ApiReturnedQuestions(Error(error)) -> {
       echo error
       #(model, effect.none())
+    }
+    ApiDeletedQuestion(_) -> {
+      case model.poll {
+        Some(poll) -> #(model, fetch_questions(poll.id, ApiReturnedQuestions))
+        None -> #(model, effect.none())
+      }
     }
   }
 }
@@ -88,7 +106,7 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
               html.tr([], [
                 html.th([], [html.text(question.id)]),
                 html.td([], [html.text(question.prompt)]),
-                html.td([], [
+                html.td([attribute.class("space-x-2")], [
                   html.a(
                     [
                       router.href(router.AdminQuestionsView(
@@ -100,6 +118,15 @@ pub fn view(poll: Option(Poll), questions: List(Question)) -> Element(Msg) {
                       html.button([attribute.class("btn btn-primary btn-sm")], [
                         html.text("Edit"),
                       ]),
+                    ],
+                  ),
+                  html.button(
+                    [
+                      attribute.class("btn btn-error btn-sm"),
+                      event.on_click(UserClickedDelete(question.id)),
+                    ],
+                    [
+                      html.text("Delete"),
                     ],
                   ),
                 ]),
@@ -129,4 +156,23 @@ fn fetch_questions(
   let decoder = decode.list(question.question_decoder())
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
+}
+
+fn confirm_delete(question_id: String) -> Effect(Msg) {
+  effect.from(fn(dispatch) {
+    case window.confirm("Are you sure you want to delete this question?") {
+      True -> dispatch(UserConfirmedDelete(question_id))
+      False -> Nil
+    }
+  })
+}
+
+fn delete_question(
+  question_id: String,
+  on_response handle_response: fn(Result(Response(String), rsvp.Error)) -> Msg,
+) -> Effect(Msg) {
+  let url = "http://localhost:3000/api/questions/" <> question_id
+  let body = json.null()
+  let handler = rsvp.expect_ok_response(handle_response)
+  rsvp.delete(url, body, handler)
 }

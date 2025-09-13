@@ -49,6 +49,58 @@ returning
   |> pog.execute(db)
 }
 
+/// A row you get from running the `delete_question` query
+/// defined in `./src/question/sql/delete_question.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type DeleteQuestionRow {
+  DeleteQuestionRow(
+    id: Uuid,
+    poll_id: Uuid,
+    prompt: String,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `delete_question` query
+/// defined in `./src/question/sql/delete_question.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn delete_question(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(DeleteQuestionRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use poll_id <- decode.field(1, uuid_decoder())
+    use prompt <- decode.field(2, decode.string)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(DeleteQuestionRow(
+      id:,
+      poll_id:,
+      prompt:,
+      created_at:,
+      updated_at:,
+    ))
+  }
+
+  "delete from questions
+where
+  id = $1
+returning
+  *;"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `find_question` query
 /// defined in `./src/question/sql/find_question.sql`.
 ///

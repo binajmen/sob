@@ -144,3 +144,14 @@ fn update_question_payload_decoder() -> decode.Decoder(UpdateQuestionPayload) {
   use prompt <- decode.field("prompt", decode.string)
   decode.success(UpdateQuestionPayload(prompt:))
 }
+
+pub fn delete_question(req: Request, ctx: Context, id: String) -> Response {
+  use _ <- helpers.require_admin(req, ctx)
+  let assert Ok(uuid) = uuid.from_string(id)
+
+  case sql.delete_question(ctx.db, uuid) {
+    Ok(pog.Returned(1, _)) -> wisp.ok()
+    Ok(_) -> wisp.not_found()
+    Error(error) -> helpers.DatabaseError(error) |> helpers.to_wisp_response
+  }
+}

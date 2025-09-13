@@ -30,6 +30,7 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
           question.list_questions_by_poll(req, ctx, id)
         Post, ["questions"] -> question.create_question(req, ctx)
         Patch, ["questions", id] -> question.update_question(req, ctx, id)
+        Delete, ["questions", id] -> question.delete_question(req, ctx, id)
         Get, ["questions", id] -> question.find_question(req, ctx, id)
         Get, ["sessions"] -> session.list_sessions(req, ctx)
         Get, ["sessions", id] -> session.find_session(req, ctx, id)
@@ -123,5 +124,6 @@ fn cors() {
   |> cors_builder.allow_method(Post)
   |> cors_builder.allow_method(Put)
   |> cors_builder.allow_method(Patch)
+  |> cors_builder.allow_method(Delete)
   |> cors_builder.allow_header("content-type")
 }

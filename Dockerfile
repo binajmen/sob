@@ -1,4 +1,4 @@
-ARG GLEAM_VERSION=v1.12.0
+ARG GLEAM_VERSION=v1.11.0
 
 # Build stage - compile the application
 FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine AS builder
@@ -9,11 +9,7 @@ COPY ./client /build/client
 COPY ./server /build/server
 
 # Install git, just, and wget for resolving dependencies and build tools
-RUN apk add --no-cache git just wget
-
-# Install dbmate for database migrations
-RUN wget -O /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64 && \
-    chmod +x /usr/local/bin/dbmate
+RUN apk add --no-cache git
 
 # Install dependencies for all projects
 RUN cd /build/shared && gleam deps download
@@ -32,11 +28,17 @@ RUN cd /build/server \
 # Runtime stage - slim image with only what's needed to run
 FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine
 
+# Install runtime dependencies for migrations and build tools
+RUN apk add --no-cache wget && \
+    wget -O /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64 && \
+    chmod +x /usr/local/bin/dbmate
+
 # Copy the compiled server code from the builder stage
 COPY --from=builder /build/server/build/erlang-shipment /app
 
-# Copy the startup script
+# Copy the startup script, justfiles, and database migrations
 COPY start.sh /app/start.sh
+COPY server/db /app/db
 
 # Set up the entrypoint
 WORKDIR /app

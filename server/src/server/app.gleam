@@ -2,6 +2,7 @@ import envoy
 import gleam/erlang/process
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
+import gleam/int
 import gleam/io
 import gleam/option.{Some}
 import gleam/otp/actor
@@ -43,9 +44,7 @@ pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
   let poll_subject = process.named_subject(poll_name)
   let poll_registry = poll_name |> poll_registry.supervised
 
-  // FIXME: use a real secret key in production
-  let secret_key_base = "secret"
-  // let secret_key_base = wisp.random_string(64)
+  let assert Ok(secret_key_base) = envoy.get("SECRET_KEY_BASE")
   let http_server =
     fn(request: Request(Connection)) -> Response(ResponseData) {
       case request.path_segments(request) {
@@ -61,6 +60,7 @@ pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
       }
     }
     |> mist.new
+    |> mist.bind("0.0.0.0")
     |> mist.port(8000)
     |> mist.supervised
 

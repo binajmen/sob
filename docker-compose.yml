@@ -1,6 +1,32 @@
 name: sob
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Database connection
+      PGHOST: database
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      PGPORT: 5432
+      HOST: 0.0.0.0
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    # healthcheck:
+    #   test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/api/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   start_period: 5s
+    #   retries: 3
+
   database:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -18,15 +44,16 @@ services:
       timeout: 5s
       retries: 5
 
-  proxy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+  # proxy:
+  #   image: caddy:2-alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #   depends_on:
+  #     app:
+  #       condition: service_healthy
 
 volumes:
   postgres_data:

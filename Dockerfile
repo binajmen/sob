@@ -1,73 +1,53 @@
-# Multi-stage Dockerfile for Gleam full-stack application
-# Stage 1: Build environment
-FROM ghcr.io/gleam-lang/gleam:v1.5.0-erlang-alpine AS builder
+ARG GLEAM_VERSION=v1.12.0
 
-# Install Node.js for client build (Lustre dev tools)
-RUN apk add --no-cache nodejs npm
+# Build stage - compile the application
+FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine AS builder
 
-# Set working directory
-WORKDIR /build
+# Add project code
+COPY ./shared /build/shared
+COPY ./client /build/client
+COPY ./server /build/server
 
-# Copy package files first for better Docker layer caching
-COPY shared/gleam.toml shared/gleam.toml
-COPY client/gleam.toml client/gleam.toml
-COPY server/gleam.toml server/gleam.toml
+# Install git, just, and wget for resolving dependencies and build tools
+RUN apk add --no-cache git just wget
 
-# Copy shared package (dependency for both client and server)
-COPY shared/ shared/
+# Install dbmate for database migrations
+RUN wget -O /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64 && \
+    chmod +x /usr/local/bin/dbmate
 
-# Copy client source
-COPY client/src client/src
-COPY client/assets client/assets
+# Install dependencies for all projects
+RUN cd /build/shared && gleam deps download
+RUN cd /build/client && gleam deps download
+RUN cd /build/server && gleam deps download
 
-# Build client first (outputs to server/priv/static)
-WORKDIR /build/client
-RUN gleam deps download
-RUN gleam run -m lustre/dev build --minify --outdir=../server/priv/static
+# Compile the client code and output to server's static directory
+RUN cd /build/client \
+  && gleam add --dev lustre_dev_tools \
+  && gleam run -m lustre/dev build app --minify --outdir=/build/server/priv/static
 
-# Copy server source
-WORKDIR /build
-COPY server/src server/src
-COPY server/priv server/priv
+# Compile the server code
+RUN cd /build/server \
+  && gleam export erlang-shipment
 
-# Build server
-WORKDIR /build/server
-RUN gleam deps download
-RUN gleam build
+# Runtime stage - slim image with only what's needed to run
+FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine
 
-# Stage 2: Runtime
-FROM ghcr.io/gleam-lang/gleam:v1.5.0-erlang-alpine AS runtime
+# Copy the compiled server code from the builder stage
+COPY --from=builder /build/server/build/erlang-shipment /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Copy the startup script
+COPY start.sh /app/start.sh
 
-# Create non-root user
-RUN addgroup -g 1001 -S gleam && \
-    adduser -S gleam -u 1001 -G gleam
-
-# Set working directory
+# Set up the entrypoint
 WORKDIR /app
+RUN chmod +x ./start.sh
 
-# Copy built application from builder stage
-COPY --from=builder --chown=gleam:gleam /build/server/build /app/build
-COPY --from=builder --chown=gleam:gleam /build/server/priv /app/priv
-COPY --from=builder --chown=gleam:gleam /build/shared /app/shared
+# Set environment variables
+ENV HOST=0.0.0.0
+ENV PORT=8000
 
-# Copy server gleam.toml for runtime dependencies
-COPY --from=builder --chown=gleam:gleam /build/server/gleam.toml /app/gleam.toml
-
-# Switch to non-root user
-USER gleam
-
-# Expose port
+# Expose the port the server will run on
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/api/health || exit 1
-
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-
-# Start the application
-CMD ["gleam", "run"]
+# Run the server
+CMD ["./start.sh", "run"]

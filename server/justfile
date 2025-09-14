@@ -1,23 +1,20 @@
 default:
 	@just --list
 
-env:
-	export $(grep -v '^#' .env | xargs)
-
-squirrel: env
+squirrel:
 	gleam run -m squirrel
 
-run: env squirrel
+run: squirrel
 	gleam run
 
-watch: env squirrel
+watch: squirrel
 	watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam --debounce 500ms --watch src/ -- "gleam run"
 
-migrate: env
+migrate:
     dbmate migrate
 
-up: env
+up:
     dbmate up
 
-down: env
+down:
     dbmate down

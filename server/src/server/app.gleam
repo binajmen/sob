@@ -22,16 +22,16 @@ pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
   let assert Ok(host) = envoy.get("PGHOST")
   let assert Ok(database) = envoy.get("PGDATABASE")
   let assert Ok(user) = envoy.get("PGUSER")
-  let assert Ok(password) = envoy.get("PGPASSWORD")
+  let assert Ok(password) = envoy.get("PGPASSWORD") |> echo
 
   let db_name = process.new_name("db")
   let db = pog.named_connection(db_name)
   let database_pool =
     pog.default_config(db_name)
-    |> pog.host(host)
-    |> pog.database(database)
     |> pog.user(user)
     |> pog.password(Some(password))
+    |> pog.host(host)
+    |> pog.database(database)
     |> pog.pool_size(15)
     |> pog.supervised
 

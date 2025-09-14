@@ -1,4 +1,4 @@
-name: sob
+name: sob-prod
 
 services:
   app:
@@ -13,6 +13,7 @@ services:
       PGUSER: ${PGUSER}
       PGPASSWORD: ${PGPASSWORD}
       PGPORT: 5432
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       HOST: 0.0.0.0
       PORT: 8000
     ports:

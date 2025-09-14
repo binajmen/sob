@@ -44,8 +44,3 @@ prod-run: prod-build
 		--restart unless-stopped \
 		sob-app:prod
 
-# Cleanup
-clean:
-	docker compose down -v
-	docker rmi sob-app || true
-	docker system prune -f

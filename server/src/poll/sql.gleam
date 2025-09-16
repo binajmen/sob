@@ -57,6 +57,7 @@ pub type DeletePollRow {
   DeletePollRow(
     id: Uuid,
     name: String,
+    status: String,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -75,9 +76,10 @@ pub fn delete_poll(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use name <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(DeletePollRow(id:, name:, created_at:, updated_at:))
+    use status <- decode.field(2, decode.string)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(DeletePollRow(id:, name:, status:, created_at:, updated_at:))
   }
 
   "delete from polls
@@ -102,6 +104,7 @@ pub type FindPollRow {
   FindPollRow(
     id: Uuid,
     name: String,
+    status: String,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -120,9 +123,10 @@ pub fn find_poll(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use name <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(FindPollRow(id:, name:, created_at:, updated_at:))
+    use status <- decode.field(2, decode.string)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(FindPollRow(id:, name:, status:, created_at:, updated_at:))
   }
 
   "select
@@ -148,6 +152,7 @@ pub type ListPollsRow {
   ListPollsRow(
     id: Uuid,
     name: String,
+    status: String,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -165,9 +170,10 @@ pub fn list_polls(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use name <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(ListPollsRow(id:, name:, created_at:, updated_at:))
+    use status <- decode.field(2, decode.string)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(ListPollsRow(id:, name:, status:, created_at:, updated_at:))
   }
 
   "select
@@ -190,6 +196,7 @@ pub type UpdatePollRow {
   UpdatePollRow(
     id: Uuid,
     name: String,
+    status: String,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -209,9 +216,10 @@ pub fn update_poll(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use name <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(UpdatePollRow(id:, name:, created_at:, updated_at:))
+    use status <- decode.field(2, decode.string)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(UpdatePollRow(id:, name:, status:, created_at:, updated_at:))
   }
 
   "update polls

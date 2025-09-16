@@ -2,6 +2,7 @@
 create table polls (
   id uuid primary key default uuid_generate_v4 (),
   name text not null,
+  status text not null default 'waiting',
   created_at timestamp not null default now(),
   updated_at timestamp not null default now()
 );

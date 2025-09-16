@@ -1,7 +1,6 @@
 import gleam/int
 import lustre.{type App}
 import lustre/attribute
-import lustre/component
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html

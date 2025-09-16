@@ -46,6 +46,8 @@ fn init_poll_socket(
   server_component.register_subject(self)
   |> lustre.send(to: component)
 
+  lustre.send(component, lustre.dispatch(component.UserConnected))
+
   #(PollSocket(component:, self:), Some(selector))
 }
 
@@ -79,6 +81,8 @@ fn loop_poll_socket(
       server_component.deregister_subject(state.self)
       |> lustre.send(to: state.component)
 
+      lustre.send(state.component, lustre.dispatch(component.UserDisconnected))
+
       mist.stop()
     }
   }
@@ -87,4 +91,6 @@ fn loop_poll_socket(
 fn close_poll_socket(state: PollSocket) -> Nil {
   server_component.deregister_subject(state.self)
   |> lustre.send(to: state.component)
+
+  lustre.send(state.component, lustre.dispatch(component.UserDisconnected))
 }

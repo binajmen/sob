@@ -1,20 +1,19 @@
 default:
 	@just --list
 
-squirrel:
+migrate:
+    dbmate migrate
+up:
+    dbmate up
+down:
+    dbmate down
+
+squirrel: migrate
 	gleam run -m squirrel
 
 run: squirrel
 	gleam run
 
 watch: squirrel
-	watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam --debounce 500ms --watch src/ -- "gleam run"
+	watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam --debounce 500ms --watch src/ -- "just run"
 
-migrate:
-    dbmate migrate
-
-up:
-    dbmate up
-
-down:
-    dbmate down

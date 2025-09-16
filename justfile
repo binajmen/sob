@@ -4,12 +4,30 @@ mod server
 default:
 	@just --list
 
-# Development - run locally with just
-run:
-	just client build-dev
+dev:
+	docker compose -f docker-compose.dev.yml up --build -d
+	just client build-min
 	just server run
+dev-watch:
+	watchexec \
+		--restart \
+		--verbose \
+		--wrap-process=session \
+		--stop-signal SIGTERM \
+		--exts gleam \
+		--debounce 500ms \
+		--watch server/src/ \
+		--watch client/src/ \
+		--watch shared/src/ \
+		--ignore '**/build/**' \
+		--ignore '**/target/**' \
+		--ignore '**/sql.gleam' \
+		-- "just dev"
 
 # Docker commands
+dev-docker:
+	watchexec --restart --verbose --exts gleam --debounce 500ms --watch server/src/ --watch client/src/ --watch shared/src/ -- "docker compose up --build -d app"
+
 docker-build:
 	docker build -t sob-app .
 

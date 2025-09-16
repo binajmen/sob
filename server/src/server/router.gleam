@@ -67,16 +67,16 @@ fn serve_index() -> Response {
             attribute.href("https://cdn.jsdelivr.net/npm/daisyui@5"),
           ]),
           html.link([
-            attribute.href("/priv/static/client.css"),
+            attribute.href("/static/daisy.css"),
             attribute.rel("stylesheet"),
           ]),
           html.link([
-            attribute.href("/priv/static/daisy.css"),
+            attribute.href("/static/client.min.css"),
             attribute.rel("stylesheet"),
           ]),
           html.script(
             [
-              attribute.src("/priv/static/client.mjs"),
+              attribute.src("/static/client.min.mjs"),
               attribute.type_("module"),
             ],
             "",

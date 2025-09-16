@@ -1,5 +1,6 @@
 import components/breadcrumbs
 import components/textarea
+import config
 import formal/form.{type Form}
 import gleam/http/response.{type Response}
 import gleam/json
@@ -114,7 +115,7 @@ fn create_question(
     msg,
 ) -> Effect(msg) {
   // TODO: use the shared package to define the routes and the helpers for both the client and the server
-  let url = "http://localhost:3000/api/questions"
+  let url = "/api/questions"
   let body =
     json.object([
       #("poll_id", json.string(values.poll_id)),
@@ -129,7 +130,7 @@ fn fetch_poll(
   id: String,
   on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls/" <> id
+  let url = config.api_url() <> "/polls/" <> id
   let decoder = poll.poll_decoder()
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)

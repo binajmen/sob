@@ -136,7 +136,7 @@ fn fetch_poll(
   id: String,
   on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls/" <> id
+  let url = "/api/polls/" <> id
   let decoder = poll.poll_decoder()
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
@@ -146,7 +146,7 @@ fn fetch_question(
   id: String,
   on_response handle_response: fn(Result(Question, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/questions/" <> id
+  let url = "/api/questions/" <> id
   let decoder = question.question_decoder()
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
@@ -157,7 +157,7 @@ fn update_question(
   on_response handle_response: fn(Result(Question, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
   // TODO: use the shared package to define the routes and the helpers for both the client and the server
-  let url = "http://localhost:3000/api/questions/" <> question.id
+  let url = "/api/questions/" <> question.id
   let body =
     json.object([
       #("prompt", json.string(question.prompt)),

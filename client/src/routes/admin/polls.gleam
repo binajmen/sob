@@ -104,7 +104,7 @@ fn confirm_delete(poll_id: String) -> Effect(Msg) {
 fn fetch_polls(
   on_response handle_response: fn(Result(List(Poll), rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls"
+  let url = "/api/polls"
   let decoder = decode.list(poll.poll_decoder())
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
@@ -114,7 +114,7 @@ fn delete_poll(
   poll_id: String,
   on_response handle_response: fn(Result(Response(String), rsvp.Error)) -> Msg,
 ) -> Effect(Msg) {
-  let url = "http://localhost:3000/api/polls/" <> poll_id
+  let url = "/api/polls/" <> poll_id
   let body = json.null()
   let handler = rsvp.expect_ok_response(handle_response)
   rsvp.delete(url, body, handler)

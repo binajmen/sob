@@ -1,4 +1,5 @@
 import components/breadcrumbs
+import config
 import gleam/dynamic/decode
 import gleam/http/response.{type Response}
 import gleam/json
@@ -140,7 +141,7 @@ fn fetch_poll(
   id: String,
   on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls/" <> id
+  let url = "/api/polls/" <> id
   let handler = rsvp.expect_json(poll.poll_decoder(), handle_response)
 
   rsvp.get(url, handler)
@@ -150,7 +151,7 @@ fn fetch_questions(
   poll_id: String,
   on_response handle_response: fn(Result(List(Question), rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls/" <> poll_id <> "/questions"
+  let url = "/api/polls/" <> poll_id <> "/questions"
   let decoder = decode.list(question.question_decoder())
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
@@ -169,7 +170,7 @@ fn delete_question(
   question_id: String,
   on_response handle_response: fn(Result(Response(String), rsvp.Error)) -> Msg,
 ) -> Effect(Msg) {
-  let url = "http://localhost:3000/api/questions/" <> question_id
+  let url = config.api_url() <> "/questions/" <> question_id
   let body = json.null()
   let handler = rsvp.expect_ok_response(handle_response)
   rsvp.delete(url, body, handler)

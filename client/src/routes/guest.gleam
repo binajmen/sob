@@ -95,7 +95,7 @@ fn register(
   on_response handle_response: fn(Result(response.Response(String), rsvp.Error)) ->
     msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/auth/guest"
+  let url = "/api/auth/guest"
   let body =
     json.object([
       #("first_name", json.string(values.first_name)),

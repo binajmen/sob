@@ -103,9 +103,9 @@ pub fn sign_up(req: Request, ctx: Context) {
   use json <- wisp.require_json(req)
 
   let result = {
-    use payload <- try(decode_sign_up_payload(json))
-    use user <- try(create_user(ctx, payload))
-    use session_id <- try(create_session(ctx, user.id))
+    use payload <- try(decode_sign_up_payload(json) |> echo)
+    use user <- try(create_user(ctx, payload) |> echo)
+    use session_id <- try(create_session(ctx, user.id) |> echo)
     Ok(session_id)
   }
 

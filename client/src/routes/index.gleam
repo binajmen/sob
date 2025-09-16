@@ -11,7 +11,7 @@ pub fn view() -> Element(msg) {
     server_component.script(),
     server_component.element(
       [
-        server_component.route("http://localhost:3000/ws"),
+        server_component.route("/ws"),
         server_component.method(server_component.WebSocket),
       ],
       [],

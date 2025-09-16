@@ -104,7 +104,7 @@ fn fetch_poll(
   id: String,
   on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls/" <> id
+  let url = "/api/polls/" <> id
   let handler = rsvp.expect_json(poll.poll_decoder(), handle_response)
 
   rsvp.get(url, handler)
@@ -114,7 +114,7 @@ fn update_poll(
   poll: UpdatePollData,
   on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/polls/" <> poll.id
+  let url = "/api/polls/" <> poll.id
   let body =
     json.object([
       #("name", json.string(poll.name)),

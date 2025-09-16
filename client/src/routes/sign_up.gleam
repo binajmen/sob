@@ -1,4 +1,6 @@
 import components/input
+import config
+import envoy
 import formal/form.{type Form}
 import gleam/http/response
 import gleam/json
@@ -113,7 +115,7 @@ fn sign_up(
   on_response handle_response: fn(Result(response.Response(String), rsvp.Error)) ->
     msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:3000/api/auth/sign-up"
+  let url = "/api/auth/sign-up"
   let body =
     json.object([
       #("email", json.string(values.email)),

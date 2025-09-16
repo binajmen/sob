@@ -4,8 +4,8 @@ default:
 dev:
 	gleam run -m lustre/dev start
 
-build-dev:
-	gleam run -m lustre/dev build --outdir=../server/priv/static
+build:
+	gleam run -m lustre/dev build app --outdir=../server/priv/static
 
-build-prod:
-	gleam run -m lustre/dev build --minify --outdir=../server/priv/static
+build-min:
+	gleam run -m lustre/dev build app --minify --outdir=../server/priv/static

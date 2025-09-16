@@ -1,4 +1,3 @@
-import config
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -26,7 +25,7 @@ pub fn view(id: String) -> Element(msg) {
     server_component.script(),
     server_component.element(
       [
-        server_component.route(config.base_url() <> "/ws/poll/" <> id),
+        server_component.route("/ws/poll/" <> id),
         server_component.method(server_component.WebSocket),
       ],
       [],

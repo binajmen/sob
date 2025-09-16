@@ -53,7 +53,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     ApiAuthenticatedUser(Ok(_)) -> #(
       model,
-      modem.push(router.to_path(router.AdminPolls), None, None),
+      modem.push(router.to_path(router.Polls), None, None),
     )
     ApiAuthenticatedUser(Error(_)) -> #(
       Model(form: register_form()),
@@ -70,7 +70,7 @@ pub fn view(form: Form(GuestFormData)) -> Element(Msg) {
     |> UserSubmittedGuestForm
   }
 
-  html.div([], [
+  html.div([attribute.class("prose")], [
     html.h1([], [html.text("Guest registration")]),
     html.form(
       [

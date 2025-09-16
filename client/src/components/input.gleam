@@ -30,7 +30,7 @@ pub fn view(
       },
     ]),
     ..list.map(errors, fn(error) {
-      html.p([attribute.class("label")], [html.text(error)])
+      html.div([attribute.class("label")], [html.text(error)])
     })
   ])
 }

@@ -13,8 +13,8 @@ import routes/admin/polls/questions/view as admin_polls_questions_view
 import routes/admin/polls/view as admin_polls_view
 import routes/guest
 import routes/index
-import routes/polls_list
-import routes/polls_view
+import routes/poll
+import routes/polls
 import routes/sign_in
 import routes/sign_up
 
@@ -34,8 +34,8 @@ pub type Page {
   SignIn(sign_in.Model)
   SignUp(sign_up.Model)
   Guest(guest.Model)
-  Polls(polls_list.Model)
-  PollsView(polls_view.Model)
+  Polls(polls.Model)
+  Poll(poll.Model)
   Admin
   AdminPolls(admin_polls.Model)
   AdminPollsCreate(admin_polls_create.Model)
@@ -50,8 +50,8 @@ pub type Msg {
   SignInMsg(sign_in.Msg)
   SignUpMsg(sign_up.Msg)
   GuestMsg(guest.Msg)
-  PollsMsg(polls_list.Msg)
-  PollsViewMsg(polls_view.Msg)
+  PollsMsg(polls.Msg)
+  PollsViewMsg(poll.Msg)
   AdminPollsMsg(admin_polls.Msg)
   AdminPollsCreateMsg(admin_polls_create.Msg)
   AdminPollsViewMsg(admin_polls_view.Msg)
@@ -98,16 +98,16 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
       )
     }
     router.Polls -> {
-      let #(page_model, effect) = polls_list.init()
+      let #(page_model, effect) = polls.init()
       #(
         Model(..model, route:, page: Polls(page_model)),
         effect.map(effect, PollsMsg),
       )
     }
-    router.PollsView(id) -> {
-      let #(page_model, effect) = polls_view.init(id)
+    router.Poll(id) -> {
+      let #(page_model, effect) = poll.init(id)
       #(
-        Model(..model, route:, page: PollsView(page_model)),
+        Model(..model, route:, page: Poll(page_model)),
         effect.map(effect, PollsViewMsg),
       )
     }
@@ -182,15 +182,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     PollsMsg(msg) -> {
       let assert Polls(page_model) = model.page
-      let #(page_model, effect) = polls_list.update(page_model, msg)
+      let #(page_model, effect) = polls.update(page_model, msg)
       #(Model(..model, page: Polls(page_model)), effect.map(effect, PollsMsg))
     }
 
     PollsViewMsg(msg) -> {
-      let assert PollsView(page_model) = model.page
-      let #(page_model, effect) = polls_view.update(page_model, msg)
+      let assert Poll(page_model) = model.page
+      let #(page_model, effect) = poll.update(page_model, msg)
       #(
-        Model(..model, page: PollsView(page_model)),
+        Model(..model, page: Poll(page_model)),
         effect.map(effect, PollsViewMsg),
       )
     }
@@ -270,11 +270,11 @@ fn view(model: Model) -> Element(Msg) {
       |> element.map(GuestMsg)
 
     router.Polls, Polls(model) ->
-      polls_list.view(model.polls)
+      polls.view(model.polls)
       |> element.map(PollsMsg)
 
-    router.PollsView(id), PollsView(_model) ->
-      polls_view.view(id)
+    router.Poll(id), Poll(_model) ->
+      poll.view(id)
       |> element.map(PollsViewMsg)
 
     router.Admin, Admin -> admin.view()

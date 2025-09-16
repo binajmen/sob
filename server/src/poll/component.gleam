@@ -35,13 +35,25 @@ fn view(model: Model) -> Element(Msg) {
   element.fragment([
     html.h1([], [html.text("Hi")]),
     html.div([attribute.styles(styles)], [
-      view_button(label: "-", on_click: UserClickedDecrement),
+      html.button(
+        [
+          attribute.class("btn btn-primary"),
+          event.on_click(UserClickedDecrement),
+        ],
+        [
+          html.text("-"),
+        ],
+      ),
       html.p([], [html.text("Count: "), html.text(count)]),
-      view_button(label: "+", on_click: UserClickedIncrement),
+      html.button(
+        [
+          attribute.class("btn btn-primary"),
+          event.on_click(UserClickedIncrement),
+        ],
+        [
+          html.text("+"),
+        ],
+      ),
     ]),
   ])
-}
-
-fn view_button(label label: String, on_click handle_click: msg) -> Element(msg) {
-  html.button([event.on_click(handle_click)], [html.text(label)])
 }

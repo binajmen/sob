@@ -2,6 +2,7 @@
 create table questions (
   id uuid primary key default uuid_generate_v4 (),
   prompt text not null,
+  position integer not null,
   created_at timestamp not null default now(),
   updated_at timestamp not null default now()
 );

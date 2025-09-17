@@ -35,9 +35,17 @@ pub fn create_question(
   }
 
   "insert into
-  questions (prompt)
+  questions (prompt, position)
 values
-  ($1)
+  (
+    $1,
+    (
+      select
+        coalesce(max(\"position\"), 0) + 1
+      from
+        questions
+    )
+  )
 returning
   id;
 "
@@ -57,6 +65,7 @@ pub type DeleteQuestionRow {
   DeleteQuestionRow(
     id: Uuid,
     prompt: String,
+    position: Int,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -75,9 +84,16 @@ pub fn delete_question(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use prompt <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(DeleteQuestionRow(id:, prompt:, created_at:, updated_at:))
+    use position <- decode.field(2, decode.int)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(DeleteQuestionRow(
+      id:,
+      prompt:,
+      position:,
+      created_at:,
+      updated_at:,
+    ))
   }
 
   "delete from questions
@@ -87,6 +103,67 @@ returning
   *;"
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `find_next_question` query
+/// defined in `./src/question/sql/find_next_question.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type FindNextQuestionRow {
+  FindNextQuestionRow(
+    id: Uuid,
+    prompt: String,
+    position: Int,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `find_next_question` query
+/// defined in `./src/question/sql/find_next_question.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn find_next_question(
+  db: pog.Connection,
+) -> Result(pog.Returned(FindNextQuestionRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use prompt <- decode.field(1, decode.string)
+    use position <- decode.field(2, decode.int)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(FindNextQuestionRow(
+      id:,
+      prompt:,
+      position:,
+      created_at:,
+      updated_at:,
+    ))
+  }
+
+  "select
+  q.id,
+  q.prompt,
+  q.position,
+  q.created_at,
+  q.updated_at
+from
+  questions q
+  left join votes v on q.id = v.question_id
+where
+  v.question_id is null
+order by
+  q.position asc
+limit
+  1;
+"
+  |> pog.query
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -101,6 +178,7 @@ pub type FindQuestionRow {
   FindQuestionRow(
     id: Uuid,
     prompt: String,
+    position: Int,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -119,9 +197,16 @@ pub fn find_question(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use prompt <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(FindQuestionRow(id:, prompt:, created_at:, updated_at:))
+    use position <- decode.field(2, decode.int)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(FindQuestionRow(
+      id:,
+      prompt:,
+      position:,
+      created_at:,
+      updated_at:,
+    ))
   }
 
   "select
@@ -147,6 +232,7 @@ pub type ListQuestionsRow {
   ListQuestionsRow(
     id: Uuid,
     prompt: String,
+    position: Int,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -164,9 +250,16 @@ pub fn list_questions(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use prompt <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(ListQuestionsRow(id:, prompt:, created_at:, updated_at:))
+    use position <- decode.field(2, decode.int)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(ListQuestionsRow(
+      id:,
+      prompt:,
+      position:,
+      created_at:,
+      updated_at:,
+    ))
   }
 
   "select
@@ -174,7 +267,7 @@ pub fn list_questions(
 from
   questions
 order by
-  created_at asc;
+  position asc;
 "
   |> pog.query
   |> pog.returning(decoder)
@@ -191,6 +284,7 @@ pub type UpdateQuestionRow {
   UpdateQuestionRow(
     id: Uuid,
     prompt: String,
+    position: Int,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
@@ -210,9 +304,16 @@ pub fn update_question(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use prompt <- decode.field(1, decode.string)
-    use created_at <- decode.field(2, pog.timestamp_decoder())
-    use updated_at <- decode.field(3, pog.timestamp_decoder())
-    decode.success(UpdateQuestionRow(id:, prompt:, created_at:, updated_at:))
+    use position <- decode.field(2, decode.int)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(UpdateQuestionRow(
+      id:,
+      prompt:,
+      position:,
+      created_at:,
+      updated_at:,
+    ))
   }
 
   "update questions

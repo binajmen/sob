@@ -28,6 +28,7 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         // questions
         Get, ["questions"] -> question.list_questions(req, ctx)
         Post, ["questions"] -> question.create_question(req, ctx)
+        Get, ["questions", "next"] -> question.find_next_question(req, ctx)
         Get, ["questions", id] -> question.find_question(req, ctx, id)
         Patch, ["questions", id] -> question.update_question(req, ctx, id)
         Delete, ["questions", id] -> question.delete_question(req, ctx, id)
@@ -79,7 +80,10 @@ fn serve_index() -> Response {
           ),
         ]),
         html.body(
-          [attribute.class("p-4"), attribute.attribute("style", "height: 100%")],
+          [
+            attribute.class("prose p-4"),
+            attribute.attribute("style", "height: 100%"),
+          ],
           [
             html.div(
               [

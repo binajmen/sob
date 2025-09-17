@@ -52,6 +52,29 @@ pub fn find_question(req: Request, ctx: Context, id: String) -> Response {
   }
 }
 
+pub fn find_next_question(req: Request, ctx: Context) -> Response {
+  wisp.log_debug("Finding next question")
+  // use _ <- helpers.require_session(req)
+
+  let result = {
+    case sql.find_next_question(ctx.db) |> echo {
+      Ok(pog.Returned(1, [question])) ->
+        Ok(
+          json.object([
+            #("id", json.string(uuid.to_string(question.id))),
+            #("prompt", json.string(question.prompt)),
+          ]),
+        )
+      _ -> Error(Nil)
+    }
+  }
+
+  case result {
+    Error(_) -> wisp.internal_server_error()
+    Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
+  }
+}
+
 type CreateQuestionPayload {
   CreateQuestionPayload(prompt: String)
 }

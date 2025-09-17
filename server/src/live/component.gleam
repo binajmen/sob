@@ -1,6 +1,6 @@
 import gleam/dynamic/decode
 import gleam/int
-import gleam/option.{type Option, None}
+import gleam/option.{type Option, None, Some}
 import lustre.{type App}
 import lustre/attribute
 import lustre/component
@@ -9,6 +9,8 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import lustre/server_component
+import question/sql
+import rsvp
 import shared/question
 
 pub fn component() -> App(_, Model, Msg) {
@@ -17,7 +19,7 @@ pub fn component() -> App(_, Model, Msg) {
 
 pub type Status {
   Waiting
-  Question(id: String)
+  Question(question.Question)
   Result(id: String)
   Finished
 }
@@ -25,8 +27,8 @@ pub type Status {
 pub type Model {
   Model(
     status: Status,
-    question: Option(question.Question),
-    result: Option(question.Result),
+    // question: Option(question.Question),
+    // result: Option(question.Result),
     count: Int,
     connected_users: Int,
   )
@@ -36,8 +38,8 @@ fn init(_) -> #(Model, Effect(Msg)) {
   #(
     Model(
       status: Waiting,
-      question: None,
-      result: None,
+      // question: None,
+      // result: None,
       count: 0,
       connected_users: 0,
     ),
@@ -47,6 +49,7 @@ fn init(_) -> #(Model, Effect(Msg)) {
 
 pub type Msg {
   AdminPressedNextQuestion
+  ApiReturnedQuestion(Result(question.Question, rsvp.Error))
   AdminPressedCloseVoting
   UserClickedIncrement
   UserClickedDecrement
@@ -54,12 +57,31 @@ pub type Msg {
   UserDisconnected
 }
 
+fn find_next_question(
+  on_response handle_response: fn(Result(question.Question, rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "http://localhost:8000/api/questions/next"
+  let decoder = question.question_decoder()
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.get(url, handler)
+}
+
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    AdminPressedNextQuestion -> #(
-      Model(..model, status: Question(id: "q1")),
-      effect.none(),
-    )
+    AdminPressedNextQuestion -> {
+      #(model, find_next_question(ApiReturnedQuestion))
+    }
+
+    ApiReturnedQuestion(Ok(question)) -> {
+      echo question
+      #(Model(..model, status: Question(question)), effect.none())
+    }
+    ApiReturnedQuestion(Error(error)) -> {
+      echo error
+      echo "reached end of questions"
+      #(model, effect.none())
+    }
+
     AdminPressedCloseVoting -> #(
       Model(..model, status: Result(id: "q1")),
       effect.none(),
@@ -85,12 +107,30 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn view(model: Model) -> Element(Msg) {
-  case model.status {
-    Waiting -> view_waiting(model)
-    Question(id:) -> view_question(model, id)
-    Result(id:) -> view_results(model, id)
-    Finished -> view_finished(model)
-  }
+  html.div([], [
+    html.h1([], [html.text("Poll")]),
+    case model.status {
+      Waiting -> view_waiting(model)
+      Question(question) -> view_question(model, question)
+      Result(id:) -> view_results(model, id)
+      Finished -> view_finished(model)
+    },
+    component.default_slot(
+      [
+        event.on("click", {
+          use id <- decode.subfield(["target", "id"], decode.string)
+
+          case id {
+            "next-question" -> decode.success(AdminPressedNextQuestion)
+            "close-voting" -> decode.success(AdminPressedCloseVoting)
+            _ -> decode.failure(AdminPressedCloseVoting, "")
+          }
+        })
+        |> server_component.include(["target.id"]),
+      ],
+      [],
+    ),
+  ])
 }
 
 fn view_finished(model: Model) -> Element(Msg) {
@@ -105,9 +145,9 @@ fn view_results(model: Model, id: String) -> Element(Msg) {
   ])
 }
 
-fn view_question(model: Model, id: String) -> Element(Msg) {
-  html.div([], [
-    html.h1([], [html.text("Question")]),
+fn view_question(model: Model, question: question.Question) -> Element(Msg) {
+  html.div([attribute.class("prose")], [
+    html.h2([], [html.text(question.prompt)]),
   ])
 }
 
@@ -144,20 +184,5 @@ fn view_waiting(model: Model) -> Element(Msg) {
         ],
       ),
     ]),
-    component.default_slot(
-      [
-        event.on("click", {
-          use id <- decode.subfield(["target", "id"], decode.string)
-
-          case id {
-            "next-question" -> decode.success(AdminPressedNextQuestion)
-            "close-voting" -> decode.success(AdminPressedCloseVoting)
-            _ -> decode.failure(AdminPressedCloseVoting, "")
-          }
-        })
-        |> server_component.include(["target.id"]),
-      ],
-      [],
-    ),
   ])
 }

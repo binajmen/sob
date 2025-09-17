@@ -3,14 +3,14 @@ import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/option.{type Option, Some}
-import live/component
+import live/component as live_component
 import lustre
 import lustre/server_component
 import mist.{type Connection, type ResponseData}
 
 pub fn serve(
   request: Request(Connection),
-  component: lustre.Runtime(component.Msg),
+  component: lustre.Runtime(live_component.Msg),
 ) -> Response(ResponseData) {
   mist.websocket(
     request:,
@@ -22,20 +22,20 @@ pub fn serve(
 
 type PollSocket {
   PollSocket(
-    component: lustre.Runtime(component.Msg),
-    self: Subject(server_component.ClientMessage(component.Msg)),
+    component: lustre.Runtime(live_component.Msg),
+    self: Subject(server_component.ClientMessage(live_component.Msg)),
   )
 }
 
 type PollSocketMessage =
-  server_component.ClientMessage(component.Msg)
+  server_component.ClientMessage(live_component.Msg)
 
 type PollSocketInit =
   #(PollSocket, Option(Selector(PollSocketMessage)))
 
 fn init_poll_socket(
   _,
-  component: lustre.Runtime(component.Msg),
+  component: lustre.Runtime(live_component.Msg),
 ) -> PollSocketInit {
   let self = process.new_subject()
   let selector =
@@ -45,7 +45,7 @@ fn init_poll_socket(
   server_component.register_subject(self)
   |> lustre.send(to: component)
 
-  lustre.send(component, lustre.dispatch(component.UserConnected))
+  lustre.send(component, lustre.dispatch(live_component.UserConnected))
 
   #(PollSocket(component:, self:), Some(selector))
 }
@@ -80,7 +80,10 @@ fn loop_poll_socket(
       server_component.deregister_subject(state.self)
       |> lustre.send(to: state.component)
 
-      lustre.send(state.component, lustre.dispatch(component.UserDisconnected))
+      lustre.send(
+        state.component,
+        lustre.dispatch(live_component.UserDisconnected),
+      )
 
       mist.stop()
     }
@@ -91,5 +94,5 @@ fn close_poll_socket(state: PollSocket) -> Nil {
   server_component.deregister_subject(state.self)
   |> lustre.send(to: state.component)
 
-  lustre.send(state.component, lustre.dispatch(component.UserDisconnected))
+  lustre.send(state.component, lustre.dispatch(live_component.UserDisconnected))
 }

@@ -19,8 +19,7 @@ RUN cd /build/server && gleam deps download
 # Compile the client code and output to server's static directory
 RUN cd /build/client \
   && gleam add --dev lustre_dev_tools \
-  && gleam run -m lustre/dev build app --minify \
-  && cp -r /build/client/priv/static/* /build/server/priv/static/
+  && gleam run -m lustre/dev build app --minify --outdir=/build/server/priv/static
 
 # Compile the server code
 RUN cd /build/server \

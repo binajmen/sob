@@ -24,7 +24,6 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         // sessions
         Get, ["sessions"] -> session.list_sessions(req, ctx)
         Get, ["sessions", id] -> session.find_session(req, ctx, id)
-        // Post, ["sessions", id] -> session.update_session(req, ctx, id)
         // questions
         Get, ["questions"] -> question.list_questions(req, ctx)
         Post, ["questions"] -> question.create_question(req, ctx)
@@ -32,6 +31,9 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         Get, ["questions", id] -> question.find_question(req, ctx, id)
         Patch, ["questions", id] -> question.update_question(req, ctx, id)
         Delete, ["questions", id] -> question.delete_question(req, ctx, id)
+        // results
+        Get, ["results", id] -> question.find_result(req, ctx, id)
+        //
         _, _ -> wisp.not_found()
       }
     Get, _ -> serve_index()

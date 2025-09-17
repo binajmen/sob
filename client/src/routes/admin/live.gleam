@@ -34,7 +34,13 @@ pub fn view() -> Element(msg) {
 }
 
 fn controls() -> Element(msg) {
-  html.div([attribute.class("space-x-2")], [
+  html.div([attribute.class("space-x-4")], [
+    html.button(
+      [attribute.id("waiting"), attribute.class("btn btn-primary btn-sm")],
+      [
+        html.text("Waiting"),
+      ],
+    ),
     html.button(
       [attribute.id("next-question"), attribute.class("btn btn-primary btn-sm")],
       [
@@ -47,6 +53,12 @@ fn controls() -> Element(msg) {
         attribute.class("btn btn-secondary btn-sm"),
       ],
       [html.text("Close voting")],
+    ),
+    html.button(
+      [attribute.id("finished"), attribute.class("btn btn-primary btn-sm")],
+      [
+        html.text("Finished"),
+      ],
     ),
   ])
 }

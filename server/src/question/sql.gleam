@@ -222,6 +222,80 @@ where
   |> pog.execute(db)
 }
 
+/// A row you get from running the `find_result` query
+/// defined in `./src/question/sql/find_result.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type FindResultRow {
+  FindResultRow(
+    id: Uuid,
+    prompt: String,
+    yes_count: Int,
+    no_count: Int,
+    blank_count: Int,
+  )
+}
+
+/// Runs the `find_result` query
+/// defined in `./src/question/sql/find_result.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn find_result(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(FindResultRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use prompt <- decode.field(1, decode.string)
+    use yes_count <- decode.field(2, decode.int)
+    use no_count <- decode.field(3, decode.int)
+    use blank_count <- decode.field(4, decode.int)
+    decode.success(FindResultRow(
+      id:,
+      prompt:,
+      yes_count:,
+      no_count:,
+      blank_count:,
+    ))
+  }
+
+  "select
+  q.id,
+  q.prompt,
+  count(
+    case
+      when v.vote = 'yes' then 1
+    end
+  ) as yes_count,
+  count(
+    case
+      when v.vote = 'no' then 1
+    end
+  ) as no_count,
+  count(
+    case
+      when v.vote = 'blank' then 1
+    end
+  ) as blank_count
+from
+  questions q
+  left join votes v on q.id = v.question_id
+where
+  q.id = $1
+group by
+  q.id,
+  q.prompt;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `list_questions` query
 /// defined in `./src/question/sql/list_questions.sql`.
 ///

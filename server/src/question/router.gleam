@@ -57,12 +57,40 @@ pub fn find_next_question(req: Request, ctx: Context) -> Response {
   // use _ <- helpers.require_session(req)
 
   let result = {
-    case sql.find_next_question(ctx.db) |> echo {
+    case sql.find_next_question(ctx.db) {
       Ok(pog.Returned(1, [question])) ->
         Ok(
           json.object([
             #("id", json.string(uuid.to_string(question.id))),
             #("prompt", json.string(question.prompt)),
+            #("position", json.int(question.position)),
+          ]),
+        )
+      _ -> Error(Nil)
+    }
+  }
+
+  case result {
+    Error(_) -> wisp.internal_server_error()
+    Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
+  }
+}
+
+pub fn find_result(req: Request, ctx: Context, id: String) -> Response {
+  wisp.log_debug("Finding result")
+  // use _ <- helpers.require_session(req)
+
+  let result = {
+    let assert Ok(uuid) = uuid.from_string(id)
+    case sql.find_result(ctx.db, uuid) {
+      Ok(pog.Returned(1, [result])) ->
+        Ok(
+          json.object([
+            #("id", json.string(uuid.to_string(result.id))),
+            #("prompt", json.string(result.prompt)),
+            #("yes_count", json.int(result.yes_count)),
+            #("no_count", json.int(result.no_count)),
+            #("blank_count", json.int(result.blank_count)),
           ]),
         )
       _ -> Error(Nil)

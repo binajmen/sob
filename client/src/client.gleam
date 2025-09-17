@@ -138,7 +138,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
     ApiReturnedUser(Error(_)) -> #(
       Model(..model, user: None),
-      modem.push(router.to_path(router.SignIn), None, None),
+      case model.route {
+        router.SignIn | router.SignUp | router.Guest -> effect.none()
+        _ -> modem.push(router.to_path(router.SignIn), None, None)
+      },
     )
 
     SignInMsg(msg) -> {

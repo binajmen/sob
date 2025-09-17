@@ -108,13 +108,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 fn view(model: Model) -> Element(Msg) {
   html.div([], [
-    html.h1([], [html.text("Poll")]),
-    case model.status {
-      Waiting -> view_waiting(model)
-      Question(question) -> view_question(model, question)
-      Result(id:) -> view_results(model, id)
-      Finished -> view_finished(model)
-    },
     component.default_slot(
       [
         event.on("click", {
@@ -130,24 +123,12 @@ fn view(model: Model) -> Element(Msg) {
       ],
       [],
     ),
-  ])
-}
-
-fn view_finished(model: Model) -> Element(Msg) {
-  html.div([], [
-    html.h1([], [html.text("Finished")]),
-  ])
-}
-
-fn view_results(model: Model, id: String) -> Element(Msg) {
-  html.div([], [
-    html.h1([], [html.text("Results")]),
-  ])
-}
-
-fn view_question(model: Model, question: question.Question) -> Element(Msg) {
-  html.div([attribute.class("prose")], [
-    html.h2([], [html.text(question.prompt)]),
+    case model.status {
+      Waiting -> view_waiting(model)
+      Question(question) -> view_question(model, question)
+      Result(id:) -> view_results(model, id)
+      Finished -> view_finished(model)
+    },
   ])
 }
 
@@ -184,5 +165,23 @@ fn view_waiting(model: Model) -> Element(Msg) {
         ],
       ),
     ]),
+  ])
+}
+
+fn view_question(model: Model, question: question.Question) -> Element(Msg) {
+  html.div([], [
+    html.h2([], [html.text(question.prompt)]),
+  ])
+}
+
+fn view_results(model: Model, id: String) -> Element(Msg) {
+  html.div([], [
+    html.h1([], [html.text("Results")]),
+  ])
+}
+
+fn view_finished(model: Model) -> Element(Msg) {
+  html.div([], [
+    html.h1([], [html.text("Finished")]),
   ])
 }

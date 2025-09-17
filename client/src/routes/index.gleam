@@ -3,6 +3,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/server_component
 import router
+import shared/user
 
 pub fn view() -> Element(msg) {
   html.div([attribute.class("card")], [
@@ -11,7 +12,7 @@ pub fn view() -> Element(msg) {
     server_component.script(),
     server_component.element(
       [
-        server_component.route("/ws"),
+        server_component.route("3000/ws"),
         server_component.method(server_component.WebSocket),
       ],
       [],

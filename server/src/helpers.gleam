@@ -111,7 +111,8 @@ pub fn require_session(req: Request, next: fn(String) -> Response) -> Response {
   let session_id = wisp.get_cookie(req, "session_id", wisp.Signed)
   case session_id {
     Ok(session_id) -> next(session_id)
-    Error(_) -> unauthorised()
+    Error(_) -> wisp.redirect("/sign-in")
+    // Error(_) -> unauthorised()
   }
 }
 

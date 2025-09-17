@@ -24,18 +24,13 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         // sessions
         Get, ["sessions"] -> session.list_sessions(req, ctx)
         Get, ["sessions", id] -> session.find_session(req, ctx, id)
+        // Post, ["sessions", id] -> session.update_session(req, ctx, id)
         // questions
         Get, ["questions"] -> question.list_questions(req, ctx)
         Post, ["questions"] -> question.create_question(req, ctx)
         Get, ["questions", id] -> question.find_question(req, ctx, id)
         Patch, ["questions", id] -> question.update_question(req, ctx, id)
         Delete, ["questions", id] -> question.delete_question(req, ctx, id)
-        // Post, ["polls"] -> poll.create_poll(req, ctx)
-        // Get, ["polls"] -> poll.list_polls(req, ctx)
-        // Get, ["polls", id] -> poll.find_poll(req, ctx, id)
-        // Patch, ["polls", id] -> poll.update_poll(req, ctx, id)
-        // Delete, ["polls", id] -> poll.delete_poll(req, ctx, id)
-        // Post, ["sessions", id] -> session.update_session(req, ctx, id)
         _, _ -> wisp.not_found()
       }
     Get, _ -> serve_index()

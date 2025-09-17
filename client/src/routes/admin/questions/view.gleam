@@ -1,7 +1,5 @@
-import components/breadcrumbs
 import components/textarea
 import formal/form.{type Form}
-
 import gleam/json
 import gleam/option.{type Option, None, Some}
 import lustre/attribute
@@ -9,48 +7,33 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import modem
-import router
 import rsvp
-import shared/poll.{type Poll}
 import shared/question.{type Question}
 
 pub type Model {
-  Model(
-    poll: Option(Poll),
-    question: Option(Question),
-    form: Form(UpdateQuestionData),
-  )
+  Model(question: Option(Question), form: Form(UpdateQuestionData))
 }
 
 pub type UpdateQuestionData {
-  UpdateQuestionData(id: String, poll_id: String, prompt: String)
+  UpdateQuestionData(id: String, prompt: String)
 }
 
 fn form() -> Form(UpdateQuestionData) {
   form.new({
     use id <- form.field("id", form.parse_string)
-    use poll_id <- form.field("poll_id", form.parse_string)
     use prompt <- form.field("prompt", form.parse_string)
-    form.success(UpdateQuestionData(id:, poll_id:, prompt:))
+    form.success(UpdateQuestionData(id:, prompt:))
   })
 }
 
-pub fn init(poll_id: String, id: String) -> #(Model, Effect(Msg)) {
-  let model = Model(poll: None, question: None, form: form())
-  #(
-    model,
-    effect.batch([
-      fetch_poll(poll_id, ApiReturnedPoll),
-      fetch_question(id, ApiReturnedQuestion),
-    ]),
-  )
+pub fn init(id: String) -> #(Model, Effect(Msg)) {
+  let model = Model(question: None, form: form())
+  #(model, fetch_question(id, ApiReturnedQuestion))
 }
 
 pub type Msg {
   UserSubmittedForm(Result(UpdateQuestionData, Form(UpdateQuestionData)))
   ApiQuestionUpdated(Result(Question, rsvp.Error))
-  ApiReturnedPoll(Result(Poll, rsvp.Error))
   ApiReturnedQuestion(Result(Question, rsvp.Error))
 }
 
@@ -66,11 +49,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
     ApiQuestionUpdated(Error(_)) -> #(model, effect.none())
-    ApiReturnedPoll(Ok(poll)) -> #(
-      Model(..model, poll: Some(poll)),
-      effect.none(),
-    )
-    ApiReturnedPoll(Error(_)) -> #(model, effect.none())
     ApiReturnedQuestion(Ok(question)) -> #(
       Model(..model, question: Some(question)),
       effect.none(),
@@ -80,7 +58,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 pub fn view(
-  poll: Option(Poll),
   question: Option(Question),
   form: Form(UpdateQuestionData),
 ) -> Element(Msg) {
@@ -91,22 +68,10 @@ pub fn view(
     |> UserSubmittedForm
   }
 
-  case poll, question {
-    Some(poll), Some(question) ->
+  case question {
+    None -> html.text("loading..")
+    Some(question) ->
       html.div([attribute.class("space-y-4")], [
-        breadcrumbs.view([
-          breadcrumbs.Crumb("Admin", Some(router.to_path(router.Admin))),
-          breadcrumbs.Crumb("Polls", Some(router.to_path(router.AdminPolls))),
-          breadcrumbs.Crumb(
-            poll.name,
-            Some(router.to_path(router.AdminPollsView(poll.id))),
-          ),
-          breadcrumbs.Crumb(
-            "Questions",
-            Some(router.to_path(router.AdminQuestions(poll.id))),
-          ),
-          breadcrumbs.Crumb(question.prompt, None),
-        ]),
         html.div([attribute.class("prose flex justify-between items-start")], [
           html.h1([], [html.text("Update question")]),
         ]),
@@ -116,11 +81,6 @@ pub fn view(
             attribute.name("id"),
             attribute.value(question.id),
           ]),
-          html.input([
-            attribute.type_("hidden"),
-            attribute.name("poll_id"),
-            attribute.value(poll.id),
-          ]),
           textarea.view(form, "prompt", "Question", Some(question.prompt)),
           html.button(
             [attribute.type_("submit"), attribute.class("btn btn-primary")],
@@ -128,18 +88,7 @@ pub fn view(
           ),
         ]),
       ])
-    _, _ -> html.text("loading..")
   }
-}
-
-fn fetch_poll(
-  id: String,
-  on_response handle_response: fn(Result(Poll, rsvp.Error)) -> msg,
-) -> Effect(msg) {
-  let url = "/api/polls/" <> id
-  let decoder = poll.poll_decoder()
-  let handler = rsvp.expect_json(decoder, handle_response)
-  rsvp.get(url, handler)
 }
 
 fn fetch_question(
@@ -156,7 +105,6 @@ fn update_question(
   question: UpdateQuestionData,
   on_response handle_response: fn(Result(Question, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  // TODO: use the shared package to define the routes and the helpers for both the client and the server
   let url = "/api/questions/" <> question.id
   let body =
     json.object([

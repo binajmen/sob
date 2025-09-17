@@ -7,15 +7,11 @@ pub type Route {
   SignIn
   SignUp
   Guest
-  Polls
-  Poll(id: String)
   Admin
-  AdminPolls
-  AdminPollsCreate
-  AdminPollsView(id: String)
-  AdminQuestions(poll_id: String)
-  AdminQuestionsCreate(poll_id: String)
-  AdminQuestionsView(poll_id: String, id: String)
+  AdminLive
+  AdminQuestionsList
+  AdminQuestionsCreate
+  AdminQuestionsView(id: String)
   NotFound(uri: Uri)
 }
 
@@ -32,17 +28,11 @@ pub fn parse_route(uri: Uri) -> Route {
     ["sign-in"] -> SignIn
     ["sign-up"] -> SignUp
     ["guest"] -> Guest
-    ["polls"] -> Polls
-    ["polls", id] -> Poll(id)
     ["admin"] -> Admin
-    ["admin", "polls"] -> AdminPolls
-    ["admin", "polls", "create"] -> AdminPollsCreate
-    ["admin", "polls", id] -> AdminPollsView(id)
-    ["admin", "polls", poll_id, "questions"] -> AdminQuestions(poll_id)
-    ["admin", "polls", poll_id, "questions", "create"] ->
-      AdminQuestionsCreate(poll_id)
-    ["admin", "polls", poll_id, "questions", id] ->
-      AdminQuestionsView(poll_id, id)
+    ["admin", "live"] -> AdminLive
+    ["admin", "questions"] -> AdminQuestionsList
+    ["admin", "questions", "create"] -> AdminQuestionsCreate
+    ["admin", "questions", id] -> AdminQuestionsView(id)
     _ -> NotFound(uri:)
   }
 }
@@ -53,16 +43,11 @@ pub fn to_path(route: Route) -> String {
     SignIn -> "/sign-in"
     SignUp -> "/sign-up"
     Guest -> "/guest"
-    Polls -> "/polls"
-    Poll(id) -> "/polls/" <> id
     Admin -> "/admin"
-    AdminPolls -> "/admin/polls"
-    AdminPollsCreate -> "/admin/polls/create"
-    AdminPollsView(id) -> "/admin/polls/" <> id
-    AdminQuestions(id) -> "/admin/polls/" <> id <> "/questions"
-    AdminQuestionsCreate(id) -> "/admin/polls/" <> id <> "/questions/create"
-    AdminQuestionsView(poll_id, id) ->
-      "/admin/polls/" <> poll_id <> "/questions/" <> id
+    AdminLive -> "/admin/live"
+    AdminQuestionsList -> "/admin/questions"
+    AdminQuestionsCreate -> "/admin/questions/create"
+    AdminQuestionsView(id) -> "/admin/questions/" <> id
     NotFound(_) -> "/not-found"
   }
 }

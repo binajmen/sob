@@ -19,16 +19,27 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   #(model, effect.none())
 }
 
-pub fn view(id: String) -> Element(msg) {
-  html.div([attribute.class("card")], [
-    html.text("Poll"),
+pub fn view() -> Element(msg) {
+  html.div([attribute.class("prose")], [
+    html.h1([], [html.text("Live")]),
     server_component.script(),
     server_component.element(
       [
-        server_component.route("/ws/poll/" <> id),
+        server_component.route("/ws/live"),
         server_component.method(server_component.WebSocket),
       ],
-      [],
+      [controls()],
     ),
+  ])
+}
+
+fn controls() -> Element(msg) {
+  html.div([attribute.class("space-x-2")], [
+    html.button([attribute.class("btn btn-primary btn-sm")], [
+      html.text("Start"),
+    ]),
+    html.button([attribute.class("btn btn-secondary btn-sm")], [
+      html.text("Stop"),
+    ]),
   ])
 }

@@ -3,6 +3,7 @@ import gleam/bit_array
 import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
+import gleam/json
 import gleam/option.{Some}
 import gleam/result.{try}
 import helpers
@@ -13,8 +14,13 @@ import youid/uuid
 
 pub fn me(req: Request, ctx: Context) {
   use session_id <- helpers.require_session(req)
-  use _user <- helpers.require_user(session_id, ctx)
-  wisp.ok()
+  use user <- helpers.require_user(session_id, ctx)
+  json.object([
+    #("id", json.string(user.id)),
+    #("is_admin", json.bool(user.is_admin)),
+  ])
+  |> json.to_string_tree
+  |> wisp.json_response(200)
 }
 
 type SignInPayload {

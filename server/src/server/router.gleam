@@ -4,7 +4,6 @@ import gleam/http.{Delete, Get, Patch, Post, Put}
 import lustre/attribute
 import lustre/element
 import lustre/element/html
-import poll/router as poll
 import question/router as question
 import server/context.{type Context}
 import session/router as session
@@ -17,23 +16,25 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
   case req.method, wisp.path_segments(req) {
     method, ["api", ..rest] ->
       case method, rest {
+        // auth
         Get, ["auth", "me"] -> auth.me(req, ctx)
         Post, ["auth", "sign-in"] -> auth.sign_in(req, ctx)
         Post, ["auth", "sign-up"] -> auth.sign_up(req, ctx)
         Post, ["auth", "guest"] -> auth.guest(req, ctx)
-        Post, ["polls"] -> poll.create_poll(req, ctx)
-        Get, ["polls"] -> poll.list_polls(req, ctx)
-        Get, ["polls", id] -> poll.find_poll(req, ctx, id)
-        Patch, ["polls", id] -> poll.update_poll(req, ctx, id)
-        Delete, ["polls", id] -> poll.delete_poll(req, ctx, id)
-        Get, ["polls", id, "questions"] ->
-          question.list_questions_by_poll(req, ctx, id)
-        Post, ["questions"] -> question.create_question(req, ctx)
-        Patch, ["questions", id] -> question.update_question(req, ctx, id)
-        Delete, ["questions", id] -> question.delete_question(req, ctx, id)
-        Get, ["questions", id] -> question.find_question(req, ctx, id)
+        // sessions
         Get, ["sessions"] -> session.list_sessions(req, ctx)
         Get, ["sessions", id] -> session.find_session(req, ctx, id)
+        // questions
+        Get, ["questions"] -> question.list_questions(req, ctx)
+        Post, ["questions"] -> question.create_question(req, ctx)
+        Get, ["questions", id] -> question.find_question(req, ctx, id)
+        Patch, ["questions", id] -> question.update_question(req, ctx, id)
+        Delete, ["questions", id] -> question.delete_question(req, ctx, id)
+        // Post, ["polls"] -> poll.create_poll(req, ctx)
+        // Get, ["polls"] -> poll.list_polls(req, ctx)
+        // Get, ["polls", id] -> poll.find_poll(req, ctx, id)
+        // Patch, ["polls", id] -> poll.update_poll(req, ctx, id)
+        // Delete, ["polls", id] -> poll.delete_poll(req, ctx, id)
         // Post, ["sessions", id] -> session.update_session(req, ctx, id)
         _, _ -> wisp.not_found()
       }

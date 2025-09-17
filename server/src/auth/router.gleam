@@ -26,6 +26,7 @@ pub fn sign_in(req: Request, ctx: Context) {
 
   let result = {
     use payload <- try(decode_sign_in_payload(json))
+    wisp.log_debug("Payload: " <> payload.email)
     use user <- try(authenticate_user(ctx, payload))
     use session_id <- try(create_session(ctx, user.id))
     Ok(session_id)

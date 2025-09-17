@@ -2,27 +2,38 @@ import envoy
 import gleam/erlang/process
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
-import gleam/int
 import gleam/io
 import gleam/option.{Some}
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
+import live/component as live
+import live/websocket
+import lustre
 import mist.{type Connection, type ResponseData}
 import pog
-import poll/registry as poll_registry
-import poll/websocket as poll_ws
 import server/context.{Context}
 import server/router
 import wisp
 import wisp/wisp_mist
 
 pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
+  case do_start() {
+    Error(error) -> Error(error)
+    Ok(supervisor) -> Ok(supervisor.pid)
+  }
+}
+
+pub fn do_start() {
   io.println("starting supervisor..")
+
+  wisp.configure_logger()
+  wisp.set_logger_level(wisp.DebugLevel)
 
   let assert Ok(host) = envoy.get("PGHOST")
   let assert Ok(database) = envoy.get("PGDATABASE")
   let assert Ok(user) = envoy.get("PGUSER")
-  let assert Ok(password) = envoy.get("PGPASSWORD") |> echo
+  let assert Ok(password) = envoy.get("PGPASSWORD")
+  let assert Ok(secret_key_base) = envoy.get("SECRET_KEY_BASE")
 
   let db_name = process.new_name("db")
   let db = pog.named_connection(db_name)
@@ -35,22 +46,21 @@ pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
     |> pog.pool_size(15)
     |> pog.supervised
 
+  io.println("database pool")
+
   let assert Ok(priv_directory) = wisp.priv_directory("server")
   let static_directory = priv_directory <> "/static"
 
   let context = Context(db:, static_directory:)
 
-  let poll_name = process.new_name("poll_registry")
-  let poll_subject = process.named_subject(poll_name)
-  let poll_registry = poll_name |> poll_registry.supervised
+  let assert Ok(live_component) =
+    lustre.start_server_component(live.component(), Nil)
 
-  let assert Ok(secret_key_base) = envoy.get("SECRET_KEY_BASE")
   let http_server =
     fn(request: Request(Connection)) -> Response(ResponseData) {
       case request.path_segments(request) {
-        ["ws", "poll", id] -> {
-          let assert Ok(component) = poll_registry.get_poll(poll_subject, id)
-          poll_ws.serve(request, component, id)
+        ["ws", "live"] -> {
+          websocket.serve(request, live_component)
         }
         _ ->
           {
@@ -64,17 +74,12 @@ pub fn start(_type, _args) -> Result(process.Pid, actor.StartError) {
     |> mist.port(8000)
     |> mist.supervised
 
-  let supervisor =
-    supervisor.new(supervisor.OneForOne)
-    |> supervisor.add(database_pool)
-    |> supervisor.add(poll_registry)
-    |> supervisor.add(http_server)
-    |> supervisor.start
+  io.println("http server")
 
-  case supervisor {
-    Error(error) -> Error(error)
-    Ok(supervisor) -> Ok(supervisor.pid)
-  }
+  supervisor.new(supervisor.OneForOne)
+  |> supervisor.add(database_pool)
+  |> supervisor.add(http_server)
+  |> supervisor.start
 }
 
 pub fn stop(_state) {

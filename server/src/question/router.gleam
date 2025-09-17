@@ -8,24 +8,15 @@ import server/context.{type Context}
 import wisp.{type Request, type Response}
 import youid/uuid
 
-pub fn list_questions_by_poll(
-  req: Request,
-  ctx: Context,
-  id: String,
-) -> Response {
+pub fn list_questions(req: Request, ctx: Context) -> Response {
   use _ <- helpers.require_admin(req, ctx)
 
   let result = {
-    let assert Ok(uuid) = uuid.from_string(id)
-    use pog.Returned(_count, rows) <- try(sql.list_questions_by_poll(
-      ctx.db,
-      uuid,
-    ))
+    use pog.Returned(_count, rows) <- try(sql.list_questions(ctx.db))
     Ok(
       json.array(rows, fn(question) {
         json.object([
           #("id", json.string(uuid.to_string(question.id))),
-          #("poll_id", json.string(uuid.to_string(question.poll_id))),
           #("prompt", json.string(question.prompt)),
         ])
       }),
@@ -48,7 +39,6 @@ pub fn find_question(req: Request, ctx: Context, id: String) -> Response {
         Ok(
           json.object([
             #("id", json.string(uuid.to_string(question.id))),
-            #("poll_id", json.string(uuid.to_string(question.poll_id))),
             #("prompt", json.string(question.prompt)),
           ]),
         )
@@ -63,7 +53,7 @@ pub fn find_question(req: Request, ctx: Context, id: String) -> Response {
 }
 
 type CreateQuestionPayload {
-  CreateQuestionPayload(poll_id: String, prompt: String)
+  CreateQuestionPayload(prompt: String)
 }
 
 pub fn create_question(req: Request, ctx: Context) {
@@ -75,8 +65,7 @@ pub fn create_question(req: Request, ctx: Context) {
       json,
       create_question_payload_decoder(),
     ))
-    let assert Ok(poll_id) = uuid.from_string(payload.poll_id)
-    use question_id <- try(do_create_question(ctx, poll_id, payload))
+    use question_id <- try(do_create_question(ctx, payload))
     Ok(question_id) |> echo
   }
 
@@ -87,17 +76,15 @@ pub fn create_question(req: Request, ctx: Context) {
 }
 
 fn create_question_payload_decoder() -> decode.Decoder(CreateQuestionPayload) {
-  use poll_id <- decode.field("poll_id", decode.string)
   use prompt <- decode.field("prompt", decode.string)
-  decode.success(CreateQuestionPayload(poll_id:, prompt:))
+  decode.success(CreateQuestionPayload(prompt:))
 }
 
 fn do_create_question(
   ctx: Context,
-  poll_id: uuid.Uuid,
   payload: CreateQuestionPayload,
 ) -> Result(uuid.Uuid, helpers.ApiError) {
-  case sql.create_question(ctx.db, poll_id, payload.prompt) {
+  case sql.create_question(ctx.db, payload.prompt) {
     Ok(pog.Returned(1, [question])) -> Ok(question.id)
     Ok(_) -> Error(helpers.UnknownError)
     Error(error) -> Error(helpers.DatabaseError(error))
@@ -124,7 +111,6 @@ pub fn update_question(req: Request, ctx: Context, id: String) {
         Ok(
           json.object([
             #("id", json.string(uuid.to_string(question.id))),
-            #("poll_id", json.string(uuid.to_string(question.poll_id))),
             #("prompt", json.string(question.prompt)),
           ]),
         )

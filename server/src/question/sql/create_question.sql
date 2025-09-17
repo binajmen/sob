@@ -1,6 +1,6 @@
 insert into
-  questions (poll_id, prompt)
+  questions (prompt)
 values
-  ($1, $2)
+  ($1)
 returning
   id;

@@ -3,15 +3,14 @@ import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/option.{type Option, Some}
+import live/component
 import lustre
 import lustre/server_component
 import mist.{type Connection, type ResponseData}
-import poll/component
 
 pub fn serve(
   request: Request(Connection),
   component: lustre.Runtime(component.Msg),
-  _id: String,
 ) -> Response(ResponseData) {
   mist.websocket(
     request:,

@@ -27,8 +27,7 @@ pub type CreateQuestionRow {
 ///
 pub fn create_question(
   db: pog.Connection,
-  arg_1: Uuid,
-  arg_2: String,
+  arg_1: String,
 ) -> Result(pog.Returned(CreateQuestionRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
@@ -36,15 +35,14 @@ pub fn create_question(
   }
 
   "insert into
-  questions (poll_id, prompt)
+  questions (prompt)
 values
-  ($1, $2)
+  ($1)
 returning
   id;
 "
   |> pog.query
-  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.text(arg_2))
+  |> pog.parameter(pog.text(arg_1))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -58,7 +56,6 @@ returning
 pub type DeleteQuestionRow {
   DeleteQuestionRow(
     id: Uuid,
-    poll_id: Uuid,
     prompt: String,
     created_at: Timestamp,
     updated_at: Timestamp,
@@ -77,17 +74,10 @@ pub fn delete_question(
 ) -> Result(pog.Returned(DeleteQuestionRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use poll_id <- decode.field(1, uuid_decoder())
-    use prompt <- decode.field(2, decode.string)
-    use created_at <- decode.field(3, pog.timestamp_decoder())
-    use updated_at <- decode.field(4, pog.timestamp_decoder())
-    decode.success(DeleteQuestionRow(
-      id:,
-      poll_id:,
-      prompt:,
-      created_at:,
-      updated_at:,
-    ))
+    use prompt <- decode.field(1, decode.string)
+    use created_at <- decode.field(2, pog.timestamp_decoder())
+    use updated_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(DeleteQuestionRow(id:, prompt:, created_at:, updated_at:))
   }
 
   "delete from questions
@@ -110,7 +100,6 @@ returning
 pub type FindQuestionRow {
   FindQuestionRow(
     id: Uuid,
-    poll_id: Uuid,
     prompt: String,
     created_at: Timestamp,
     updated_at: Timestamp,
@@ -129,17 +118,10 @@ pub fn find_question(
 ) -> Result(pog.Returned(FindQuestionRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use poll_id <- decode.field(1, uuid_decoder())
-    use prompt <- decode.field(2, decode.string)
-    use created_at <- decode.field(3, pog.timestamp_decoder())
-    use updated_at <- decode.field(4, pog.timestamp_decoder())
-    decode.success(FindQuestionRow(
-      id:,
-      poll_id:,
-      prompt:,
-      created_at:,
-      updated_at:,
-    ))
+    use prompt <- decode.field(1, decode.string)
+    use created_at <- decode.field(2, pog.timestamp_decoder())
+    use updated_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(FindQuestionRow(id:, prompt:, created_at:, updated_at:))
   }
 
   "select
@@ -155,58 +137,46 @@ where
   |> pog.execute(db)
 }
 
-/// A row you get from running the `list_questions_by_poll` query
-/// defined in `./src/question/sql/list_questions_by_poll.sql`.
+/// A row you get from running the `list_questions` query
+/// defined in `./src/question/sql/list_questions.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type ListQuestionsByPollRow {
-  ListQuestionsByPollRow(
+pub type ListQuestionsRow {
+  ListQuestionsRow(
     id: Uuid,
-    poll_id: Uuid,
     prompt: String,
     created_at: Timestamp,
     updated_at: Timestamp,
   )
 }
 
-/// Runs the `list_questions_by_poll` query
-/// defined in `./src/question/sql/list_questions_by_poll.sql`.
+/// Runs the `list_questions` query
+/// defined in `./src/question/sql/list_questions.sql`.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn list_questions_by_poll(
+pub fn list_questions(
   db: pog.Connection,
-  arg_1: Uuid,
-) -> Result(pog.Returned(ListQuestionsByPollRow), pog.QueryError) {
+) -> Result(pog.Returned(ListQuestionsRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use poll_id <- decode.field(1, uuid_decoder())
-    use prompt <- decode.field(2, decode.string)
-    use created_at <- decode.field(3, pog.timestamp_decoder())
-    use updated_at <- decode.field(4, pog.timestamp_decoder())
-    decode.success(ListQuestionsByPollRow(
-      id:,
-      poll_id:,
-      prompt:,
-      created_at:,
-      updated_at:,
-    ))
+    use prompt <- decode.field(1, decode.string)
+    use created_at <- decode.field(2, pog.timestamp_decoder())
+    use updated_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(ListQuestionsRow(id:, prompt:, created_at:, updated_at:))
   }
 
   "select
   *
 from
   questions
-where
-  poll_id = $1
 order by
   created_at asc;
 "
   |> pog.query
-  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -220,7 +190,6 @@ order by
 pub type UpdateQuestionRow {
   UpdateQuestionRow(
     id: Uuid,
-    poll_id: Uuid,
     prompt: String,
     created_at: Timestamp,
     updated_at: Timestamp,
@@ -240,17 +209,10 @@ pub fn update_question(
 ) -> Result(pog.Returned(UpdateQuestionRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use poll_id <- decode.field(1, uuid_decoder())
-    use prompt <- decode.field(2, decode.string)
-    use created_at <- decode.field(3, pog.timestamp_decoder())
-    use updated_at <- decode.field(4, pog.timestamp_decoder())
-    decode.success(UpdateQuestionRow(
-      id:,
-      poll_id:,
-      prompt:,
-      created_at:,
-      updated_at:,
-    ))
+    use prompt <- decode.field(1, decode.string)
+    use created_at <- decode.field(2, pog.timestamp_decoder())
+    use updated_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(UpdateQuestionRow(id:, prompt:, created_at:, updated_at:))
   }
 
   "update questions

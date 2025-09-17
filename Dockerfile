@@ -1,7 +1,7 @@
-ARG GLEAM_VERSION=v1.11.0
+ARG GLEAM_VERSION=v1.12.0
 
 # Build stage - compile the application
-FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine AS builder
+FROM gleamlang/gleam:${GLEAM_VERSION}-erlang-alpine AS builder
 
 # Add project code
 COPY ./shared /build/shared
@@ -26,7 +26,7 @@ RUN cd /build/server \
   && gleam export erlang-shipment
 
 # Runtime stage - slim image with only what's needed to run
-FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine
+FROM gleamlang/gleam:${GLEAM_VERSION}-erlang-alpine
 
 # Install runtime dependencies for migrations and build tools
 RUN apk add --no-cache wget && \

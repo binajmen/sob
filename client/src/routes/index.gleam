@@ -1,21 +1,58 @@
 import lustre/attribute
+import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/server_component
-import router
-import shared/user
+
+pub type Model {
+  Model(id: String)
+}
+
+pub fn init(id: String) -> #(Model, Effect(Msg)) {
+  let model = Model(id:)
+  #(model, effect.none())
+}
+
+pub type Msg
+
+pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+  #(model, effect.none())
+}
 
 pub fn view() -> Element(msg) {
-  html.div([attribute.class("card")], [
-    html.text("index"),
-    html.a([router.href(router.SignIn)], [html.text("Sign In")]),
+  html.div([attribute.class("prose")], [
+    html.h1([], [html.text("Live")]),
     server_component.script(),
     server_component.element(
       [
-        server_component.route("3000/ws"),
+        server_component.route("/ws/live"),
         server_component.method(server_component.WebSocket),
       ],
-      [],
+      [controls()],
+    ),
+  ])
+}
+
+fn controls() -> Element(msg) {
+  html.div([attribute.class("space-x-4")], [
+    html.button(
+      [attribute.id("yes"), attribute.class("btn btn-primary btn-sm")],
+      [
+        html.text("Yes 👍"),
+      ],
+    ),
+    html.button(
+      [attribute.id("no"), attribute.class("btn btn-primary btn-sm")],
+      [
+        html.text("No 👎"),
+      ],
+    ),
+    html.button(
+      [
+        attribute.id("blank"),
+        attribute.class("btn btn-secondary btn-sm"),
+      ],
+      [html.text("Blank 🫣")],
     ),
   ])
 }

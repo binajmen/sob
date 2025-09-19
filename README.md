@@ -11,7 +11,7 @@ Support:
 - [ ] tbd
 
 
-docker compose -f docker-compose.yml up --build -d
+docker compose -f docker-compose.yml up database -d
 cd client
 gleam run -m lustre/dev build app --minify --outdir=../server/priv/static
 cd server

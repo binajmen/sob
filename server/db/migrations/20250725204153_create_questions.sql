@@ -16,6 +16,10 @@ create table votes (
   updated_at timestamp not null default now()
 );
 
+-- Insert fake question
+INSERT INTO questions (prompt, position) 
+VALUES ('What is your favorite programming language?', 1);
+
 -- migrate:down
 drop table votes;
 

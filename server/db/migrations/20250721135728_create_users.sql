@@ -10,5 +10,9 @@ create table users (
   updated_at timestamp not null default now()
 );
 
+-- Insert fake admin user
+INSERT INTO users (email, password_hash, first_name, last_name, is_admin) 
+VALUES ('admin@example.com', 'XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg', 'Admin', 'User', true);
+
 -- migrate:down
 drop table users;

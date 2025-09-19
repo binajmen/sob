@@ -99,7 +99,7 @@ fn sign_in(
   on_response handle_response: fn(Result(response.Response(String), rsvp.Error)) ->
     msg,
 ) -> Effect(msg) {
-  let url = "/auth/sign-in"
+  let url = "/api/auth/sign-in"
   let body =
     json.object([
       #("email", json.string(values.email)),

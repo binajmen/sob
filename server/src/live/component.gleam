@@ -1,6 +1,5 @@
 import gleam/dynamic/decode
 import gleam/int
-import gleam/option.{type Option, None, Some}
 import lustre.{type App}
 import lustre/attribute
 import lustre/component
@@ -9,7 +8,6 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import lustre/server_component
-import question/sql
 import rsvp
 import shared/question
 

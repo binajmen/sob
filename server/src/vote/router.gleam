@@ -13,6 +13,7 @@ import youid/uuid
 pub fn find_vote(req: Request, ctx: Context, question_id: String) -> Response {
   use session_id <- helpers.require_session(req)
   use user <- helpers.require_user(session_id, ctx)
+  echo user
 
   let result = {
     use question_id <- try(uuid.from_string(question_id))

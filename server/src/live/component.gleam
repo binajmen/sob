@@ -11,6 +11,7 @@ import lustre/event
 import lustre/server_component
 import rsvp
 import shared/question
+import wisp
 
 pub fn component() -> App(_, Model, Msg) {
   lustre.component(init, update, view, [])
@@ -75,7 +76,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case model.status {
         Question(question) -> #(
           model,
-          find_result(question.id, ApiReturnedResult),
+          effect.batch([
+            find_result(question.id, ApiReturnedResult),
+            event.emit("no-questions", json.string(question.id)),
+          ]),
         )
         _ -> #(model, effect.none())
       }
@@ -85,7 +89,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     ApiReturnedQuestion(Ok(question)) -> #(
       Model(status: Question(question)),
-      event.emit("question-changed", json.string(question.id)) |> echo,
+      event.emit("next-question", json.string(question.id)),
     )
     ApiReturnedQuestion(Error(error)) -> {
       echo error
@@ -93,7 +97,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     ApiReturnedResult(Ok(result)) -> #(
-      Model(status: Result(result)) |> echo,
+      Model(status: Result(result)),
       effect.none(),
     )
     ApiReturnedResult(Error(error)) -> {
@@ -116,13 +120,12 @@ fn view(model: Model) -> Element(Msg) {
         event.on("click", {
           use id <- decode.subfield(["target", "id"], decode.string)
 
-          echo id
           case id {
             "waiting" -> decode.success(AdminPressedWaiting)
             "next-question" -> decode.success(AdminPressedNextQuestion)
             "close-voting" -> decode.success(AdminPressedCloseVoting)
             "finished" -> decode.success(AdminPressedFinished)
-            _ -> decode.failure(NoOp, "") |> echo
+            _ -> decode.failure(NoOp, "")
           }
         })
         |> server_component.include(["target.id"]),

@@ -20,6 +20,7 @@ pub fn init() -> #(Model, Effect(Msg)) {
 }
 
 pub type Msg {
+  NoQuestions
   QuestionIdChanged(String)
   UserIsVoting(String)
   ApiReturnedVote(Result(vote.Vote, rsvp.Error))
@@ -28,13 +29,14 @@ pub type Msg {
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    NoQuestions -> #(Model(question_id: None, vote: None), effect.none())
+
     QuestionIdChanged(id) -> #(
       Model(question_id: Some(id), vote: None),
       fetch_vote(id, ApiReturnedVote),
     )
 
     UserIsVoting(vote) -> {
-      echo "voting " <> vote
       case model.question_id {
         None -> #(model, effect.none())
         Some(question_id) -> #(
@@ -62,11 +64,6 @@ pub fn view(model: Model) -> Element(Msg) {
   html.div(
     [
       attribute.class("prose"),
-      event.on("question-changed", {
-        echo "question-changed"
-        use id <- decode.then(decode.string)
-        decode.success(QuestionIdChanged(id))
-      }),
     ],
     [
       html.h1([], [html.text("Live")]),
@@ -74,13 +71,19 @@ pub fn view(model: Model) -> Element(Msg) {
         [
           server_component.route("/ws/live"),
           server_component.method(server_component.WebSocket),
+          event.on("next-question", {
+            decode.at(["detail"], decode.string)
+            |> decode.map(QuestionIdChanged)
+          }),
+          event.on("no-questions", { decode.success(NoQuestions) }),
         ],
         [
-          case model.question_id, model.vote {
-            Some(_id), Some(vote) -> view_registered_vote(vote)
-            Some(_id), None -> view_voting_buttons()
-            None, _ -> element.none()
-          },
+          // case model.question_id, model.vote {
+          //   Some(_id), Some(vote) -> view_registered_vote(vote)
+          //   Some(_id), None -> view_voting_buttons()
+          //   None, _ -> element.none()
+          // },
+          view_voting_buttons(),
         ],
       ),
     ],
@@ -110,6 +113,7 @@ fn view_voting_buttons() -> Element(Msg) {
       [
         attribute.id("no"),
         attribute.class("btn btn-primary btn-sm"),
+        event.on_click(UserIsVoting("no")),
       ],
       [
         html.text("No"),
@@ -119,6 +123,7 @@ fn view_voting_buttons() -> Element(Msg) {
       [
         attribute.id("blank"),
         attribute.class("btn btn-primary btn-sm"),
+        event.on_click(UserIsVoting("blank")),
       ],
       [html.text("Abstain")],
     ),

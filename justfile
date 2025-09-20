@@ -6,7 +6,7 @@ default:
 
 dev:
 	docker compose -f docker-compose.dev.yml up --build -d
-	just client build-min
+	just client build
 	just server run
 dev-watch:
 	watchexec \

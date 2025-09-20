@@ -1,6 +1,7 @@
 import gleam/dynamic/decode
 import gleam/int
 import gleam/json
+import gleam/option
 import lustre.{type App}
 import lustre/attribute
 import lustre/component
@@ -12,6 +13,7 @@ import lustre/server_component
 import rsvp
 import shared/question
 import wisp
+import youid/uuid
 
 pub fn component() -> App(_, Model, Msg) {
   lustre.component(init, update, view, [])
@@ -40,12 +42,13 @@ pub type Msg {
   AdminPressedFinished
   ApiReturnedQuestion(Result(question.Question, rsvp.Error))
   ApiReturnedResult(Result(question.Result, rsvp.Error))
+  ApiUpdatedPollState(Result(Nil, rsvp.Error))
 }
 
 fn find_next_question(
   on_response handle_response: fn(Result(question.Question, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:8000/api/questions/next"
+  let url = "/api/questions/next"
   let decoder = question.question_decoder()
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
@@ -55,17 +58,39 @@ fn find_result(
   id: String,
   on_response handle_response: fn(Result(question.Result, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "http://localhost:8000/api/results/" <> id
+  let url = "/api/results/" <> id
   let decoder = question.result_decoder()
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
+}
+
+fn update_poll_state(
+  current_question_id: option.Option(String),
+  status: String,
+  on_response handle_response: fn(Result(Nil, rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "/api/poll-state"
+  let body =
+    json.object([
+      #("current_question_id", case current_question_id {
+        option.Some(id) -> json.string(id)
+        option.None -> json.null()
+      }),
+      #("status", json.string(status)),
+    ])
+  let decoder = decode.success(Nil)
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.patch(url, body, handler)
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     NoOp -> #(model, effect.none())
 
-    AdminPressedWaiting -> #(Model(status: Waiting), effect.none())
+    AdminPressedWaiting -> #(
+      Model(status: Waiting),
+      update_poll_state(option.None, "waiting", ApiUpdatedPollState),
+    )
 
     AdminPressedNextQuestion -> #(
       model,
@@ -85,11 +110,21 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
 
-    AdminPressedFinished -> #(Model(status: Finished), effect.none())
+    AdminPressedFinished -> #(
+      Model(status: Finished),
+      update_poll_state(option.None, "finished", ApiUpdatedPollState),
+    )
 
     ApiReturnedQuestion(Ok(question)) -> #(
       Model(status: Question(question)),
-      event.emit("next-question", json.string(question.id)),
+      effect.batch([
+        event.emit("next-question", json.string(question.id)),
+        update_poll_state(
+          option.Some(question.id),
+          "voting",
+          ApiUpdatedPollState,
+        ),
+      ]),
     )
     ApiReturnedQuestion(Error(error)) -> {
       echo error
@@ -98,9 +133,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     ApiReturnedResult(Ok(result)) -> #(
       Model(status: Result(result)),
-      effect.none(),
+      update_poll_state(option.Some(result.id), "results", ApiUpdatedPollState),
     )
     ApiReturnedResult(Error(error)) -> {
+      echo error
+      #(model, effect.none())
+    }
+
+    ApiUpdatedPollState(Ok(_)) -> #(model, effect.none())
+    ApiUpdatedPollState(Error(error)) -> {
       echo error
       #(model, effect.none())
     }
@@ -154,6 +195,8 @@ fn view_results(result: question.Result) -> Element(Msg) {
   html.div([attribute.id("view-results")], [
     html.h2([], [html.text("Results")]),
     html.pre([], [html.text(int.to_string(result.yes_count))]),
+    html.pre([], [html.text(int.to_string(result.no_count))]),
+    html.pre([], [html.text(int.to_string(result.blank_count))]),
   ])
 }
 

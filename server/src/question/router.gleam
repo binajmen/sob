@@ -1,5 +1,6 @@
 import gleam/dynamic/decode
 import gleam/json
+import gleam/option
 import gleam/result.{try}
 import helpers
 import pog
@@ -42,6 +43,31 @@ pub fn find_question(req: Request, ctx: Context, id: String) -> Response {
             #("prompt", json.string(question.prompt)),
           ]),
         )
+      _ -> Error(Nil)
+    }
+  }
+
+  case result {
+    Error(_) -> wisp.internal_server_error()
+    Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
+  }
+}
+
+pub fn find_current_question(req: Request, ctx: Context) -> Response {
+  wisp.log_debug("Finding current question")
+  // use _ <- helpers.require_session(req)
+
+  let result = {
+    case sql.find_current_question(ctx.db) {
+      Ok(pog.Returned(1, [question])) ->
+        Ok(
+          json.object([
+            #("id", json.string(uuid.to_string(question.id))),
+            #("prompt", json.string(question.prompt)),
+            #("position", json.int(question.position)),
+          ]),
+        )
+      Ok(pog.Returned(0, [])) -> Ok(json.null())
       _ -> Error(Nil)
     }
   }
@@ -190,5 +216,65 @@ pub fn delete_question(req: Request, ctx: Context, id: String) -> Response {
     Ok(pog.Returned(1, _)) -> wisp.ok()
     Ok(_) -> wisp.not_found()
     Error(error) -> helpers.DatabaseError(error) |> helpers.to_wisp_response
+  }
+}
+
+type UpdatePollStatePayload {
+  UpdatePollStatePayload(
+    current_question_id: option.Option(String),
+    status: String,
+  )
+}
+
+pub fn update_poll_state(req: Request, ctx: Context) -> Response {
+  // use _ <- helpers.require_admin(req, ctx)
+  use json <- wisp.require_json(req)
+
+  let result = {
+    use payload <- try(helpers.decode_json(
+      json,
+      update_poll_state_payload_decoder(),
+    ))
+    use question_uuid <- try(case payload.current_question_id {
+      option.Some(id) ->
+        case uuid.from_string(id) {
+          Ok(uuid) -> Ok(option.Some(uuid))
+          Error(_) -> Error(helpers.CustomError("Invalid question ID format"))
+        }
+      option.None -> Ok(option.None)
+    })
+    do_update_poll_state(ctx, question_uuid, payload.status)
+  }
+
+  case result {
+    Ok(_) -> wisp.ok()
+    Error(error) -> error |> helpers.to_wisp_response
+  }
+}
+
+fn update_poll_state_payload_decoder() -> decode.Decoder(UpdatePollStatePayload) {
+  use current_question_id <- decode.field(
+    "current_question_id",
+    decode.optional(decode.string),
+  )
+  use status <- decode.field("status", decode.string)
+  decode.success(UpdatePollStatePayload(current_question_id:, status:))
+}
+
+fn do_update_poll_state(
+  ctx: Context,
+  current_question_id: option.Option(uuid.Uuid),
+  status: String,
+) -> Result(Nil, helpers.ApiError) {
+  let result = case current_question_id {
+    option.Some(question_id) ->
+      sql.update_poll_state_with_question(ctx.db, question_id, status)
+    option.None -> sql.update_poll_state_no_question(ctx.db, status)
+  }
+
+  case result {
+    Ok(pog.Returned(1, _)) -> Ok(Nil)
+    Ok(_) -> Error(helpers.UnknownError)
+    Error(error) -> Error(helpers.DatabaseError(error))
   }
 }

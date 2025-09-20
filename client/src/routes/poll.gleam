@@ -16,7 +16,7 @@ pub type Model {
 
 pub fn init() -> #(Model, Effect(Msg)) {
   let model = Model(question_id: None, vote: None)
-  #(model, effect.none())
+  #(model, fetch_current_question(ApiReturnedCurrentQuestion))
 }
 
 pub type Msg {
@@ -25,6 +25,7 @@ pub type Msg {
   UserIsVoting(String)
   ApiReturnedVote(Result(vote.Vote, rsvp.Error))
   ApiRegisteredVote(Result(vote.Vote, rsvp.Error))
+  ApiReturnedCurrentQuestion(Result(Option(String), rsvp.Error))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -57,6 +58,13 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
     ApiRegisteredVote(Error(_)) -> #(model, effect.none())
+
+    ApiReturnedCurrentQuestion(Ok(Some(question_id))) -> #(
+      Model(question_id: Some(question_id), vote: None),
+      fetch_vote(question_id, ApiReturnedVote),
+    )
+    ApiReturnedCurrentQuestion(Ok(None)) -> #(model, effect.none())
+    ApiReturnedCurrentQuestion(Error(_)) -> #(model, effect.none())
   }
 }
 
@@ -78,12 +86,12 @@ pub fn view(model: Model) -> Element(Msg) {
           event.on("no-questions", { decode.success(NoQuestions) }),
         ],
         [
-          // case model.question_id, model.vote {
-          //   Some(_id), Some(vote) -> view_registered_vote(vote)
-          //   Some(_id), None -> view_voting_buttons()
-          //   None, _ -> element.none()
-          // },
-          view_voting_buttons(),
+          case model.question_id, model.vote {
+            Some(_id), Some(vote) -> view_registered_vote(vote)
+            Some(_id), None -> view_voting_buttons()
+            None, _ -> element.none()
+          },
+          // view_voting_buttons(),
         ],
       ),
     ],
@@ -154,4 +162,13 @@ fn cast_vote(
   let decoder = vote.vote_decoder()
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.post(url, body, handler)
+}
+
+fn fetch_current_question(
+  on_response handle_response: fn(Result(Option(String), rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "/api/questions/current"
+  let decoder = decode.optional(decode.at(["id"], decode.string))
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.get(url, handler)
 }

@@ -33,6 +33,8 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         // questions
         Get, ["questions"] -> question.list_questions(req, ctx)
         Post, ["questions"] -> question.create_question(req, ctx)
+        Get, ["questions", "current"] ->
+          question.find_current_question(req, ctx)
         Get, ["questions", "next"] -> question.find_next_question(req, ctx)
         Get, ["questions", id] -> question.find_question(req, ctx, id)
         Patch, ["questions", id] -> question.update_question(req, ctx, id)
@@ -42,6 +44,8 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         // votes
         Post, ["votes"] -> vote.create_vote(req, ctx)
         Get, ["votes", id] -> vote.find_vote(req, ctx, id)
+        // poll state
+        Patch, ["poll-state"] -> question.update_poll_state(req, ctx)
         //
         _, _ -> wisp.not_found()
       }

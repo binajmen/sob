@@ -107,6 +107,62 @@ returning
   |> pog.execute(db)
 }
 
+/// A row you get from running the `find_current_question` query
+/// defined in `./src/question/sql/find_current_question.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type FindCurrentQuestionRow {
+  FindCurrentQuestionRow(
+    id: Uuid,
+    prompt: String,
+    position: Int,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `find_current_question` query
+/// defined in `./src/question/sql/find_current_question.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn find_current_question(
+  db: pog.Connection,
+) -> Result(pog.Returned(FindCurrentQuestionRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use prompt <- decode.field(1, decode.string)
+    use position <- decode.field(2, decode.int)
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use updated_at <- decode.field(4, pog.timestamp_decoder())
+    decode.success(FindCurrentQuestionRow(
+      id:,
+      prompt:,
+      position:,
+      created_at:,
+      updated_at:,
+    ))
+  }
+
+  "select 
+  q.id,
+  q.prompt,
+  q.position,
+  q.created_at,
+  q.updated_at
+from poll_state ps
+left join questions q on ps.current_question_id = q.id
+where ps.id = 1
+  and ps.status = 'voting'
+  and q.id is not null;"
+  |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `find_next_question` query
 /// defined in `./src/question/sql/find_next_question.sql`.
 ///
@@ -344,6 +400,56 @@ order by
   position asc;
 "
   |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// Runs the `update_poll_state_no_question` query
+/// defined in `./src/question/sql/update_poll_state_no_question.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn update_poll_state_no_question(
+  db: pog.Connection,
+  arg_1: String,
+) -> Result(pog.Returned(Nil), pog.QueryError) {
+  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+
+  "UPDATE poll_state 
+SET 
+  current_question_id = NULL,
+  status = $1,
+  updated_at = now()
+WHERE id = 1;"
+  |> pog.query
+  |> pog.parameter(pog.text(arg_1))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// Runs the `update_poll_state_with_question` query
+/// defined in `./src/question/sql/update_poll_state_with_question.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn update_poll_state_with_question(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: String,
+) -> Result(pog.Returned(Nil), pog.QueryError) {
+  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+
+  "UPDATE poll_state 
+SET 
+  current_question_id = $1,
+  status = $2,
+  updated_at = now()
+WHERE id = 1;"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(arg_2))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

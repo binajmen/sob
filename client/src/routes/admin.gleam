@@ -11,7 +11,7 @@ pub fn view() -> Element(msg) {
       ]),
     ]),
     html.a([router.href(router.AdminLive)], [
-      html.button([attribute.class("btn btn-secondary")], [
+      html.button([attribute.class("btn btn-primary")], [
         html.text("Live"),
       ]),
     ]),

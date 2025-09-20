@@ -62,11 +62,11 @@ pub fn view(model: Model) -> Element(Msg) {
   html.div(
     [
       attribute.class("prose"),
-      // event.on("question-changed", {
-    //   echo "question-changed"
-    //   use id <- decode.then(decode.string)
-    //   decode.success(QuestionIdChanged(id))
-    // }),
+      event.on("question-changed", {
+        echo "question-changed"
+        use id <- decode.then(decode.string)
+        decode.success(QuestionIdChanged(id))
+      }),
     ],
     [
       html.h1([], [html.text("Live")]),
@@ -74,11 +74,6 @@ pub fn view(model: Model) -> Element(Msg) {
         [
           server_component.route("/ws/live"),
           server_component.method(server_component.WebSocket),
-          event.on("question-changed", {
-            echo "question-changed"
-            use id <- decode.then(decode.string)
-            decode.success(QuestionIdChanged(id))
-          }),
         ],
         [
           case model.question_id, model.vote {

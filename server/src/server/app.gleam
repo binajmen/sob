@@ -11,9 +11,6 @@ import gleam/otp/static_supervisor as supervisor
 import live/component as live
 import live/websocket
 import lustre
-import lustre/attribute
-import lustre/element
-import lustre/element/html
 import mist.{type Connection, type ResponseData}
 import pog
 import server/context.{Context}

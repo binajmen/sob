@@ -19,6 +19,7 @@ import shared/user.{type User}
 
 pub fn main() {
   let app = lustre.application(init, update, view)
+  let assert Ok(_) = poll.register()
   let assert Ok(_) = lustre.start(app, "#app", [])
 
   Nil
@@ -78,7 +79,7 @@ fn retrieve_user(
 fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
   case route {
     router.Poll -> {
-      let #(page_model, effect) = poll.init()
+      let #(page_model, effect) = poll.init(Nil)
       #(
         Model(..model, route:, page: Poll(page_model)),
         effect.map(effect, PollMsg),

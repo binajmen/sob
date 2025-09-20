@@ -1,6 +1,8 @@
 import gleam/json
 import gleam/option.{type Option, None, Some}
+import lustre
 import lustre/attribute
+import lustre/component
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
@@ -9,15 +11,24 @@ import lustre/server_component
 import rsvp
 import shared/vote
 
-pub const id = "75c7a6ce-7276-4407-af2b-7f16a226bbc3"
-
 pub type Model {
-  Model(vote: Option(vote.Vote))
+  Model(question_id: Option(String), vote: Option(vote.Vote))
 }
 
-pub fn init() -> #(Model, Effect(Msg)) {
-  let model = Model(vote: None)
-  #(model, fetch_vote(id, ApiReturnedVote))
+pub fn register() -> Result(Nil, lustre.Error) {
+  let component =
+    lustre.component(init, update, view, [
+      component.on_attribute_change("data-question", fn(value) {
+        value |> echo |> QuestionIdChanged |> Ok
+      }),
+    ])
+
+  lustre.register(component, "poll-component")
+}
+
+pub fn init(_) -> #(Model, Effect(Msg)) {
+  let model = Model(question_id: None, vote: None)
+  #(model, effect.none())
 }
 
 fn fetch_vote(
@@ -31,6 +42,7 @@ fn fetch_vote(
 }
 
 pub type Msg {
+  QuestionIdChanged(String)
   UserIsVoting(String)
   ApiReturnedVote(Result(vote.Vote, rsvp.Error))
   ApiRegisteredVote(Result(vote.Vote, rsvp.Error))
@@ -38,12 +50,29 @@ pub type Msg {
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    UserIsVoting(vote) -> #(model, cast_vote(id, vote, ApiRegisteredVote))
+    QuestionIdChanged(id) -> #(
+      Model(..model, question_id: Some(id) |> echo),
+      fetch_vote(id, ApiReturnedVote),
+    )
+    UserIsVoting(vote) ->
+      case model.question_id {
+        None -> #(model, effect.none())
+        Some(question_id) -> #(
+          model,
+          cast_vote(question_id, vote, ApiRegisteredVote),
+        )
+      }
 
-    ApiReturnedVote(Ok(vote)) -> #(Model(vote: Some(vote)), effect.none())
+    ApiReturnedVote(Ok(vote)) -> #(
+      Model(..model, vote: Some(vote)),
+      effect.none(),
+    )
     ApiReturnedVote(Error(_)) -> #(model, effect.none())
 
-    ApiRegisteredVote(Ok(vote)) -> #(Model(vote: Some(vote)), effect.none())
+    ApiRegisteredVote(Ok(vote)) -> #(
+      Model(..model, vote: Some(vote)),
+      effect.none(),
+    )
     ApiRegisteredVote(Error(_)) -> #(model, effect.none())
   }
 }

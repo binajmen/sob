@@ -34,7 +34,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     UserIsVoting(vote) -> {
-      echo vote
+      echo "voting " <> vote
       case model.question_id {
         None -> #(model, effect.none())
         Some(question_id) -> #(
@@ -104,7 +104,7 @@ fn view_voting_buttons() -> Element(Msg) {
         event.on_click(UserIsVoting("yes")),
       ],
       [
-        html.text("Agree"),
+        html.text("Yes"),
       ],
     ),
     html.button(
@@ -113,7 +113,7 @@ fn view_voting_buttons() -> Element(Msg) {
         attribute.class("btn btn-primary btn-sm"),
       ],
       [
-        html.text("Disagree"),
+        html.text("No"),
       ],
     ),
     html.button(

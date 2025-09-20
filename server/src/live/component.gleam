@@ -141,7 +141,7 @@ fn view_waiting() -> Element(Msg) {
 fn view_question(question: question.Question) -> Element(Msg) {
   html.div([attribute.id("view-questions")], [
     html.h2([], [
-      html.text("Question #" <> int.to_string(question.position + 1)),
+      html.text("Question #" <> int.to_string(question.position)),
     ]),
     html.h3([], [html.text(question.prompt)]),
   ])

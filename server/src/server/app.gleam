@@ -1,14 +1,19 @@
 import envoy
+import gleam/bytes_tree
+import gleam/erlang/application
 import gleam/erlang/process
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/io
-import gleam/option.{Some}
+import gleam/option.{None, Some}
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
 import live/component as live
 import live/websocket
 import lustre
+import lustre/attribute
+import lustre/element
+import lustre/element/html
 import mist.{type Connection, type ResponseData}
 import pog
 import server/context.{Context}
@@ -62,6 +67,7 @@ pub fn do_start() {
         ["ws", "live"] -> {
           websocket.serve(request, live_component)
         }
+        ["lustre", "runtime.mjs"] -> serve_runtime()
         _ ->
           {
             router.handle_request(_, context)
@@ -80,6 +86,22 @@ pub fn do_start() {
   |> supervisor.add(database_pool)
   |> supervisor.add(http_server)
   |> supervisor.start
+}
+
+fn serve_runtime() -> Response(ResponseData) {
+  let assert Ok(lustre_priv) = application.priv_directory("lustre")
+  let file_path = lustre_priv <> "/static/lustre-server-component.mjs"
+
+  case mist.send_file(file_path, offset: 0, limit: None) {
+    Ok(file) ->
+      response.new(200)
+      |> response.prepend_header("content-type", "application/javascript")
+      |> response.set_body(file)
+
+    Error(_) ->
+      response.new(404)
+      |> response.set_body(mist.Bytes(bytes_tree.new()))
+  }
 }
 
 pub fn stop(_state) {

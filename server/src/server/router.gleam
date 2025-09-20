@@ -1,9 +1,14 @@
 import auth/router as auth
 import cors_builder
+import gleam/bytes_tree
+import gleam/erlang/application
 import gleam/http.{Delete, Get, Patch, Post, Put}
+import gleam/http/response
+import gleam/option.{None}
 import lustre/attribute
 import lustre/element
 import lustre/element/html
+import mist
 import question/router as question
 import server/context.{type Context}
 import session/router as session
@@ -32,13 +37,13 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         Get, ["questions", id] -> question.find_question(req, ctx, id)
         Patch, ["questions", id] -> question.update_question(req, ctx, id)
         Delete, ["questions", id] -> question.delete_question(req, ctx, id)
-         // results
-         Get, ["results", id] -> question.find_result(req, ctx, id)
-         // votes
-         Post, ["votes"] -> vote.create_vote(req, ctx)
-         Get, ["votes", id] -> vote.find_vote(req, ctx, id)
-         //
-         _, _ -> wisp.not_found()
+        // results
+        Get, ["results", id] -> question.find_result(req, ctx, id)
+        // votes
+        Post, ["votes"] -> vote.create_vote(req, ctx)
+        Get, ["votes", id] -> vote.find_vote(req, ctx, id)
+        //
+        _, _ -> wisp.not_found()
       }
     Get, _ -> serve_index()
     _, _ -> wisp.not_found()
@@ -79,9 +84,13 @@ fn serve_index() -> Response {
           ]),
           html.script(
             [
-              attribute.src("/static/client.min.mjs"),
               attribute.type_("module"),
+              attribute.src("/static/client.min.mjs"),
             ],
+            "",
+          ),
+          html.script(
+            [attribute.type_("module"), attribute.src("/lustre/runtime.mjs")],
             "",
           ),
         ]),

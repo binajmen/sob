@@ -22,7 +22,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 pub fn view() -> Element(msg) {
   html.div([attribute.class("prose")], [
     html.h1([], [html.text("Live")]),
-    server_component.script(),
     server_component.element(
       [
         server_component.route("/ws/live"),

@@ -85,7 +85,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     ApiReturnedQuestion(Ok(question)) -> #(
       Model(status: Question(question)),
-      event.emit("question-changed", json.string(question.id)) |> echo,
+      event.emit("question-changed", json.string(question.id)),
     )
     ApiReturnedQuestion(Error(error)) -> {
       echo error

@@ -1,5 +1,6 @@
 import gleam/dynamic/decode
 import gleam/int
+import gleam/json
 import lustre.{type App}
 import lustre/attribute
 import lustre/component
@@ -84,7 +85,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     ApiReturnedQuestion(Ok(question)) -> #(
       Model(status: Question(question)),
-      effect.none(),
+      event.emit("question-changed", json.string(question.id)) |> echo,
     )
     ApiReturnedQuestion(Error(error)) -> {
       echo error
@@ -105,42 +106,39 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 fn view(model: Model) -> Element(Msg) {
   html.div([], [
     case model.status {
-      Waiting -> view_waiting(model)
-      Question(question) -> view_question(model, question)
-      Result(result) -> view_results(model, result)
-      Finished -> view_finished(model)
+      Waiting -> view_waiting()
+      Question(question) -> view_question(question)
+      Result(result) -> view_results(result)
+      Finished -> view_finished()
     },
     component.default_slot(
       [
         event.on("click", {
           use id <- decode.subfield(["target", "id"], decode.string)
 
+          echo id
           case id {
             "waiting" -> decode.success(AdminPressedWaiting)
             "next-question" -> decode.success(AdminPressedNextQuestion)
             "close-voting" -> decode.success(AdminPressedCloseVoting)
             "finished" -> decode.success(AdminPressedFinished)
-            _ -> decode.failure(NoOp, "")
+            _ -> decode.failure(NoOp, "") |> echo
           }
         })
-          |> server_component.include(["target.id"]),
-        case model.status {
-          Question(question) -> attribute.data("question", question.id)
-          _ -> attribute.none()
-        },
+        |> server_component.include(["target.id"]),
       ],
       [],
     ),
   ])
 }
 
-fn view_waiting(model: Model) -> Element(Msg) {
+fn view_waiting() -> Element(Msg) {
   html.div([attribute.id("view-waiting")], [
     html.h2([], [html.text("Waiting to start the poll")]),
   ])
 }
 
-fn view_question(model: Model, question: question.Question) -> Element(Msg) {
+fn view_question(question: question.Question) -> Element(Msg) {
   html.div([attribute.id("view-questions")], [
     html.h2([], [
       html.text("Question #" <> int.to_string(question.position + 1)),
@@ -149,14 +147,14 @@ fn view_question(model: Model, question: question.Question) -> Element(Msg) {
   ])
 }
 
-fn view_results(model: Model, result: question.Result) -> Element(Msg) {
+fn view_results(result: question.Result) -> Element(Msg) {
   html.div([attribute.id("view-results")], [
     html.h2([], [html.text("Results")]),
     html.pre([], [html.text(int.to_string(result.yes_count))]),
   ])
 }
 
-fn view_finished(model: Model) -> Element(Msg) {
+fn view_finished() -> Element(Msg) {
   html.div([attribute.id("view-finished")], [
     html.h1([], [html.text("Finished")]),
   ])

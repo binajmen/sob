@@ -28,12 +28,12 @@ pub fn view() -> Element(msg) {
         server_component.route("/ws/live"),
         server_component.method(server_component.WebSocket),
       ],
-      [controls()],
+      [view_controls()],
     ),
   ])
 }
 
-fn controls() -> Element(msg) {
+fn view_controls() -> Element(msg) {
   html.div([attribute.class("space-x-4")], [
     html.button(
       [attribute.id("waiting"), attribute.class("btn btn-primary btn-sm")],

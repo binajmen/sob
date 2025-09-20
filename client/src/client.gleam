@@ -20,7 +20,6 @@ import shared/user.{type User}
 
 pub fn main() {
   let app = lustre.application(init, update, view)
-  let assert Ok(_) = voting_buttons.register()
   let assert Ok(_) = lustre.start(app, "#app", [])
 
   Nil

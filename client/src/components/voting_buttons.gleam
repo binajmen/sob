@@ -85,36 +85,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 pub fn view(_) -> Element(Msg) {
-  html.div([attribute.class("space-x-4")], [
-    html.button(
-      [
-        attribute.id("yes"),
-        attribute.class("btn btn-primary btn-sm"),
-        event.on_click(UserIsVoting("yes")),
-      ],
-      [
-        html.text("Agree"),
-      ],
-    ),
-    html.button(
-      [
-        attribute.id("no"),
-        attribute.class("btn btn-primary btn-sm"),
-        event.on_click(UserIsVoting("no")),
-      ],
-      [
-        html.text("Disagree"),
-      ],
-    ),
-    html.button(
-      [
-        attribute.id("blank"),
-        attribute.class("btn btn-primary btn-sm"),
-        event.on_click(UserIsVoting("blank")),
-      ],
-      [html.text("Abstain")],
-    ),
-  ])
+  todo
 }
 
 fn cast_vote(

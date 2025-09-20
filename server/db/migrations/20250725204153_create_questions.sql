@@ -13,7 +13,8 @@ create table votes (
   user_id uuid not null references users (id) on delete cascade,
   vote text not null,
   created_at timestamp not null default now(),
-  updated_at timestamp not null default now()
+  updated_at timestamp not null default now(),
+  unique (question_id, user_id)
 );
 
 -- Insert fake question

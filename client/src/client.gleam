@@ -11,7 +11,7 @@ import routes/admin/questions/create as admin_questions_create
 import routes/admin/questions/list as admin_questions_list
 import routes/admin/questions/view as admin_questions_view
 import routes/guest
-import routes/index
+import routes/poll
 import routes/sign_in
 import routes/sign_up
 import rsvp
@@ -29,7 +29,7 @@ pub type Model {
 }
 
 pub type Page {
-  Index
+  Poll(poll.Model)
   SignIn(sign_in.Model)
   SignUp(sign_up.Model)
   Guest(guest.Model)
@@ -43,6 +43,7 @@ pub type Page {
 pub type Msg {
   UserNavigatedTo(route: Route)
   ApiReturnedUser(Result(User, rsvp.Error))
+  PollMsg(poll.Msg)
   SignInMsg(sign_in.Msg)
   SignUpMsg(sign_up.Msg)
   GuestMsg(guest.Msg)
@@ -53,7 +54,7 @@ pub type Msg {
 
 fn init(_options) -> #(Model, Effect(Msg)) {
   let route = router.initial_route()
-  let model = Model(route: route, lang: "en", user: None, page: Index)
+  let model = Model(route: route, lang: "en", user: None, page: Admin)
   let #(model, page_effect) = init_route(route, model)
   let effect =
     effect.batch([
@@ -76,7 +77,14 @@ fn retrieve_user(
 
 fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
   case route {
-    router.Index -> #(Model(..model, route:, page: Index), effect.none())
+    router.Poll -> {
+      let #(page_model, effect) = poll.init()
+      #(
+        Model(..model, route:, page: Poll(page_model)),
+        effect.map(effect, PollMsg),
+      )
+    }
+
     router.SignIn -> {
       let #(page_model, effect) = sign_in.init()
       #(
@@ -144,6 +152,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       },
     )
 
+    PollMsg(msg) -> {
+      let assert Poll(page_model) = model.page
+      let #(page_model, effect) = poll.update(page_model, msg)
+      #(Model(..model, page: Poll(page_model)), effect.map(effect, PollMsg))
+    }
+
     SignInMsg(msg) -> {
       let assert SignIn(page_model) = model.page
       let #(page_model, effect) = sign_in.update(page_model, msg)
@@ -193,10 +207,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 fn view(model: Model) -> Element(Msg) {
   case model.route, model.page {
-    router.Index, Index -> index.view()
+    router.Poll, Poll(model) ->
+      poll.view(model)
+      |> element.map(PollMsg)
 
     router.SignIn, SignIn(model) ->
-      sign_in.view(model.form)
+      sign_in.view(model)
       |> element.map(SignInMsg)
 
     router.SignUp, SignUp(model) ->

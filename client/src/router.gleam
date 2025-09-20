@@ -3,7 +3,7 @@ import lustre/attribute.{type Attribute}
 import modem
 
 pub type Route {
-  Index
+  Poll
   SignIn
   SignUp
   Guest
@@ -18,13 +18,13 @@ pub type Route {
 pub fn initial_route() -> Route {
   case modem.initial_uri() {
     Ok(uri) -> parse_route(uri)
-    Error(_) -> Index
+    Error(_) -> Poll
   }
 }
 
 pub fn parse_route(uri: Uri) -> Route {
   case uri.path_segments(uri.path) |> echo {
-    [] -> Index
+    [] -> Poll
     ["sign-in"] -> SignIn
     ["sign-up"] -> SignUp
     ["guest"] -> Guest
@@ -39,7 +39,7 @@ pub fn parse_route(uri: Uri) -> Route {
 
 pub fn to_path(route: Route) -> String {
   case route {
-    Index -> "/"
+    Poll -> "/"
     SignIn -> "/sign-in"
     SignUp -> "/sign-up"
     Guest -> "/guest"

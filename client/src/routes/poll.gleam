@@ -5,11 +5,11 @@ import lustre/element/html
 import lustre/server_component
 
 pub type Model {
-  Model(id: String)
+  Model(vote: Option(question.Result))
 }
 
-pub fn init(id: String) -> #(Model, Effect(Msg)) {
-  let model = Model(id:)
+pub fn init() -> #(Model, Effect(Msg)) {
+  let model = Model(vote: "")
   #(model, effect.none())
 }
 
@@ -19,7 +19,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   #(model, effect.none())
 }
 
-pub fn view() -> Element(msg) {
+pub fn view(model: Model) -> Element(msg) {
   html.div([attribute.class("prose")], [
     html.h1([], [html.text("Live")]),
     server_component.script(),
@@ -50,9 +50,9 @@ fn controls() -> Element(msg) {
     html.button(
       [
         attribute.id("blank"),
-        attribute.class("btn btn-secondary btn-sm"),
+        attribute.class("btn btn-primary btn-sm"),
       ],
-      [html.text("Blank 🫣")],
+      [html.text("Blank 🤷")],
     ),
   ])
 }

@@ -63,7 +63,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     ApiAuthenticatedUser(Ok(_)) -> #(
       model,
-      modem.push(router.to_path(router.Index), None, None),
+      modem.push(router.to_path(router.Poll), None, None),
     )
     ApiAuthenticatedUser(Error(_)) -> #(
       Model(

@@ -1,5 +1,4 @@
 import components/input
-import config
 import formal/form.{type Form}
 import gleam/http/response
 import gleam/json
@@ -51,7 +50,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     ApiAuthenticatedUser(Ok(_)) -> #(
       model,
-      modem.push(router.to_path(router.Index), None, None),
+      modem.push(router.to_path(router.Poll), None, None),
     )
     ApiAuthenticatedUser(Error(_)) -> #(
       Model(
@@ -66,9 +65,9 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
+pub fn view(model: Model) -> Element(Msg) {
   let submit = fn(fields) {
-    form
+    model.form
     |> form.add_values(fields)
     |> form.run
     |> UserSubmittedSignInForm
@@ -83,8 +82,8 @@ pub fn view(form: Form(SignInFormData)) -> Element(Msg) {
         attribute.autocomplete("off"),
       ],
       [
-        input.view(form, "text", "email", "Email", None),
-        input.view(form, "password", "password", "Password", None),
+        input.view(model.form, "text", "email", "Email", None),
+        input.view(model.form, "password", "password", "Password", None),
         html.button(
           [attribute.type_("submit"), attribute.class("btn btn-primary")],
           [html.text("Sign in")],

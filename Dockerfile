@@ -37,6 +37,9 @@ RUN apk add --no-cache wget && \
 # Copy the compiled server code from the builder stage
 COPY --from=builder /build/server/build/erlang-shipment /app
 
+# Copy the client static assets from the builder stage
+COPY --from=builder /build/server/priv/static /app/server/priv/static
+
 # Copy the startup script, justfiles, and database migrations
 COPY start.sh /app/start.sh
 COPY server/db /app/db

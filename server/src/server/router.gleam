@@ -80,12 +80,21 @@ fn serve_index() -> Response {
             attribute.href("https://cdn.jsdelivr.net/npm/daisyui@5"),
           ]),
           html.link([
-            attribute.href("/static/daisy.css"),
+            attribute.type_("text/css"),
             attribute.rel("stylesheet"),
+            attribute.href(
+              "https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css",
+            ),
           ]),
           html.link([
-            attribute.href("/static/client.css"),
+            attribute.type_("text/css"),
             attribute.rel("stylesheet"),
+            attribute.href("/static/daisy.css"),
+          ]),
+          html.link([
+            attribute.type_("text/css"),
+            attribute.rel("stylesheet"),
+            attribute.href("/static/client.css"),
           ]),
           html.script(
             [

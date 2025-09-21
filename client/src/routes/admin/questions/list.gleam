@@ -127,7 +127,7 @@ fn delete_question(
   id: String,
   on_response handle_response: fn(Result(Response(String), rsvp.Error)) -> Msg,
 ) -> Effect(Msg) {
-  let url = "/api/questions" <> id
+  let url = "/api/questions/" <> id
   let body = json.null()
   let handler = rsvp.expect_ok_response(handle_response)
   rsvp.delete(url, body, handler)

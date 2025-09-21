@@ -42,6 +42,7 @@ pub fn find_question(req: Request, ctx: Context, id: String) -> Response {
           json.object([
             #("id", json.string(uuid.to_string(question.id))),
             #("prompt", json.string(question.prompt)),
+            #("position", json.int(question.position)),
           ]),
         )
       _ -> Error(Nil)
@@ -190,6 +191,7 @@ pub fn update_question(req: Request, ctx: Context, id: String) {
           json.object([
             #("id", json.string(uuid.to_string(question.id))),
             #("prompt", json.string(question.prompt)),
+            #("position", json.int(question.position)),
           ]),
         )
         |> echo

@@ -19,6 +19,7 @@ pub fn list_questions(req: Request, ctx: Context) -> Response {
         json.object([
           #("id", json.string(uuid.to_string(question.id))),
           #("prompt", json.string(question.prompt)),
+          #("position", json.int(question.position)),
         ])
       }),
     )
@@ -53,7 +54,7 @@ pub fn find_question(req: Request, ctx: Context, id: String) -> Response {
   }
 }
 
-pub fn find_current_question(req: Request, ctx: Context) -> Response {
+pub fn find_current_question(_req: Request, ctx: Context) -> Response {
   wisp.log_debug("Finding current question")
   // use _ <- helpers.require_session(req)
 
@@ -78,7 +79,7 @@ pub fn find_current_question(req: Request, ctx: Context) -> Response {
   }
 }
 
-pub fn find_next_question(req: Request, ctx: Context) -> Response {
+pub fn find_next_question(_req: Request, ctx: Context) -> Response {
   wisp.log_debug("Finding next question")
   // use _ <- helpers.require_session(req)
 
@@ -102,7 +103,7 @@ pub fn find_next_question(req: Request, ctx: Context) -> Response {
   }
 }
 
-pub fn find_result(req: Request, ctx: Context, id: String) -> Response {
+pub fn find_result(_req: Request, ctx: Context, id: String) -> Response {
   wisp.log_debug("Finding result")
   // use _ <- helpers.require_session(req)
 

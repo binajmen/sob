@@ -208,7 +208,7 @@ fn view_question(question: question.Question) -> Element(Msg) {
     html.h2([], [
       html.text("Question #" <> int.to_string(question.position)),
     ]),
-    html.h3([], [html.text(question.prompt)]),
+    html.h3([attribute.class("whitespace-pre")], [html.text(question.prompt)]),
   ])
 }
 

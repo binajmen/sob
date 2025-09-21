@@ -69,7 +69,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 pub fn view(model: Model) -> Element(Msg) {
-  html.div([attribute.class("prose")], [
+  html.div([attribute.class("prose whitespace-pre")], [
     html.h1([attribute.class("text-center !m-0")], [
       html.text("Sing Out Brussels!"),
     ]),
@@ -98,10 +98,10 @@ pub fn view(model: Model) -> Element(Msg) {
   ])
 }
 
-fn view_registered_vote(vote: vote.Vote) -> Element(msg) {
+fn view_registered_vote(vote: vote.Vote) -> Element(Msg) {
   html.div([], [
-    html.text("You have voted!"),
-    html.text(vote.vote |> vote.vote_type_to_string()),
+    html.text("You have voted: " <> vote.vote |> vote.vote_type_to_string()),
+    view_voting_buttons(),
   ])
 }
 

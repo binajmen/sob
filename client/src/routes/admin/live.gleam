@@ -19,7 +19,7 @@ pub fn update(model: Model, _msg: Msg) -> #(Model, Effect(Msg)) {
   #(model, effect.none())
 }
 
-pub fn view() -> Element(Msg) {
+pub fn view() -> Element(msg) {
   html.div(
     [
       attribute.class("prose"),
@@ -47,34 +47,34 @@ fn view_controls() -> Element(msg) {
     html.button(
       [attribute.id("waiting"), attribute.class("btn btn-primary btn-sm")],
       [
-        html.text("Waiting"),
+        html.text("⏱️ Waiting"),
       ],
     ),
     html.button(
       [attribute.id("next-question"), attribute.class("btn btn-primary btn-sm")],
       [
-        html.text("Next question"),
+        html.text("❓ Next question"),
       ],
     ),
     html.button(
       [
         attribute.id("close-voting"),
-        attribute.class("btn btn-secondary btn-sm"),
+        attribute.class("btn btn-primary btn-sm"),
       ],
-      [html.text("Close voting")],
+      [html.text("🛑 Close voting")],
     ),
     html.button(
       [attribute.id("finished"), attribute.class("btn btn-primary btn-sm")],
       [
-        html.text("Finished"),
+        html.text("🎬 End"),
       ],
     ),
     html.button(
       [
         attribute.id("reset-votes"),
-        attribute.class("btn btn-error btn-sm"),
+        attribute.class("btn btn-primary btn-sm"),
       ],
-      [html.text("Reset Votes")],
+      [html.text("🧹 Reset")],
     ),
   ])
 }

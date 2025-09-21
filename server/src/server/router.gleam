@@ -105,17 +105,18 @@ fn serve_index() -> Response {
             ],
             "",
           ),
-          // html.link([
-          //   attribute.href("/static/client.min.css"),
-          //   attribute.rel("stylesheet"),
-          // ]),
-          // html.script(
-          //   [
-          //     attribute.type_("module"),
-          //     attribute.src("/static/client.min.mjs"),
-          //   ],
-          //   "",
-          // ),
+          html.link([
+            attribute.type_("text/css"),
+            attribute.rel("stylesheet"),
+            attribute.href("/static/client.min.css"),
+          ]),
+          html.script(
+            [
+              attribute.type_("module"),
+              attribute.src("/static/client.min.mjs"),
+            ],
+            "",
+          ),
           html.script(
             [attribute.type_("module"), attribute.src("/lustre/runtime.mjs")],
             "",

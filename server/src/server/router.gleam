@@ -39,6 +39,7 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
           question.find_current_question(req, ctx)
         Get, ["questions", "next"] -> question.find_next_question(req, ctx)
         Get, ["questions", id] -> question.find_question(req, ctx, id)
+        Get, ["questions", id, "waiting-users"] -> question.list_users_without_votes(req, ctx, id)
         Patch, ["questions", id] -> question.update_question(req, ctx, id)
         Delete, ["questions", id] -> question.delete_question(req, ctx, id)
         // results

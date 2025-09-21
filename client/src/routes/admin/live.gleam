@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/list
 import gleam/option.{type Option, None, Some}
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -74,13 +75,13 @@ pub fn view(model: Model) -> Element(Msg) {
         ],
         [view_controls()],
       ),
-      view_users(model.question_id),
+      view_users(model),
     ],
   )
 }
 
-fn view_users(question_id: Option(String)) -> Element(Msg) {
-  let question_id_attr = case question_id {
+fn view_users(model: Model) -> Element(Msg) {
+  let question_id_attr = case model.question_id {
     None -> attribute.none()
     Some(id) -> attribute.data("question", id)
   }
@@ -91,7 +92,29 @@ fn view_users(question_id: Option(String)) -> Element(Msg) {
       attribute.class("mt-4"),
       question_id_attr,
     ],
-    [],
+    [
+      html.h3([attribute.class("text-lg font-semibold mb-2")], [html.text("Waiting for votes:")]),
+      case model.users {
+        None -> html.div([attribute.class("text-gray-500")], [html.text("Loading...")])
+        Some([]) -> html.div([attribute.class("text-gray-500")], [html.text("All users have voted!")])
+        Some(users) -> 
+          html.ul([attribute.class("space-y-1")], 
+            users
+            |> list.map(fn(user) {
+              let name = case user.first_name, user.last_name {
+                Some(first), Some(last) -> first <> " " <> last
+                Some(first), None -> first
+                None, Some(last) -> last
+                None, None -> case user.email {
+                  Some(email) -> email
+                  None -> "Unknown user"
+                }
+              }
+              html.li([attribute.class("text-sm")], [html.text("• " <> name)])
+            })
+          )
+      }
+    ],
   )
 }
 

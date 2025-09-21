@@ -222,6 +222,34 @@ pub fn delete_question(req: Request, ctx: Context, id: String) -> Response {
   }
 }
 
+pub fn list_users_without_votes(req: Request, ctx: Context, id: String) -> Response {
+  use _ <- helpers.require_admin(req, ctx)
+
+  let result = {
+    use uuid <- try(uuid.from_string(id))
+    case sql.list_users_without_votes(ctx.db, uuid) {
+      Ok(pog.Returned(_count, rows)) ->
+        Ok(
+          json.array(rows, fn(user) {
+            json.object([
+              #("id", json.string(uuid.to_string(user.id))),
+              #("email", json.nullable(user.email, json.string)),
+              #("first_name", json.nullable(user.first_name, json.string)),
+              #("last_name", json.nullable(user.last_name, json.string)),
+              #("is_admin", json.bool(user.is_admin)),
+            ])
+          }),
+        )
+      Error(_) -> Error(Nil)
+    }
+  }
+
+  case result {
+    Error(_) -> wisp.internal_server_error()
+    Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
+  }
+}
+
 type UpdatePollStatePayload {
   UpdatePollStatePayload(
     current_question_id: option.Option(String),

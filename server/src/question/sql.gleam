@@ -5,6 +5,7 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/option.{type Option}
 import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
@@ -400,6 +401,76 @@ order by
   position asc;
 "
   |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `list_users_without_votes` query
+/// defined in `./src/question/sql/list_users_without_votes.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type ListUsersWithoutVotesRow {
+  ListUsersWithoutVotesRow(
+    id: Uuid,
+    email: Option(String),
+    first_name: Option(String),
+    last_name: Option(String),
+    is_admin: Bool,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `list_users_without_votes` query
+/// defined in `./src/question/sql/list_users_without_votes.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn list_users_without_votes(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(ListUsersWithoutVotesRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use email <- decode.field(1, decode.optional(decode.string))
+    use first_name <- decode.field(2, decode.optional(decode.string))
+    use last_name <- decode.field(3, decode.optional(decode.string))
+    use is_admin <- decode.field(4, decode.bool)
+    use created_at <- decode.field(5, pog.timestamp_decoder())
+    use updated_at <- decode.field(6, pog.timestamp_decoder())
+    decode.success(ListUsersWithoutVotesRow(
+      id:,
+      email:,
+      first_name:,
+      last_name:,
+      is_admin:,
+      created_at:,
+      updated_at:,
+    ))
+  }
+
+  "select
+  u.id,
+  u.email,
+  u.first_name,
+  u.last_name,
+  u.is_admin,
+  u.created_at,
+  u.updated_at
+from
+  users u
+left join votes v on u.id = v.user_id and v.question_id = $1
+where
+  v.user_id is null
+  and u.is_admin = false
+order by
+  u.first_name asc,
+  u.last_name asc;"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

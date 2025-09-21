@@ -1,3 +1,4 @@
+import components/bar_chart
 import gleam/dynamic/decode
 import gleam/http/response
 import gleam/int
@@ -214,10 +215,8 @@ fn view_question(question: question.Question) -> Element(Msg) {
 fn view_results(result: question.Result) -> Element(Msg) {
   html.div([attribute.id("view-results")], [
     html.h2([], [html.text("Results")]),
-    html.h3([], [html.text(result.prompt)]),
-    html.pre([], [html.text(int.to_string(result.yes_count))]),
-    html.pre([], [html.text(int.to_string(result.no_count))]),
-    html.pre([], [html.text(int.to_string(result.blank_count))]),
+    html.h3([attribute.class("text-yellow-600")], [html.text(result.prompt)]),
+    bar_chart.view(result.yes_count, result.no_count, result.blank_count),
   ])
 }
 

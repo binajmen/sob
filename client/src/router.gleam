@@ -12,6 +12,7 @@ pub type Route {
   AdminQuestionsList
   AdminQuestionsCreate
   AdminQuestionsView(id: String)
+  AdminUsersList
   NotFound(uri: Uri)
 }
 
@@ -33,6 +34,7 @@ pub fn parse_route(uri: Uri) -> Route {
     ["admin", "questions"] -> AdminQuestionsList
     ["admin", "questions", "create"] -> AdminQuestionsCreate
     ["admin", "questions", id] -> AdminQuestionsView(id)
+    ["admin", "users"] -> AdminUsersList
     _ -> NotFound(uri:)
   }
 }
@@ -48,6 +50,7 @@ pub fn to_path(route: Route) -> String {
     AdminQuestionsList -> "/admin/questions"
     AdminQuestionsCreate -> "/admin/questions/create"
     AdminQuestionsView(id) -> "/admin/questions/" <> id
+    AdminUsersList -> "/admin/users"
     NotFound(_) -> "/not-found"
   }
 }

@@ -259,6 +259,70 @@ where
   |> pog.execute(db)
 }
 
+/// A row you get from running the `list_users` query
+/// defined in `./src/auth/sql/list_users.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type ListUsersRow {
+  ListUsersRow(
+    id: Uuid,
+    email: Option(String),
+    first_name: Option(String),
+    last_name: Option(String),
+    is_admin: Bool,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+  )
+}
+
+/// Runs the `list_users` query
+/// defined in `./src/auth/sql/list_users.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn list_users(
+  db: pog.Connection,
+) -> Result(pog.Returned(ListUsersRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use email <- decode.field(1, decode.optional(decode.string))
+    use first_name <- decode.field(2, decode.optional(decode.string))
+    use last_name <- decode.field(3, decode.optional(decode.string))
+    use is_admin <- decode.field(4, decode.bool)
+    use created_at <- decode.field(5, pog.timestamp_decoder())
+    use updated_at <- decode.field(6, pog.timestamp_decoder())
+    decode.success(ListUsersRow(
+      id:,
+      email:,
+      first_name:,
+      last_name:,
+      is_admin:,
+      created_at:,
+      updated_at:,
+    ))
+  }
+
+  "select
+  id,
+  email,
+  first_name,
+  last_name,
+  is_admin,
+  created_at,
+  updated_at
+from
+  users
+order by
+  first_name asc,
+  last_name asc;"
+  |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 // --- Encoding/decoding utils -------------------------------------------------
 
 /// A decoder to decode `Uuid`s coming from a Postgres query.

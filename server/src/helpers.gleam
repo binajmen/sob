@@ -125,7 +125,13 @@ pub fn require_user(
   let assert Ok(session_id) = uuid.from_string(session_id)
   case sql.find_user_by_session(ctx.db, session_id) {
     Ok(pog.Returned(1, [user])) ->
-      next(user.User(id: uuid.to_string(user.id), is_admin: user.is_admin))
+      next(user.User(
+        id: uuid.to_string(user.id),
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        is_admin: user.is_admin,
+      ))
     Ok(_) -> unauthorised()
     Error(error) ->
       DatabaseError(error)

@@ -9,7 +9,7 @@ import gleam/result.{try}
 import helpers
 import pog
 import server/context.{type Context}
-import wisp.{type Request}
+import wisp.{type Request, type Response}
 import youid/uuid
 
 pub fn me(req: Request, ctx: Context) {
@@ -17,6 +17,9 @@ pub fn me(req: Request, ctx: Context) {
   use user <- helpers.require_user(session_id, ctx)
   json.object([
     #("id", json.string(user.id)),
+    #("email", json.nullable(user.email, json.string)),
+    #("first_name", json.nullable(user.first_name, json.string)),
+    #("last_name", json.nullable(user.last_name, json.string)),
     #("is_admin", json.bool(user.is_admin)),
   ])
   |> json.to_string_tree
@@ -217,5 +220,29 @@ fn create_guest(
     Ok(pog.Returned(1, [user])) -> Ok(user)
     Ok(_) -> Error(helpers.UnknownError)
     Error(error) -> Error(helpers.DatabaseError(error))
+  }
+}
+
+pub fn list_users(req: Request, ctx: Context) -> Response {
+  use _ <- helpers.require_admin(req, ctx)
+
+  let result = {
+    use pog.Returned(_count, rows) <- try(sql.list_users(ctx.db))
+    Ok(
+      json.array(rows, fn(user) {
+        json.object([
+          #("id", json.string(uuid.to_string(user.id))),
+          #("email", json.nullable(user.email, json.string)),
+          #("first_name", json.nullable(user.first_name, json.string)),
+          #("last_name", json.nullable(user.last_name, json.string)),
+          #("is_admin", json.bool(user.is_admin)),
+        ])
+      }),
+    )
+  }
+
+  case result {
+    Error(_) -> wisp.internal_server_error()
+    Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
   }
 }

@@ -11,6 +11,7 @@ import routes/admin/live
 import routes/admin/questions/create as admin_questions_create
 import routes/admin/questions/list as admin_questions_list
 import routes/admin/questions/view as admin_questions_view
+import routes/admin/users/list as admin_users_list
 import routes/guest
 import routes/poll
 import routes/sign_in
@@ -39,6 +40,7 @@ pub type Page {
   AdminQuestionsList(admin_questions_list.Model)
   AdminQuestionsCreate(admin_questions_create.Model)
   AdminQuestionsView(admin_questions_view.Model)
+  AdminUsersList(admin_users_list.Model)
 }
 
 pub type Msg {
@@ -51,6 +53,7 @@ pub type Msg {
   AdminQuestionsListMsg(admin_questions_list.Msg)
   AdminQuestionsCreateMsg(admin_questions_create.Msg)
   AdminQuestionsViewMsg(admin_questions_view.Msg)
+  AdminUsersListMsg(admin_users_list.Msg)
 }
 
 fn init(_options) -> #(Model, Effect(Msg)) {
@@ -133,6 +136,13 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
         effect.map(effect, AdminQuestionsViewMsg),
       )
     }
+    router.AdminUsersList -> {
+      let #(page_model, effect) = admin_users_list.init()
+      #(
+        Model(..model, route:, page: AdminUsersList(page_model)),
+        effect.map(effect, AdminUsersListMsg),
+      )
+    }
     _ -> #(model, effect.none())
   }
 }
@@ -203,6 +213,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.map(effect, AdminQuestionsViewMsg),
       )
     }
+
+    AdminUsersListMsg(msg) -> {
+      let assert AdminUsersList(page_model) = model.page
+      let #(page_model, effect) = admin_users_list.update(page_model, msg)
+      #(
+        Model(..model, page: AdminUsersList(page_model)),
+        effect.map(effect, AdminUsersListMsg),
+      )
+    }
   }
 }
 
@@ -239,6 +258,10 @@ fn view(model: Model) -> Element(Msg) {
     router.AdminQuestionsView(_id), AdminQuestionsView(model) ->
       admin_questions_view.view(model.question, model.form)
       |> element.map(AdminQuestionsViewMsg)
+
+    router.AdminUsersList, AdminUsersList(model) ->
+      admin_users_list.view(model.users)
+      |> element.map(AdminUsersListMsg)
 
     _, _ -> view_not_found()
   }

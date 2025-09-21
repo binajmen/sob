@@ -30,6 +30,8 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         // sessions
         Get, ["sessions"] -> session.list_sessions(req, ctx)
         Get, ["sessions", id] -> session.find_session(req, ctx, id)
+        // users
+        Get, ["users"] -> auth.list_users(req, ctx)
         // questions
         Get, ["questions"] -> question.list_questions(req, ctx)
         Post, ["questions"] -> question.create_question(req, ctx)

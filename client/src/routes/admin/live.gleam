@@ -15,23 +15,31 @@ pub fn init(id: String) -> #(Model, Effect(Msg)) {
 
 pub type Msg
 
-pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+pub fn update(model: Model, _msg: Msg) -> #(Model, Effect(Msg)) {
   #(model, effect.none())
 }
 
-pub fn view() -> Element(msg) {
-  html.div([attribute.class("prose")], [
-    html.h1([attribute.class("text-center")], [
-      html.text("Sing Out Brussels!"),
-    ]),
-    server_component.element(
-      [
-        server_component.route("/ws/live"),
-        server_component.method(server_component.WebSocket),
-      ],
-      [view_controls()],
-    ),
-  ])
+pub fn view() -> Element(Msg) {
+  html.div(
+    [
+      attribute.class("prose"),
+    ],
+    [
+      html.h1([attribute.class("text-center !m-0")], [
+        html.text("Sing Out Brussels!"),
+      ]),
+      html.h2([attribute.class("text-center !m-0")], [
+        html.text("The Fabulous Queer Choir"),
+      ]),
+      server_component.element(
+        [
+          server_component.route("/ws/live"),
+          server_component.method(server_component.WebSocket),
+        ],
+        [view_controls()],
+      ),
+    ],
+  )
 }
 
 fn view_controls() -> Element(msg) {

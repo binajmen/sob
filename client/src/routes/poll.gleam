@@ -69,33 +69,33 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 pub fn view(model: Model) -> Element(Msg) {
-  html.div(
-    [
-      attribute.class("prose"),
-    ],
-    [
-      html.h1([], [html.text("Live")]),
-      server_component.element(
-        [
-          server_component.route("/ws/live"),
-          server_component.method(server_component.WebSocket),
-          event.on("next-question", {
-            decode.at(["detail"], decode.string)
-            |> decode.map(QuestionIdChanged)
-          }),
-          event.on("no-questions", { decode.success(NoQuestions) }),
-        ],
-        [
-          case model.question_id, model.vote {
-            Some(_id), Some(vote) -> view_registered_vote(vote)
-            Some(_id), None -> view_voting_buttons()
-            None, _ -> element.none()
-          },
-          // view_voting_buttons(),
-        ],
-      ),
-    ],
-  )
+  html.div([attribute.class("prose")], [
+    html.h1([attribute.class("text-center !m-0")], [
+      html.text("Sing Out Brussels!"),
+    ]),
+    html.h2([attribute.class("text-center !m-0")], [
+      html.text("The Fabulous Queer Choir"),
+    ]),
+    server_component.element(
+      [
+        server_component.route("/ws/live"),
+        server_component.method(server_component.WebSocket),
+        event.on("next-question", {
+          decode.at(["detail"], decode.string)
+          |> decode.map(QuestionIdChanged)
+        }),
+        event.on("no-questions", { decode.success(NoQuestions) }),
+      ],
+      [
+        case model.question_id, model.vote {
+          Some(_id), Some(vote) -> view_registered_vote(vote)
+          Some(_id), None -> view_voting_buttons()
+          None, _ -> element.none()
+        },
+        // view_voting_buttons(),
+      ],
+    ),
+  ])
 }
 
 fn view_registered_vote(vote: vote.Vote) -> Element(msg) {

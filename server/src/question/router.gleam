@@ -222,8 +222,12 @@ pub fn delete_question(req: Request, ctx: Context, id: String) -> Response {
   }
 }
 
-pub fn list_users_without_votes(req: Request, ctx: Context, id: String) -> Response {
-  use _ <- helpers.require_admin(req, ctx)
+pub fn list_users_without_votes(
+  req: Request,
+  ctx: Context,
+  id: String,
+) -> Response {
+  // use _ <- helpers.require_admin(req, ctx)
 
   let result = {
     use uuid <- try(uuid.from_string(id))

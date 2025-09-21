@@ -5,6 +5,7 @@ import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/event
 import lustre/server_component
 import rsvp
 import shared/user
@@ -22,20 +23,30 @@ pub type Msg {
   QuestionIdChanged(String)
   ApiReturnedCurrentQuestion(Result(Option(String), rsvp.Error))
   ApiReturnedUsers(Result(List(user.User), rsvp.Error))
+  RefreshUsers
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     QuestionIdChanged(id) -> #(
       Model(..model, question_id: Some(id)),
-      effect.none(),
+      effect.batch([
+        fetch_waiting_users(id, ApiReturnedUsers),
+        start_refresh_timer(),
+      ]),
     )
 
     ApiReturnedCurrentQuestion(Ok(Some(question_id))) -> #(
       Model(..model, question_id: Some(question_id)),
-      fetch_waiting_users(question_id, ApiReturnedUsers),
+      effect.batch([
+        fetch_waiting_users(question_id, ApiReturnedUsers),
+        start_refresh_timer(),
+      ]),
     )
-    ApiReturnedCurrentQuestion(Ok(None)) -> #(model, effect.none())
+    ApiReturnedCurrentQuestion(Ok(None)) -> #(
+      Model(..model, question_id: None, users: None),
+      effect.none(),
+    )
     ApiReturnedCurrentQuestion(Error(_)) -> #(model, effect.none())
 
     ApiReturnedUsers(Ok(users)) -> #(
@@ -43,8 +54,29 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
     ApiReturnedUsers(Error(_)) -> #(model, effect.none())
+
+    RefreshUsers -> {
+      case model.question_id {
+        Some(question_id) -> #(
+          model,
+          effect.batch([
+            fetch_waiting_users(question_id, ApiReturnedUsers),
+            start_refresh_timer(),
+          ]),
+        )
+        None -> #(model, effect.none())
+      }
+    }
   }
 }
+
+fn start_refresh_timer() -> Effect(Msg) {
+  use dispatch <- effect.from
+  do_set_timeout(1000, fn() { dispatch(RefreshUsers) })
+}
+
+@external(javascript, "./live_ffi.mjs", "setTimeout")
+fn do_set_timeout(ms: Int, callback: fn() -> Nil) -> Nil
 
 fn fetch_waiting_users(
   question_id: String,
@@ -72,6 +104,10 @@ pub fn view(model: Model) -> Element(Msg) {
         [
           server_component.route("/ws/live"),
           server_component.method(server_component.WebSocket),
+          event.on("next-question", {
+            decode.at(["detail"], decode.string)
+            |> decode.map(QuestionIdChanged)
+          }),
         ],
         [view_controls()],
       ),
@@ -93,27 +129,35 @@ fn view_users(model: Model) -> Element(Msg) {
       question_id_attr,
     ],
     [
-      html.h3([attribute.class("text-lg font-semibold mb-2")], [html.text("Waiting for votes:")]),
+      html.h3([attribute.class("text-lg font-semibold mb-2")], [
+        html.text("Waiting for votes:"),
+      ]),
       case model.users {
-        None -> html.div([attribute.class("text-gray-500")], [html.text("Loading...")])
-        Some([]) -> html.div([attribute.class("text-gray-500")], [html.text("All users have voted!")])
-        Some(users) -> 
-          html.ul([attribute.class("space-y-1")], 
+        None ->
+          html.div([attribute.class("text-gray-500")], [html.text("Loading...")])
+        Some([]) ->
+          html.div([attribute.class("text-gray-500")], [
+            html.text("All users have voted!"),
+          ])
+        Some(users) ->
+          html.ul(
+            [attribute.class("space-y-1")],
             users
-            |> list.map(fn(user) {
-              let name = case user.first_name, user.last_name {
-                Some(first), Some(last) -> first <> " " <> last
-                Some(first), None -> first
-                None, Some(last) -> last
-                None, None -> case user.email {
-                  Some(email) -> email
-                  None -> "Unknown user"
+              |> list.map(fn(user) {
+                let name = case user.first_name, user.last_name {
+                  Some(first), Some(last) -> first <> " " <> last
+                  Some(first), None -> first
+                  None, Some(last) -> last
+                  None, None ->
+                    case user.email {
+                      Some(email) -> email
+                      None -> "Unknown user"
+                    }
                 }
-              }
-              html.li([attribute.class("text-sm")], [html.text("• " <> name)])
-            })
+                html.li([attribute.class("text-sm")], [html.text("• " <> name)])
+              }),
           )
-      }
+      },
     ],
   )
 }

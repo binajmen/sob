@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/http/response
 import gleam/int
 import gleam/json
 import gleam/option
@@ -12,8 +13,6 @@ import lustre/event
 import lustre/server_component
 import rsvp
 import shared/question
-import wisp
-import youid/uuid
 
 pub fn component() -> App(_, Model, Msg) {
   lustre.component(init, update, view, [])
@@ -40,15 +39,16 @@ pub type Msg {
   AdminPressedNextQuestion
   AdminPressedCloseVoting
   AdminPressedFinished
+  AdminPressedResetVotes
   ApiReturnedQuestion(Result(question.Question, rsvp.Error))
   ApiReturnedResult(Result(question.Result, rsvp.Error))
-  ApiUpdatedPollState(Result(Nil, rsvp.Error))
+  ApiUpdatedPollState(Result(response.Response(String), rsvp.Error))
 }
 
 fn find_next_question(
   on_response handle_response: fn(Result(question.Question, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "/api/questions/next"
+  let url = "http://localhost:8000/api/questions/next"
   let decoder = question.question_decoder()
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
@@ -58,7 +58,7 @@ fn find_result(
   id: String,
   on_response handle_response: fn(Result(question.Result, rsvp.Error)) -> msg,
 ) -> Effect(msg) {
-  let url = "/api/results/" <> id
+  let url = "http://localhost:8000/api/results/" <> id
   let decoder = question.result_decoder()
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
@@ -67,9 +67,10 @@ fn find_result(
 fn update_poll_state(
   current_question_id: option.Option(String),
   status: String,
-  on_response handle_response: fn(Result(Nil, rsvp.Error)) -> msg,
+  on_response handle_response: fn(Result(response.Response(String), rsvp.Error)) ->
+    msg,
 ) -> Effect(msg) {
-  let url = "/api/poll-state"
+  let url = "http://localhost:8000/api/poll-state"
   let body =
     json.object([
       #("current_question_id", case current_question_id {
@@ -78,9 +79,17 @@ fn update_poll_state(
       }),
       #("status", json.string(status)),
     ])
-  let decoder = decode.success(Nil)
-  let handler = rsvp.expect_json(decoder, handle_response)
+  let handler = rsvp.expect_ok_response(handle_response)
   rsvp.patch(url, body, handler)
+}
+
+fn reset_all_votes(
+  on_response handle_response: fn(Result(response.Response(String), rsvp.Error)) ->
+    msg,
+) -> Effect(msg) {
+  let url = "http://localhost:8000/api/votes"
+  let handler = rsvp.expect_ok_response(handle_response)
+  rsvp.delete(url, json.null(), handler)
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -113,6 +122,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     AdminPressedFinished -> #(
       Model(status: Finished),
       update_poll_state(option.None, "finished", ApiUpdatedPollState),
+    )
+
+    AdminPressedResetVotes -> #(
+      Model(status: Waiting),
+      effect.batch([
+        update_poll_state(option.None, "waiting", ApiUpdatedPollState),
+        reset_all_votes(ApiUpdatedPollState),
+      ]),
     )
 
     ApiReturnedQuestion(Ok(question)) -> #(
@@ -149,7 +166,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn view(model: Model) -> Element(Msg) {
-  html.div([], [
+  html.div([attribute.class("prose")], [
     case model.status {
       Waiting -> view_waiting()
       Question(question) -> view_question(question)
@@ -166,6 +183,7 @@ fn view(model: Model) -> Element(Msg) {
             "next-question" -> decode.success(AdminPressedNextQuestion)
             "close-voting" -> decode.success(AdminPressedCloseVoting)
             "finished" -> decode.success(AdminPressedFinished)
+            "reset-votes" -> decode.success(AdminPressedResetVotes)
             _ -> decode.failure(NoOp, "")
           }
         })
@@ -178,7 +196,9 @@ fn view(model: Model) -> Element(Msg) {
 
 fn view_waiting() -> Element(Msg) {
   html.div([attribute.id("view-waiting")], [
-    html.h2([], [html.text("Waiting to start the poll")]),
+    html.h2([attribute.class("text-center text-white")], [
+      html.text("Waiting to start the poll"),
+    ]),
   ])
 }
 
@@ -194,6 +214,7 @@ fn view_question(question: question.Question) -> Element(Msg) {
 fn view_results(result: question.Result) -> Element(Msg) {
   html.div([attribute.id("view-results")], [
     html.h2([], [html.text("Results")]),
+    html.h3([], [html.text(result.prompt)]),
     html.pre([], [html.text(int.to_string(result.yes_count))]),
     html.pre([], [html.text(int.to_string(result.no_count))]),
     html.pre([], [html.text(int.to_string(result.blank_count))]),

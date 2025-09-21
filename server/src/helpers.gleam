@@ -140,6 +140,7 @@ pub fn require_admin(
 ) -> Response {
   use session_id <- require_session(req)
   use user <- require_user(session_id, ctx)
+  echo user
   case user.is_admin {
     True -> next(user)
     False -> unauthorised()

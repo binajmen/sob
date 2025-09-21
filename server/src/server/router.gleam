@@ -44,6 +44,7 @@ pub fn handle_request(req: Request, ctx: Context) -> Response {
         // votes
         Post, ["votes"] -> vote.create_vote(req, ctx)
         Get, ["votes", id] -> vote.find_vote(req, ctx, id)
+        Delete, ["votes"] -> vote.delete_all_votes(req, ctx)
         // poll state
         Patch, ["poll-state"] -> question.update_poll_state(req, ctx)
         //
@@ -58,9 +59,9 @@ fn serve_index() -> Response {
   let html =
     html.html(
       [
-        attribute.attribute("data-theme", "dark"),
-        attribute.attribute("style", "height: 100%"),
         attribute.lang("en"),
+        attribute.attribute("data-theme", "light"),
+        attribute.attribute("style", "height: 100%"),
       ],
       [
         html.head([], [

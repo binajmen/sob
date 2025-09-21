@@ -1,5 +1,4 @@
 import gleam/dynamic/decode
-
 import gleam/json
 import gleam/result.{try}
 import helpers
@@ -13,7 +12,6 @@ import youid/uuid
 pub fn find_vote(req: Request, ctx: Context, question_id: String) -> Response {
   use session_id <- helpers.require_session(req)
   use user <- helpers.require_user(session_id, ctx)
-  echo user
 
   let result = {
     use question_id <- try(uuid.from_string(question_id))
@@ -84,9 +82,7 @@ fn do_create_vote(
     Ok(question_id), Ok(user_id) -> {
       case vote.vote_type_from_string(payload.vote) {
         Ok(_) -> {
-          case
-            sql.create_vote(ctx.db, question_id, user_id, payload.vote) |> echo
-          {
+          case sql.create_vote(ctx.db, question_id, user_id, payload.vote) {
             Ok(pog.Returned(1, [vote])) -> Ok(vote)
             Ok(_) -> Error(helpers.UnknownError)
             Error(error) -> Error(helpers.DatabaseError(error))
@@ -96,5 +92,20 @@ fn do_create_vote(
       }
     }
     _, _ -> Error(helpers.CustomError("Invalid UUID format"))
+  }
+}
+
+pub fn delete_all_votes(req: Request, ctx: Context) -> Response {
+  let result = {
+    case sql.delete_all_votes(ctx.db) {
+      Ok(pog.Returned(1, [_])) -> Ok(Nil)
+      Ok(_) -> Ok(Nil)
+      Error(error) -> Error(helpers.DatabaseError(error))
+    }
+  }
+
+  case result {
+    Error(error) -> error |> helpers.to_wisp_response
+    Ok(_) -> wisp.ok()
   }
 }

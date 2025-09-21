@@ -21,7 +21,9 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 pub fn view() -> Element(msg) {
   html.div([attribute.class("prose")], [
-    html.h1([], [html.text("Live")]),
+    html.h1([attribute.class("text-center")], [
+      html.text("Sing Out Brussels!"),
+    ]),
     server_component.element(
       [
         server_component.route("/ws/live"),
@@ -58,6 +60,13 @@ fn view_controls() -> Element(msg) {
       [
         html.text("Finished"),
       ],
+    ),
+    html.button(
+      [
+        attribute.id("reset-votes"),
+        attribute.class("btn btn-error btn-sm"),
+      ],
+      [html.text("Reset Votes")],
     ),
   ])
 }

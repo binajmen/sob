@@ -75,6 +75,25 @@ returning
   |> pog.execute(db)
 }
 
+/// Runs the `delete_all_votes` query
+/// defined in `./src/vote/sql/delete_all_votes.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn delete_all_votes(
+  db: pog.Connection,
+) -> Result(pog.Returned(Nil), pog.QueryError) {
+  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+
+  "delete from votes;
+
+"
+  |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `find_vote` query
 /// defined in `./src/vote/sql/find_vote.sql`.
 ///

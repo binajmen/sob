@@ -9,7 +9,7 @@ COPY ./client /build/client
 COPY ./server /build/server
 
 # Install git, just, and wget for resolving dependencies and build tools
-RUN apk add --no-cache git
+RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies for all projects
 RUN cd /build/shared && gleam deps download
@@ -30,9 +30,10 @@ RUN cd /build/server \
 FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang
 
 # Install runtime dependencies for migrations and build tools
-RUN apk add --no-cache wget && \
+RUN apt-get update && apt-get install -y wget && \
     wget -O /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/latest/download/dbmate-linux-amd64 && \
-    chmod +x /usr/local/bin/dbmate
+    chmod +x /usr/local/bin/dbmate && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy the compiled server code from the builder stage
 COPY --from=builder /build/server/build/erlang-shipment /app

@@ -8,7 +8,7 @@ import lustre/element/html
 import lustre/event
 import lustre/server_component
 import rsvp
-import shared/vote
+import shared/vote.{Vote}
 
 pub type Model {
   Model(question_id: Option(String), vote: Option(vote.Vote))
@@ -69,7 +69,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 pub fn view(model: Model) -> Element(Msg) {
-  html.div([attribute.class("prose whitespace-pre")], [
+  html.div([attribute.class("prose whitespace-pre-wrap")], [
     html.h1([attribute.class("text-center !m-0")], [
       html.text("Sing Out Brussels!"),
     ]),
@@ -87,10 +87,9 @@ pub fn view(model: Model) -> Element(Msg) {
         event.on("no-questions", { decode.success(NoQuestions) }),
       ],
       [
-        case model.question_id, model.vote {
-          Some(_id), Some(vote) -> view_registered_vote(vote)
-          Some(_id), None -> view_voting_buttons()
-          None, _ -> element.none()
+        case model.question_id {
+          Some(_id) -> view_voting_buttons(model.vote)
+          None -> element.none()
         },
         // view_voting_buttons(),
       ],
@@ -98,44 +97,72 @@ pub fn view(model: Model) -> Element(Msg) {
   ])
 }
 
-fn view_registered_vote(vote: vote.Vote) -> Element(Msg) {
-  html.div([], [
-    html.text("You have voted: " <> vote.vote |> vote.vote_type_to_string()),
-    view_voting_buttons(),
-  ])
-}
+fn view_voting_buttons(vote: Option(vote.Vote)) -> Element(Msg) {
+  let current = "border-4 border-black"
 
-fn view_voting_buttons() -> Element(Msg) {
-  html.div([attribute.class("space-x-4")], [
-    html.button(
-      [
-        attribute.id("yes"),
-        attribute.class("btn btn-primary btn-sm"),
-        event.on_click(UserIsVoting("yes")),
-      ],
-      [
-        html.text("Yes"),
-      ],
-    ),
-    html.button(
-      [
-        attribute.id("no"),
-        attribute.class("btn btn-primary btn-sm"),
-        event.on_click(UserIsVoting("no")),
-      ],
-      [
-        html.text("No"),
-      ],
-    ),
-    html.button(
-      [
-        attribute.id("blank"),
-        attribute.class("btn btn-primary btn-sm"),
-        event.on_click(UserIsVoting("blank")),
-      ],
-      [html.text("Abstain")],
-    ),
-  ])
+  html.div(
+    [attribute.class("grid grid-cols-3 gap-4 bg-white p-4 sticky bottom-0")],
+    [
+      html.button(
+        [
+          attribute.id("yes"),
+          attribute.class(
+            "btn btn-primary "
+            <> case vote {
+              Some(vote) ->
+                case vote.vote {
+                  vote.Yes -> current
+                  _ -> ""
+                }
+              _ -> ""
+            },
+          ),
+          event.on_click(UserIsVoting("yes")),
+        ],
+        [
+          html.text("Yes"),
+        ],
+      ),
+      html.button(
+        [
+          attribute.id("no"),
+          attribute.class(
+            "btn btn-primary "
+            <> case vote {
+              Some(vote) ->
+                case vote.vote {
+                  vote.No -> current
+                  _ -> ""
+                }
+              _ -> ""
+            },
+          ),
+          event.on_click(UserIsVoting("no")),
+        ],
+        [
+          html.text("No"),
+        ],
+      ),
+      html.button(
+        [
+          attribute.id("blank"),
+          attribute.class(
+            "btn btn-primary "
+            <> case vote {
+              Some(vote) ->
+                case vote.vote {
+                  vote.Blank -> current
+                  _ -> ""
+                }
+              _ -> ""
+            },
+          ),
+          event.on_click(UserIsVoting("blank")),
+        ],
+        [html.text("Abstain")],
+      ),
+    ],
+  )
 }
 
 fn fetch_vote(

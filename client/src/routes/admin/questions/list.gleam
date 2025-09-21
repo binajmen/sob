@@ -3,6 +3,7 @@ import gleam/http/response.{type Response}
 import gleam/json
 import gleam/list
 import gleam/option.{None}
+import gleam/string
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -65,7 +66,7 @@ pub fn view(questions: List(Question)) -> Element(Msg) {
         ]),
       ]),
     ]),
-    html.table([attribute.class("table table-zebra w-auto")], [
+    html.table([attribute.class("table table-zebra w-full")], [
       html.thead([], [
         html.tr([], [
           html.th([], [html.text("Prompt")]),
@@ -76,8 +77,10 @@ pub fn view(questions: List(Question)) -> Element(Msg) {
         [],
         list.map(questions, fn(question) {
           html.tr([], [
-            html.td([], [html.text(question.prompt)]),
-            html.td([attribute.class("space-x-2 whitespace-nowrap")], [
+            html.td([attribute.class("whitespace-pre-wrap")], [
+              html.text(question.prompt |> string.slice(0, 200) <> "..."),
+            ]),
+            html.td([attribute.class("flex gap-2")], [
               html.a(
                 [
                   router.href(router.AdminQuestionsView(question.id)),

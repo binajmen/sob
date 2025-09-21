@@ -197,7 +197,7 @@ fn view(model: Model) -> Element(Msg) {
 
 fn view_waiting() -> Element(Msg) {
   html.div([attribute.id("view-waiting")], [
-    html.h2([attribute.class("text-center text-white")], [
+    html.h2([attribute.class("text-center")], [
       html.text("Waiting to start the poll"),
     ]),
   ])
@@ -208,14 +208,18 @@ fn view_question(question: question.Question) -> Element(Msg) {
     html.h2([], [
       html.text("Question #" <> int.to_string(question.position)),
     ]),
-    html.h3([attribute.class("whitespace-pre")], [html.text(question.prompt)]),
+    html.h3([attribute.class("whitespace-pre-wrap")], [
+      html.text(question.prompt),
+    ]),
   ])
 }
 
 fn view_results(result: question.Result) -> Element(Msg) {
   html.div([attribute.id("view-results")], [
     html.h2([], [html.text("Results")]),
-    html.h3([attribute.class("text-yellow-600")], [html.text(result.prompt)]),
+    html.h3([attribute.class("whitespace-pre-wrap")], [
+      html.text(result.prompt),
+    ]),
     bar_chart.view(result.yes_count, result.no_count, result.blank_count),
   ])
 }

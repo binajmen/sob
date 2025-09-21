@@ -1,25 +1,61 @@
+import gleam/dynamic/decode
+import gleam/option.{type Option, None, Some}
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/server_component
+import rsvp
+import shared/user
 
 pub type Model {
-  Model(id: String)
+  Model(question_id: Option(String), users: Option(List(user.User)))
 }
 
-pub fn init(id: String) -> #(Model, Effect(Msg)) {
-  let model = Model(id:)
-  #(model, effect.none())
+pub fn init() -> #(Model, Effect(Msg)) {
+  let model = Model(question_id: None, users: None)
+  #(model, fetch_current_question(ApiReturnedCurrentQuestion))
 }
 
-pub type Msg
-
-pub fn update(model: Model, _msg: Msg) -> #(Model, Effect(Msg)) {
-  #(model, effect.none())
+pub type Msg {
+  QuestionIdChanged(String)
+  ApiReturnedCurrentQuestion(Result(Option(String), rsvp.Error))
+  ApiReturnedUsers(Result(List(user.User), rsvp.Error))
 }
 
-pub fn view() -> Element(msg) {
+pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+  case msg {
+    QuestionIdChanged(id) -> #(
+      Model(..model, question_id: Some(id)),
+      effect.none(),
+    )
+
+    ApiReturnedCurrentQuestion(Ok(Some(question_id))) -> #(
+      Model(..model, question_id: Some(question_id)),
+      fetch_waiting_users(question_id, ApiReturnedUsers),
+    )
+    ApiReturnedCurrentQuestion(Ok(None)) -> #(model, effect.none())
+    ApiReturnedCurrentQuestion(Error(_)) -> #(model, effect.none())
+
+    ApiReturnedUsers(Ok(users)) -> #(
+      Model(..model, users: Some(users)),
+      effect.none(),
+    )
+    ApiReturnedUsers(Error(_)) -> #(model, effect.none())
+  }
+}
+
+fn fetch_waiting_users(
+  question_id: String,
+  on_response handle_response: fn(Result(List(user.User), rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "/api/questions/" <> question_id <> "/waiting-users"
+  let decoder = decode.list(user.user_decoder())
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.get(url, handler)
+}
+
+pub fn view(model: Model) -> Element(Msg) {
   html.div(
     [
       attribute.class("prose"),
@@ -38,7 +74,24 @@ pub fn view() -> Element(msg) {
         ],
         [view_controls()],
       ),
+      view_users(model.question_id),
     ],
+  )
+}
+
+fn view_users(question_id: Option(String)) -> Element(Msg) {
+  let question_id_attr = case question_id {
+    None -> attribute.none()
+    Some(id) -> attribute.data("question", id)
+  }
+
+  html.div(
+    [
+      attribute.id("users"),
+      attribute.class("mt-4"),
+      question_id_attr,
+    ],
+    [],
   )
 }
 
@@ -77,4 +130,13 @@ fn view_controls() -> Element(msg) {
       [html.text("🧹 Reset")],
     ),
   ])
+}
+
+fn fetch_current_question(
+  on_response handle_response: fn(Result(Option(String), rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "/api/questions/current"
+  let decoder = decode.optional(decode.at(["id"], decode.string))
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.get(url, handler)
 }

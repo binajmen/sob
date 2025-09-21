@@ -1,4 +1,3 @@
-import components/voting_buttons
 import gleam/option.{type Option, None, Some}
 import lustre
 import lustre/effect.{type Effect}
@@ -36,7 +35,7 @@ pub type Page {
   SignUp(sign_up.Model)
   Guest(guest.Model)
   Admin
-  AdminLive
+  AdminLive(live.Model)
   AdminQuestionsList(admin_questions_list.Model)
   AdminQuestionsCreate(admin_questions_create.Model)
   AdminQuestionsView(admin_questions_view.Model)
@@ -50,6 +49,7 @@ pub type Msg {
   SignInMsg(sign_in.Msg)
   SignUpMsg(sign_up.Msg)
   GuestMsg(guest.Msg)
+  AdminLiveMsg(live.Msg)
   AdminQuestionsListMsg(admin_questions_list.Msg)
   AdminQuestionsCreateMsg(admin_questions_create.Msg)
   AdminQuestionsViewMsg(admin_questions_view.Msg)
@@ -111,10 +111,13 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
       )
     }
     router.Admin -> #(Model(..model, route:, page: Admin), effect.none())
-    router.AdminLive -> #(
-      Model(..model, route:, page: AdminLive),
-      effect.none(),
-    )
+    router.AdminLive -> {
+      let #(page_model, effect) = live.init()
+      #(
+        Model(..model, route:, page: AdminLive(page_model)),
+        effect.map(effect, AdminLiveMsg),
+      )
+    }
     router.AdminQuestionsList -> {
       let #(page_model, effect) = admin_questions_list.init()
       #(
@@ -187,6 +190,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(Model(..model, page: Guest(page_model)), effect.map(effect, GuestMsg))
     }
 
+    AdminLiveMsg(msg) -> {
+      let assert AdminLive(page_model) = model.page
+      let #(page_model, effect) = live.update(page_model, msg)
+      #(
+        Model(..model, page: AdminLive(page_model)),
+        effect.map(effect, AdminLiveMsg),
+      )
+    }
+
     AdminQuestionsListMsg(msg) -> {
       let assert AdminQuestionsList(page_model) = model.page
       let #(page_model, effect) = admin_questions_list.update(page_model, msg)
@@ -245,7 +257,9 @@ fn view(model: Model) -> Element(Msg) {
 
     router.Admin, Admin -> admin.view()
 
-    router.AdminLive, AdminLive -> live.view()
+    router.AdminLive, AdminLive(model) ->
+      live.view(model)
+      |> element.map(AdminLiveMsg)
 
     router.AdminQuestionsList, AdminQuestionsList(model) ->
       admin_questions_list.view(model.questions)

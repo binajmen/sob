@@ -189,13 +189,6 @@ fn view_controls() -> Element(msg) {
         html.text("🎬 End"),
       ],
     ),
-    html.button(
-      [
-        attribute.id("reset-votes"),
-        attribute.class("btn btn-primary btn-sm"),
-      ],
-      [html.text("🧹 Reset")],
-    ),
   ])
 }
 

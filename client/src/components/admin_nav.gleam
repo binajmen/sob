@@ -20,5 +20,10 @@ pub fn view() -> Element(msg) {
         html.text("Live"),
       ]),
     ]),
+    html.a([router.href(router.AdminReset)], [
+      html.button([attribute.class("btn btn-error btn-outline")], [
+        html.text("🧹 Reset Votes"),
+      ]),
+    ]),
   ])
 }

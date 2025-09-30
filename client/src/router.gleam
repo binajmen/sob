@@ -9,6 +9,7 @@ pub type Route {
   Guest
   Admin
   AdminLive
+  AdminReset
   AdminQuestionsList
   AdminQuestionsCreate
   AdminQuestionsView(id: String)
@@ -31,6 +32,7 @@ pub fn parse_route(uri: Uri) -> Route {
     ["guest"] -> Guest
     ["admin"] -> Admin
     ["admin", "live"] -> AdminLive
+    ["admin", "reset"] -> AdminReset
     ["admin", "questions"] -> AdminQuestionsList
     ["admin", "questions", "create"] -> AdminQuestionsCreate
     ["admin", "questions", id] -> AdminQuestionsView(id)
@@ -47,6 +49,7 @@ pub fn to_path(route: Route) -> String {
     Guest -> "/guest"
     Admin -> "/admin"
     AdminLive -> "/admin/live"
+    AdminReset -> "/admin/reset"
     AdminQuestionsList -> "/admin/questions"
     AdminQuestionsCreate -> "/admin/questions/create"
     AdminQuestionsView(id) -> "/admin/questions/" <> id

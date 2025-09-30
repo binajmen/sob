@@ -10,6 +10,7 @@ import routes/admin/live
 import routes/admin/questions/create as admin_questions_create
 import routes/admin/questions/list as admin_questions_list
 import routes/admin/questions/view as admin_questions_view
+import routes/admin/reset
 import routes/admin/users/list as admin_users_list
 import routes/guest
 import routes/poll
@@ -36,6 +37,7 @@ pub type Page {
   Guest(guest.Model)
   Admin
   AdminLive(live.Model)
+  AdminReset(reset.Model)
   AdminQuestionsList(admin_questions_list.Model)
   AdminQuestionsCreate(admin_questions_create.Model)
   AdminQuestionsView(admin_questions_view.Model)
@@ -50,6 +52,7 @@ pub type Msg {
   SignUpMsg(sign_up.Msg)
   GuestMsg(guest.Msg)
   AdminLiveMsg(live.Msg)
+  AdminResetMsg(reset.Msg)
   AdminQuestionsListMsg(admin_questions_list.Msg)
   AdminQuestionsCreateMsg(admin_questions_create.Msg)
   AdminQuestionsViewMsg(admin_questions_view.Msg)
@@ -116,6 +119,13 @@ fn init_route(route: Route, model: Model) -> #(Model, Effect(Msg)) {
       #(
         Model(..model, route:, page: AdminLive(page_model)),
         effect.map(effect, AdminLiveMsg),
+      )
+    }
+    router.AdminReset -> {
+      let #(page_model, effect) = reset.init()
+      #(
+        Model(..model, route:, page: AdminReset(page_model)),
+        effect.map(effect, AdminResetMsg),
       )
     }
     router.AdminQuestionsList -> {
@@ -199,6 +209,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
     }
 
+    AdminResetMsg(msg) -> {
+      let assert AdminReset(page_model) = model.page
+      let #(page_model, effect) = reset.update(page_model, msg)
+      #(
+        Model(..model, page: AdminReset(page_model)),
+        effect.map(effect, AdminResetMsg),
+      )
+    }
+
     AdminQuestionsListMsg(msg) -> {
       let assert AdminQuestionsList(page_model) = model.page
       let #(page_model, effect) = admin_questions_list.update(page_model, msg)
@@ -260,6 +279,10 @@ fn view(model: Model) -> Element(Msg) {
     router.AdminLive, AdminLive(model) ->
       live.view(model)
       |> element.map(AdminLiveMsg)
+
+    router.AdminReset, AdminReset(model) ->
+      reset.view(model)
+      |> element.map(AdminResetMsg)
 
     router.AdminQuestionsList, AdminQuestionsList(model) ->
       admin_questions_list.view(model.questions)

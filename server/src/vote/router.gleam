@@ -1,9 +1,11 @@
 import gleam/dynamic/decode
 import gleam/json
+import gleam/option.{type Option, None, Some}
 import gleam/result.{try}
 import helpers
 import pog
 import server/context.{type Context}
+import shared/user
 import shared/vote
 import vote/sql
 import wisp.{type Request, type Response}
@@ -47,7 +49,14 @@ pub fn create_vote(req: Request, ctx: Context) {
 
   let result = {
     use payload <- try(helpers.decode_json(json, create_vote_payload_decoder()))
-    use vote <- try(do_create_vote(ctx, user.id, payload))
+    
+    // Check for optional voting_for_user_id field
+    let voting_for_user_id = case decode.run(json, decode.at(["voting_for_user_id"], decode.string)) {
+      Ok(value) -> Some(value)
+      Error(_) -> None
+    }
+    
+    use vote <- try(do_create_vote(ctx, user, payload, voting_for_user_id))
     let vote =
       json.object([
         #("id", json.string(uuid.to_string(vote.id))),
@@ -72,11 +81,19 @@ fn create_vote_payload_decoder() -> decode.Decoder(CreateVotePayload) {
 
 fn do_create_vote(
   ctx: Context,
-  user_id: String,
+  user: user.User,
   payload: CreateVotePayload,
+  voting_for_user_id: Option(String),
 ) -> Result(sql.CreateVoteRow, helpers.ApiError) {
   let question_id = uuid.from_string(payload.question_id)
-  let user_id = uuid.from_string(user_id)
+  
+  // Determine which user_id to use for the vote
+  let target_user_id = case voting_for_user_id {
+    Some(proxy_user_id) -> proxy_user_id
+    None -> user.id
+  }
+  
+  let user_id = uuid.from_string(target_user_id)
 
   case question_id, user_id {
     Ok(question_id), Ok(user_id) -> {

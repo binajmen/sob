@@ -8,42 +8,70 @@ import lustre/element/html
 import lustre/event
 import lustre/server_component
 import rsvp
+import shared/user
 import shared/vote.{Vote}
 
 pub type Model {
-  Model(question_id: Option(String), vote: Option(vote.Vote))
+  Model(
+    question_id: Option(String), 
+    vote: Option(vote.Vote),
+    proxy_vote: Option(vote.Vote),
+    user: Option(user.User)
+  )
 }
 
 pub fn init() -> #(Model, Effect(Msg)) {
-  let model = Model(question_id: None, vote: None)
-  #(model, fetch_current_question(ApiReturnedCurrentQuestion))
+  let model = Model(question_id: None, vote: None, proxy_vote: None, user: None)
+  #(model, effect.batch([
+    fetch_current_question(ApiReturnedCurrentQuestion),
+    fetch_current_user(ApiReturnedCurrentUser)
+  ]))
 }
 
 pub type Msg {
   NoQuestions
   QuestionIdChanged(String)
-  UserIsVoting(String)
+  UserIsVotingForSelf(String)
+  UserIsVotingForProxy(String)
   ApiReturnedVote(Result(vote.Vote, rsvp.Error))
+  ApiReturnedProxyVote(Result(vote.Vote, rsvp.Error))
   ApiRegisteredVote(Result(vote.Vote, rsvp.Error))
+  ApiRegisteredProxyVote(Result(vote.Vote, rsvp.Error))
   ApiReturnedCurrentQuestion(Result(Option(String), rsvp.Error))
+  ApiReturnedCurrentUser(Result(user.User, rsvp.Error))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    NoQuestions -> #(Model(question_id: None, vote: None), effect.none())
+    NoQuestions -> #(Model(question_id: None, vote: None, proxy_vote: None, user: model.user), effect.none())
 
     QuestionIdChanged(id) -> #(
-      Model(question_id: Some(id), vote: None),
-      fetch_vote(id, ApiReturnedVote),
+      Model(..model, question_id: Some(id), vote: None, proxy_vote: None),
+      fetch_vote(id, ApiReturnedVote)
     )
 
-    UserIsVoting(vote) -> {
+    UserIsVotingForSelf(vote) -> {
       case model.question_id {
         None -> #(model, effect.none())
         Some(question_id) -> #(
           model,
-          cast_vote(question_id, vote, ApiRegisteredVote),
+          cast_vote_for_self(question_id, vote, ApiRegisteredVote),
         )
+      }
+    }
+
+    UserIsVotingForProxy(vote) -> {
+      case model.question_id, model.user {
+        Some(question_id), Some(user) -> {
+          case user.proxy_id {
+            Some(proxy_id) -> #(
+              model,
+              cast_vote_for_proxy(question_id, vote, proxy_id, ApiRegisteredProxyVote),
+            )
+            None -> #(model, effect.none())
+          }
+        }
+        _, _ -> #(model, effect.none())
       }
     }
 
@@ -53,18 +81,36 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
     ApiReturnedVote(Error(_)) -> #(model, effect.none())
 
+    ApiReturnedProxyVote(Ok(vote)) -> #(
+      Model(..model, proxy_vote: Some(vote)),
+      effect.none(),
+    )
+    ApiReturnedProxyVote(Error(_)) -> #(model, effect.none())
+
     ApiRegisteredVote(Ok(vote)) -> #(
       Model(..model, vote: Some(vote)),
       effect.none(),
     )
     ApiRegisteredVote(Error(_)) -> #(model, effect.none())
 
+    ApiRegisteredProxyVote(Ok(vote)) -> #(
+      Model(..model, proxy_vote: Some(vote)),
+      effect.none(),
+    )
+    ApiRegisteredProxyVote(Error(_)) -> #(model, effect.none())
+
     ApiReturnedCurrentQuestion(Ok(Some(question_id))) -> #(
-      Model(question_id: Some(question_id), vote: None),
-      fetch_vote(question_id, ApiReturnedVote),
+      Model(..model, question_id: Some(question_id), vote: None, proxy_vote: None),
+      fetch_vote(question_id, ApiReturnedVote)
     )
     ApiReturnedCurrentQuestion(Ok(None)) -> #(model, effect.none())
     ApiReturnedCurrentQuestion(Error(_)) -> #(model, effect.none())
+
+    ApiReturnedCurrentUser(Ok(user)) -> #(
+      Model(..model, user: Some(user)),
+      effect.none(),
+    )
+    ApiReturnedCurrentUser(Error(_)) -> #(model, effect.none())
   }
 }
 
@@ -87,9 +133,9 @@ pub fn view(model: Model) -> Element(Msg) {
         event.on("no-questions", { decode.success(NoQuestions) }),
       ],
       [
-        case model.question_id {
-          Some(_id) -> view_voting_buttons(model.vote)
-          None -> element.none()
+        case model.question_id, model.user {
+          Some(_id), Some(user) -> view_voting_interface(user, model.vote, model.proxy_vote)
+          _, _ -> element.none()
         },
         // view_voting_buttons(),
       ],
@@ -97,15 +143,38 @@ pub fn view(model: Model) -> Element(Msg) {
   ])
 }
 
-fn view_voting_buttons(vote: Option(vote.Vote)) -> Element(Msg) {
+fn view_voting_interface(user: user.User, vote: Option(vote.Vote), proxy_vote: Option(vote.Vote)) -> Element(Msg) {
+  case user.proxy_id {
+    Some(_) -> {
+      html.div([attribute.class("bg-white p-4 sticky bottom-0")], [
+        html.div([attribute.class("mb-4")], [
+          html.h3([attribute.class("text-lg font-semibold mb-2")], [
+            html.text("Your Vote:")
+          ]),
+          view_voting_buttons(vote, UserIsVotingForSelf)
+        ]),
+        html.div([], [
+          html.h3([attribute.class("text-lg font-semibold mb-2")], [
+            html.text("Proxy Vote:")
+          ]),
+          view_voting_buttons(proxy_vote, UserIsVotingForProxy)
+        ])
+      ])
+    }
+    None -> html.div([attribute.class("bg-white p-4 sticky bottom-0")], [
+      view_voting_buttons(vote, UserIsVotingForSelf)
+    ])
+  }
+}
+
+fn view_voting_buttons(vote: Option(vote.Vote), vote_handler: fn(String) -> Msg) -> Element(Msg) {
   let current = "border-4 border-black"
 
   html.div(
-    [attribute.class("grid grid-cols-3 gap-4 bg-white p-4 sticky bottom-0")],
+    [attribute.class("grid grid-cols-3 gap-4")],
     [
       html.button(
         [
-          attribute.id("yes"),
           attribute.class(
             "btn btn-primary "
             <> case vote {
@@ -117,7 +186,7 @@ fn view_voting_buttons(vote: Option(vote.Vote)) -> Element(Msg) {
               _ -> ""
             },
           ),
-          event.on_click(UserIsVoting("yes")),
+          event.on_click(vote_handler("yes")),
         ],
         [
           html.text("Yes"),
@@ -125,7 +194,6 @@ fn view_voting_buttons(vote: Option(vote.Vote)) -> Element(Msg) {
       ),
       html.button(
         [
-          attribute.id("no"),
           attribute.class(
             "btn btn-primary "
             <> case vote {
@@ -137,7 +205,7 @@ fn view_voting_buttons(vote: Option(vote.Vote)) -> Element(Msg) {
               _ -> ""
             },
           ),
-          event.on_click(UserIsVoting("no")),
+          event.on_click(vote_handler("no")),
         ],
         [
           html.text("No"),
@@ -145,7 +213,6 @@ fn view_voting_buttons(vote: Option(vote.Vote)) -> Element(Msg) {
       ),
       html.button(
         [
-          attribute.id("blank"),
           attribute.class(
             "btn btn-primary "
             <> case vote {
@@ -157,7 +224,7 @@ fn view_voting_buttons(vote: Option(vote.Vote)) -> Element(Msg) {
               _ -> ""
             },
           ),
-          event.on_click(UserIsVoting("blank")),
+          event.on_click(vote_handler("blank")),
         ],
         [html.text("Abstain")],
       ),
@@ -175,7 +242,7 @@ fn fetch_vote(
   rsvp.get(url, handler)
 }
 
-fn cast_vote(
+fn cast_vote_for_self(
   question_id: String,
   vote: String,
   on_response handle_response: fn(Result(vote.Vote, rsvp.Error)) -> msg,
@@ -191,6 +258,24 @@ fn cast_vote(
   rsvp.post(url, body, handler)
 }
 
+fn cast_vote_for_proxy(
+  question_id: String,
+  vote: String,
+  proxy_id: String,
+  on_response handle_response: fn(Result(vote.Vote, rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "/api/votes"
+  let body =
+    json.object([
+      #("question_id", json.string(question_id)),
+      #("vote", json.string(vote)),
+      #("voting_for_user_id", json.string(proxy_id)),
+    ])
+  let decoder = vote.vote_decoder()
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.post(url, body, handler)
+}
+
 fn fetch_current_question(
   on_response handle_response: fn(Result(Option(String), rsvp.Error)) -> msg,
 ) -> Effect(msg) {
@@ -199,3 +284,14 @@ fn fetch_current_question(
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
 }
+
+fn fetch_current_user(
+  on_response handle_response: fn(Result(user.User, rsvp.Error)) -> msg,
+) -> Effect(msg) {
+  let url = "/api/auth/me"
+  let decoder = user.user_decoder()
+  let handler = rsvp.expect_json(decoder, handle_response)
+  rsvp.get(url, handler)
+}
+
+

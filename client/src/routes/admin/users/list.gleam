@@ -1,3 +1,4 @@
+import components/admin_nav
 import gleam/dynamic/decode
 import gleam/list
 import gleam/option.{None, Some}
@@ -23,10 +24,7 @@ pub type Msg {
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    ApiReturnedUsers(Ok(users)) -> #(
-      Model(..model, users:),
-      effect.none(),
-    )
+    ApiReturnedUsers(Ok(users)) -> #(Model(..model, users:), effect.none())
     ApiReturnedUsers(Error(error)) -> {
       echo error
       #(model, effect.none())
@@ -36,6 +34,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 pub fn view(users: List(User)) -> Element(Msg) {
   html.div([attribute.class("space-y-4")], [
+    admin_nav.view(),
     html.div([attribute.class("prose flex justify-between items-start")], [
       html.h1([], [html.text("Users")]),
     ]),
@@ -90,8 +89,6 @@ fn format_user_name(
     None, None -> "Anonymous"
   }
 }
-
-
 
 fn fetch_users(
   on_response handle_response: fn(Result(List(User), rsvp.Error)) -> msg,

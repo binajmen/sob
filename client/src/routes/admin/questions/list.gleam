@@ -1,3 +1,4 @@
+import components/admin_nav
 import gleam/dynamic/decode
 import gleam/http/response.{type Response}
 import gleam/json
@@ -58,6 +59,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 pub fn view(questions: List(Question)) -> Element(Msg) {
   html.div([attribute.class("space-y-4")], [
+    admin_nav.view(),
     html.div([attribute.class("prose flex justify-between items-start")], [
       html.h1([], [html.text("Questions")]),
       html.a([router.href(router.AdminQuestionsCreate)], [

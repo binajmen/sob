@@ -252,7 +252,7 @@ fn view(model: Model) -> Element(Msg) {
       |> element.map(SignUpMsg)
 
     router.Guest, Guest(model) ->
-      guest.view(model.form)
+      guest.view(model)
       |> element.map(GuestMsg)
 
     router.Admin, Admin -> admin.view()

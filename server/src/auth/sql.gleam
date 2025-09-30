@@ -50,6 +50,47 @@ returning
   |> pog.execute(db)
 }
 
+/// A row you get from running the `create_guest_with_proxy` query
+/// defined in `./src/auth/sql/create_guest_with_proxy.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type CreateGuestWithProxyRow {
+  CreateGuestWithProxyRow(id: Uuid)
+}
+
+/// Runs the `create_guest_with_proxy` query
+/// defined in `./src/auth/sql/create_guest_with_proxy.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn create_guest_with_proxy(
+  db: pog.Connection,
+  arg_1: String,
+  arg_2: String,
+  arg_3: Uuid,
+) -> Result(pog.Returned(CreateGuestWithProxyRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    decode.success(CreateGuestWithProxyRow(id:))
+  }
+
+  "insert into
+  users (first_name, last_name, proxy_id)
+values
+  ($1, $2, $3)
+returning
+  id;"
+  |> pog.query
+  |> pog.parameter(pog.text(arg_1))
+  |> pog.parameter(pog.text(arg_2))
+  |> pog.parameter(pog.text(uuid.to_string(arg_3)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `create_session` query
 /// defined in `./src/auth/sql/create_session.sql`.
 ///
@@ -148,6 +189,7 @@ pub type FindUserByEmailRow {
     is_admin: Bool,
     created_at: Timestamp,
     updated_at: Timestamp,
+    proxy_id: Option(Uuid),
   )
 }
 
@@ -170,6 +212,7 @@ pub fn find_user_by_email(
     use is_admin <- decode.field(5, decode.bool)
     use created_at <- decode.field(6, pog.timestamp_decoder())
     use updated_at <- decode.field(7, pog.timestamp_decoder())
+    use proxy_id <- decode.field(8, decode.optional(uuid_decoder()))
     decode.success(FindUserByEmailRow(
       id:,
       email:,
@@ -179,6 +222,7 @@ pub fn find_user_by_email(
       is_admin:,
       created_at:,
       updated_at:,
+      proxy_id:,
     ))
   }
 
@@ -211,6 +255,7 @@ pub type FindUserBySessionRow {
     is_admin: Bool,
     created_at: Timestamp,
     updated_at: Timestamp,
+    proxy_id: Option(Uuid),
   )
 }
 
@@ -233,6 +278,7 @@ pub fn find_user_by_session(
     use is_admin <- decode.field(5, decode.bool)
     use created_at <- decode.field(6, pog.timestamp_decoder())
     use updated_at <- decode.field(7, pog.timestamp_decoder())
+    use proxy_id <- decode.field(8, decode.optional(uuid_decoder()))
     decode.success(FindUserBySessionRow(
       id:,
       email:,
@@ -242,6 +288,7 @@ pub fn find_user_by_session(
       is_admin:,
       created_at:,
       updated_at:,
+      proxy_id:,
     ))
   }
 
@@ -274,6 +321,7 @@ pub type ListUsersRow {
     is_admin: Bool,
     created_at: Timestamp,
     updated_at: Timestamp,
+    proxy_id: Option(Uuid),
   )
 }
 
@@ -294,6 +342,7 @@ pub fn list_users(
     use is_admin <- decode.field(4, decode.bool)
     use created_at <- decode.field(5, pog.timestamp_decoder())
     use updated_at <- decode.field(6, pog.timestamp_decoder())
+    use proxy_id <- decode.field(7, decode.optional(uuid_decoder()))
     decode.success(ListUsersRow(
       id:,
       email:,
@@ -302,6 +351,7 @@ pub fn list_users(
       is_admin:,
       created_at:,
       updated_at:,
+      proxy_id:,
     ))
   }
 
@@ -312,7 +362,8 @@ pub fn list_users(
   last_name,
   is_admin,
   created_at,
-  updated_at
+  updated_at,
+  proxy_id
 from
   users
 order by

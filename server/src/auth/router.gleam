@@ -21,6 +21,7 @@ pub fn me(req: Request, ctx: Context) {
     #("first_name", json.nullable(user.first_name, json.string)),
     #("last_name", json.nullable(user.last_name, json.string)),
     #("is_admin", json.bool(user.is_admin)),
+    #("proxy_id", json.nullable(user.proxy_id, json.string)),
   ])
   |> json.to_string_tree
   |> wisp.json_response(200)
@@ -172,7 +173,13 @@ fn create_user(
 }
 
 type GuestPayload {
-  GuestPayload(first_name: String, last_name: String)
+  GuestPayload(
+    first_name: String,
+    last_name: String,
+    is_proxy: Bool,
+    proxy_first_name: String,
+    proxy_last_name: String,
+  )
 }
 
 pub fn guest(req: Request, ctx: Context) {
@@ -180,7 +187,7 @@ pub fn guest(req: Request, ctx: Context) {
 
   let result = {
     use payload <- try(decode_guest_payload(json))
-    use user <- try(create_guest(ctx, payload))
+    use user <- try(create_guest_user(ctx, payload))
     use session_id <- try(create_session(ctx, user.id))
     Ok(session_id)
   }
@@ -209,17 +216,60 @@ fn decode_guest_payload(
 fn guest_payload_decoder() -> decode.Decoder(GuestPayload) {
   use first_name <- decode.field("first_name", decode.string)
   use last_name <- decode.field("last_name", decode.string)
-  decode.success(GuestPayload(first_name:, last_name:))
+  use is_proxy <- decode.field("is_proxy", decode.bool)
+  use proxy_first_name <- decode.field("proxy_first_name", decode.string)
+  use proxy_last_name <- decode.field("proxy_last_name", decode.string)
+  decode.success(GuestPayload(
+    first_name:,
+    last_name:,
+    is_proxy:,
+    proxy_first_name:,
+    proxy_last_name:,
+  ))
 }
 
-fn create_guest(
+type GuestUser {
+  GuestUser(id: uuid.Uuid)
+}
+
+fn create_guest_user(
   ctx: Context,
   payload: GuestPayload,
-) -> Result(sql.CreateGuestRow, helpers.ApiError) {
-  case sql.create_guest(ctx.db, payload.first_name, payload.last_name) {
-    Ok(pog.Returned(1, [user])) -> Ok(user)
-    Ok(_) -> Error(helpers.UnknownError)
-    Error(error) -> Error(helpers.DatabaseError(error))
+) -> Result(GuestUser, helpers.ApiError) {
+  case payload.is_proxy {
+    False -> {
+      // Regular guest - no proxy
+      case sql.create_guest(ctx.db, payload.first_name, payload.last_name) {
+        Ok(pog.Returned(1, [user])) -> Ok(GuestUser(id: user.id))
+        Ok(_) -> Error(helpers.UnknownError)
+        Error(error) -> Error(helpers.DatabaseError(error))
+      }
+    }
+    True -> {
+      // Proxy scenario - create both users
+      // First create the person being represented (proxied user)
+      use proxied_user <- try(case
+        sql.create_guest(ctx.db, payload.proxy_first_name, payload.proxy_last_name)
+      {
+        Ok(pog.Returned(1, [user])) -> Ok(user)
+        Ok(_) -> Error(helpers.UnknownError)
+        Error(error) -> Error(helpers.DatabaseError(error))
+      })
+      
+      // Then create the proxy user with reference to the proxied user
+      case
+        sql.create_guest_with_proxy(
+          ctx.db,
+          payload.first_name,
+          payload.last_name,
+          proxied_user.id,
+        )
+      {
+        Ok(pog.Returned(1, [user])) -> Ok(GuestUser(id: user.id))
+        Ok(_) -> Error(helpers.UnknownError)
+        Error(error) -> Error(helpers.DatabaseError(error))
+      }
+    }
   }
 }
 
@@ -236,6 +286,10 @@ pub fn list_users(req: Request, ctx: Context) -> Response {
           #("first_name", json.nullable(user.first_name, json.string)),
           #("last_name", json.nullable(user.last_name, json.string)),
           #("is_admin", json.bool(user.is_admin)),
+          #("proxy_id", json.nullable(case user.proxy_id {
+            option.Some(proxy_id) -> option.Some(uuid.to_string(proxy_id))
+            option.None -> option.None
+          }, json.string)),
         ])
       }),
     )

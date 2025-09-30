@@ -5,7 +5,8 @@ select
   last_name,
   is_admin,
   created_at,
-  updated_at
+  updated_at,
+  proxy_id
 from
   users
 order by

@@ -4,6 +4,7 @@ import gleam/dynamic/decode
 import gleam/http/response
 import gleam/json
 import gleam/list
+import gleam/option
 import gleam/result
 import gleam/string
 import gleam/string_tree
@@ -131,6 +132,10 @@ pub fn require_user(
         first_name: user.first_name,
         last_name: user.last_name,
         is_admin: user.is_admin,
+        proxy_id: case user.proxy_id {
+          option.Some(proxy_id) -> option.Some(uuid.to_string(proxy_id))
+          option.None -> option.None
+        },
       ))
     Ok(_) -> unauthorised()
     Error(error) ->

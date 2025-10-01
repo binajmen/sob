@@ -173,6 +173,71 @@ returning
   |> pog.execute(db)
 }
 
+/// A row you get from running the `delete_user` query
+/// defined in `./src/auth/sql/delete_user.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type DeleteUserRow {
+  DeleteUserRow(
+    id: Uuid,
+    email: Option(String),
+    password_hash: Option(String),
+    first_name: Option(String),
+    last_name: Option(String),
+    is_admin: Bool,
+    created_at: Timestamp,
+    updated_at: Timestamp,
+    proxy_id: Option(Uuid),
+  )
+}
+
+/// Runs the `delete_user` query
+/// defined in `./src/auth/sql/delete_user.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn delete_user(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(DeleteUserRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use email <- decode.field(1, decode.optional(decode.string))
+    use password_hash <- decode.field(2, decode.optional(decode.string))
+    use first_name <- decode.field(3, decode.optional(decode.string))
+    use last_name <- decode.field(4, decode.optional(decode.string))
+    use is_admin <- decode.field(5, decode.bool)
+    use created_at <- decode.field(6, pog.timestamp_decoder())
+    use updated_at <- decode.field(7, pog.timestamp_decoder())
+    use proxy_id <- decode.field(8, decode.optional(uuid_decoder()))
+    decode.success(DeleteUserRow(
+      id:,
+      email:,
+      password_hash:,
+      first_name:,
+      last_name:,
+      is_admin:,
+      created_at:,
+      updated_at:,
+      proxy_id:,
+    ))
+  }
+
+  "delete from users
+where
+  id = $1
+  and is_admin = false
+returning
+  *;"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `find_user_by_email` query
 /// defined in `./src/auth/sql/find_user_by_email.sql`.
 ///

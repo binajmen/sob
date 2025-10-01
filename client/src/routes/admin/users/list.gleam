@@ -1,11 +1,15 @@
 import components/admin_nav
 import gleam/dynamic/decode
+import gleam/http/response.{type Response}
+import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/event
+import plinth/browser/window
 import rsvp
 import shared/user.{type User}
 
@@ -20,6 +24,9 @@ pub fn init() -> #(Model, Effect(Msg)) {
 
 pub type Msg {
   ApiReturnedUsers(Result(List(User), rsvp.Error))
+  UserClickedDelete(String)
+  UserConfirmedDelete(String)
+  ApiDeletedUser(Result(Response(String), rsvp.Error))
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -29,6 +36,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       echo error
       #(model, effect.none())
     }
+    UserClickedDelete(user_id) -> #(model, confirm_delete(user_id))
+    UserConfirmedDelete(user_id) -> #(
+      model,
+      delete_user(user_id, ApiDeletedUser),
+    )
+    ApiDeletedUser(Ok(_res)) -> {
+      #(model, fetch_users(ApiReturnedUsers))
+    }
+    ApiDeletedUser(Error(_)) -> #(model, effect.none())
   }
 }
 
@@ -44,6 +60,7 @@ pub fn view(users: List(User)) -> Element(Msg) {
           html.th([], [html.text("Name")]),
           html.th([], [html.text("Email")]),
           html.th([], [html.text("Admin")]),
+          html.th([], [html.text("Actions")]),
         ]),
       ]),
       html.tbody(
@@ -71,6 +88,21 @@ pub fn view(users: List(User)) -> Element(Msg) {
                   ])
               },
             ]),
+            html.td([], [
+              case user.is_admin {
+                True -> 
+                  html.span([attribute.class("text-gray-400")], [
+                    html.text("Protected")
+                  ])
+                False -> 
+                  html.button([
+                    attribute.class("btn btn-error btn-sm"),
+                    event.on_click(UserClickedDelete(user.id))
+                  ], [
+                    html.text("Delete")
+                  ])
+              }
+            ]),
           ])
         }),
       ),
@@ -97,4 +129,23 @@ fn fetch_users(
   let decoder = decode.list(user.user_decoder())
   let handler = rsvp.expect_json(decoder, handle_response)
   rsvp.get(url, handler)
+}
+
+fn confirm_delete(user_id: String) -> Effect(Msg) {
+  effect.from(fn(dispatch) {
+    case window.confirm("Are you sure you want to delete this user?") {
+      True -> dispatch(UserConfirmedDelete(user_id))
+      False -> Nil
+    }
+  })
+}
+
+fn delete_user(
+  id: String,
+  on_response handle_response: fn(Result(Response(String), rsvp.Error)) -> Msg,
+) -> Effect(Msg) {
+  let url = "/api/users/" <> id
+  let body = json.null()
+  let handler = rsvp.expect_ok_response(handle_response)
+  rsvp.delete(url, body, handler)
 }

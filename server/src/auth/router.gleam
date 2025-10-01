@@ -300,3 +300,14 @@ pub fn list_users(req: Request, ctx: Context) -> Response {
     Ok(result) -> result |> json.to_string_tree |> wisp.json_response(200)
   }
 }
+
+pub fn delete_user(req: Request, ctx: Context, id: String) -> Response {
+  use _ <- helpers.require_admin(req, ctx)
+  let assert Ok(uuid) = uuid.from_string(id)
+
+  case sql.delete_user(ctx.db, uuid) {
+    Ok(pog.Returned(1, _)) -> wisp.ok()
+    Ok(_) -> wisp.not_found()
+    Error(error) -> helpers.DatabaseError(error) |> helpers.to_wisp_response
+  }
+}

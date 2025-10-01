@@ -235,13 +235,17 @@ pub fn list_users_without_votes(
       Ok(pog.Returned(_count, rows)) ->
         Ok(
           json.array(rows, fn(user) {
-            json.object([
-              #("id", json.string(uuid.to_string(user.id))),
-              #("email", json.nullable(user.email, json.string)),
-              #("first_name", json.nullable(user.first_name, json.string)),
-              #("last_name", json.nullable(user.last_name, json.string)),
-              #("is_admin", json.bool(user.is_admin)),
-            ])
+             json.object([
+               #("id", json.string(uuid.to_string(user.id))),
+               #("email", json.nullable(user.email, json.string)),
+               #("first_name", json.nullable(user.first_name, json.string)),
+               #("last_name", json.nullable(user.last_name, json.string)),
+               #("is_admin", json.bool(user.is_admin)),
+               #("proxy_id", json.nullable(case user.proxy_id {
+                 option.Some(proxy_id) -> option.Some(uuid.to_string(proxy_id))
+                 option.None -> option.None
+               }, json.string)),
+             ])
           }),
         )
       Error(_) -> Error(Nil)

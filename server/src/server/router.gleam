@@ -113,13 +113,13 @@ fn serve_index() -> Response {
             attribute.href("/static/client.min.css"),
           ]),
           // FIXME:
-          // html.script(
-          //   [
-          //     attribute.type_("module"),
-          //     attribute.src("/static/client.min.mjs"),
-          //   ],
-          //   "",
-          // ),
+          html.script(
+            [
+              attribute.type_("module"),
+              attribute.src("/static/client.min.mjs"),
+            ],
+            "",
+          ),
           html.script(
             [attribute.type_("module"), attribute.src("/lustre/runtime.mjs")],
             "",

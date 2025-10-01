@@ -1,17 +1,13 @@
 select
-  u.id,
-  u.email,
-  u.first_name,
-  u.last_name,
-  u.is_admin,
-  u.created_at,
-  u.updated_at
+  u.*
 from
   users u
-left join votes v on u.id = v.user_id and v.question_id = $1
+  left join votes v on u.id = v.user_id
+  and v.question_id = $1
 where
   v.user_id is null
   and u.is_admin = false
 order by
   u.first_name asc,
   u.last_name asc;
+

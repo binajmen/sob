@@ -415,11 +415,13 @@ pub type ListUsersWithoutVotesRow {
   ListUsersWithoutVotesRow(
     id: Uuid,
     email: Option(String),
+    password_hash: Option(String),
     first_name: Option(String),
     last_name: Option(String),
     is_admin: Bool,
     created_at: Timestamp,
     updated_at: Timestamp,
+    proxy_id: Option(Uuid),
   )
 }
 
@@ -436,39 +438,40 @@ pub fn list_users_without_votes(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use email <- decode.field(1, decode.optional(decode.string))
-    use first_name <- decode.field(2, decode.optional(decode.string))
-    use last_name <- decode.field(3, decode.optional(decode.string))
-    use is_admin <- decode.field(4, decode.bool)
-    use created_at <- decode.field(5, pog.timestamp_decoder())
-    use updated_at <- decode.field(6, pog.timestamp_decoder())
+    use password_hash <- decode.field(2, decode.optional(decode.string))
+    use first_name <- decode.field(3, decode.optional(decode.string))
+    use last_name <- decode.field(4, decode.optional(decode.string))
+    use is_admin <- decode.field(5, decode.bool)
+    use created_at <- decode.field(6, pog.timestamp_decoder())
+    use updated_at <- decode.field(7, pog.timestamp_decoder())
+    use proxy_id <- decode.field(8, decode.optional(uuid_decoder()))
     decode.success(ListUsersWithoutVotesRow(
       id:,
       email:,
+      password_hash:,
       first_name:,
       last_name:,
       is_admin:,
       created_at:,
       updated_at:,
+      proxy_id:,
     ))
   }
 
   "select
-  u.id,
-  u.email,
-  u.first_name,
-  u.last_name,
-  u.is_admin,
-  u.created_at,
-  u.updated_at
+  u.*
 from
   users u
-left join votes v on u.id = v.user_id and v.question_id = $1
+  left join votes v on u.id = v.user_id
+  and v.question_id = $1
 where
   v.user_id is null
   and u.is_admin = false
 order by
   u.first_name asc,
-  u.last_name asc;"
+  u.last_name asc;
+
+"
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.returning(decoder)
